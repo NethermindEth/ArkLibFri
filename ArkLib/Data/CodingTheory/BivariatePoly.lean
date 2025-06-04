@@ -218,12 +218,14 @@ lemma univQuotientY_deg' (p : F[X]) (hf : f ≠ 0) (hg : g ≠ 0) :
 /--
 Tighter bound of the `Y`-univariate quotient polynomial.
 -/
-def univQuotientY_deg_bd : Prop :=
+def univQuotientY_deg_bd (hmn : m ≥ n) : Prop :=
   ∃ p, p.natDegree ≤ m - n ∧ evalAtX a g = p * (evalAtX a f)
 
-
-def setUnivQuotientY : Prop :=
-  ∀ θ ∈ P, univQuotientY_deg_bd m n θ f g
+/--
+Univariate quotients in `Y` obtained after evaluating on a set of points.
+-/
+def setUnivQuotientY (hmn : m ≥ n) : Prop :=
+  ∀ θ ∈ P, univQuotientY_deg_bd m n θ f g hmn
 
 /--
 The quotient univariate polynomial in `X` obtained after evaluating bivariate polynomials
@@ -233,7 +235,7 @@ def univQuotientX : Prop :=
   ∃ p : Polynomial F, evalAtY a g = p * (evalAtY a f)
 
 
-def univQuotientX_deg_bd : Prop :=
+def univQuotientX_deg_bd (hmn : m ≥ n) : Prop :=
   ∃ p : Polynomial F, p.natDegree ≤ m - n ∧ evalAtY a g = p * (evalAtY a f)
 
 /--
@@ -244,8 +246,11 @@ lemma univQuotientX_deg (p : F[X]) :
     p.natDegree ≤ degreeY g - degreeY f := by
     sorry
 
-def setUnivQuotientX : Prop :=
-  ∀ θ ∈ P, univQuotientX_deg_bd m n θ f g
+/--
+Univariate quotients in `X` obtained after evaluating on a set of points.
+-/
+def setUnivQuotientX (hmn : m ≥ n) : Prop :=
+  ∀ θ ∈ P, univQuotientX_deg_bd m n θ f g hmn
 
 end
 end Bivariate
