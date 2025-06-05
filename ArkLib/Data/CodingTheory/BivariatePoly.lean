@@ -174,7 +174,8 @@ def quotientPoly : Prop :=
 The quotient of two non-zero bivariate polynomials is non-zero.
 -/
 lemma quotientPoly_nezero (q : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0) (h_quot_XY : g = q * f)
-  : q ≠ 0 := by sorry
+  : q ≠ 0 := by
+  rw [← @nonempty_support_iff]
 
 /--
 The `X` degree of the bivarate quotient is bounded above by the difference of the `X`-degrees of
