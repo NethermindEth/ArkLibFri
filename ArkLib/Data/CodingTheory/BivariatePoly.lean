@@ -6,7 +6,6 @@ Authors: Katerina Hristova, František Silváši, Julian Sutherland
 
 import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Algebra.Polynomial.Bivariate
-import ArkLib.Data.CodingTheory.ReedSolomonCodes
 import Mathlib.Data.Fintype.Defs
 
 
@@ -176,7 +175,7 @@ The quotient of two non-zero bivariate polynomials is non-zero.
 lemma quotientPoly_nezero (q : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0) (h_quot_XY : g = q * f)
   : q ≠ 0 := by
   rw [← @nonempty_support_iff]
-
+  sorry
 /--
 The `X` degree of the bivarate quotient is bounded above by the difference of the `X`-degrees of
 the divisor and divident.
