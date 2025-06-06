@@ -40,6 +40,14 @@ def coeffs (f : F[X][Y]) : Finset F[X] :=
 def degreeX'' (f : F[X][Y]) : ℕ :=
   f.toFinsupp.support.sup (fun n => (f.coeff n).natDegree)
 
+lemma degreeX_prod (f g : F[X][Y]) : degreeX'' (f * g) = degreeX'' f + degreeX'' g := by
+  unfold degreeX''
+  simp only [toFinsupp_mul]
+  rw [@mul_eq_sum_sum]
+  sorry
+
+
+
 /-the next def, lemmma and def give an alternative def of degreeX. the proof of nonempty
 forces the condition of `f ≠ 0`. So this definition is closer to the degree rather than
 natdegree one.. mayve still worth keeping?
@@ -59,28 +67,102 @@ def degreeX' (f : F[X][Y]) (hf : f ≠ 0) : ℕ :=
   f.toFinsupp.support.max' (degreesXFinset'_nonempty f hf)
 
 
-/--
-Julian's deg def
--/
-def degreeX (f : F[X][Y]) : ℕ :=
-  match f.toFinsupp.support.max with
-  | ⊥ => 0
-  | .some n => n
+-- /--
+-- Julian's deg def
+-- -/
+-- def degreeX (f : F[X][Y]) : ℕ :=
+--   match f.toFinsupp.support.max with
+--   | ⊥ => 0
+--   | .some n => n
 
 /--
 The `Y` degree of a bivariate polynomial.
 -/
 def degreeY (f : F[X][Y]) : ℕ := Polynomial.natDegree f
 
+def leadingCoeffY (f : F[X][Y]) : F[X] := f.coeff (natDegree f)
+
+-- def leadingCoeffY (f : F[X][Y]) : F := leadingCoeff (f.coeff (natDegree f))
+
+
+lemma degreeY_prod (f g : F[X][Y]) (hf : leadingCoeffY f ≠ 0) (hg : leadingCoeffY g ≠ 0)
+  : degreeY (f * g) = degreeY f + degreeY g := by
+  unfold degreeY
+  sorry
+
+#check Polynomial.monomial
+
+def monomial_y (n : ℕ) : F[X] →ₗ[F[X]] F[X][Y] where
+  toFun t := ⟨Finsupp.single n t⟩
+  map_add' x y := by rw [Finsupp.single_add]; aesop
+  map_smul' r x := by simp; rw[smul_monomial]; aesop
+
+
+def monomial_xy (n m : ℕ) : F →ₗ[F] F[X][Y] where
+  toFun t := ⟨Finsupp.single m ⟨(Finsupp.single n t)⟩⟩
+  map_add' x y := by sorry
+   --simp only [Finsupp.single_add, ofFinsupp_single]; rw[← monomial ]
+  map_smul' x y := by simp; rw[smul_monomial]; sorry
+
+theorem monomial_xy_add (n m : ℕ) (r s : F) :
+  monomial_xy n m (r + s) = monomial_xy n m r + monomial_xy n m s :=
+  (monomial_xy n m).map_add _ _
+
+theorem monomial_xy_mul_monomial_xy (n m p q : ℕ) (r s : F) :
+    monomial_xy n m r * monomial_xy p q s = monomial_xy (n + p) (m + q) (r * s) :=
+  toFinsupp_injective <| by
+  unfold monomial_xy
+  rw [@toFinsupp_mul, @AddMonoidAlgebra.mul_def]
+  simp only [ofFinsupp_single, LinearMap.coe_mk, AddHom.coe_mk, toFinsupp_monomial, mul_zero,
+    Finsupp.single_zero, Finsupp.sum_single_index, zero_mul]
+  rw [@monomial_mul_monomial]
+
+
+@[simp]
+theorem monomial_pow (n m k: ℕ) (r : F) :
+  monomial_xy n m r ^ k = monomial_xy (n * k) (m * k) (r ^ k) := by
+  unfold monomial_xy
+  simp only [ofFinsupp_single, LinearMap.coe_mk, AddHom.coe_mk, Polynomial.monomial_pow]
+
+
+theorem smul_monomial_xy {S} [SMulZeroClass S F] (a : S) (n m : ℕ) (b : F) :
+    a • monomial_xy n m b = monomial_xy n m (a • b) := by
+    rw [monomial_xy]
+    simp only [ofFinsupp_single, LinearMap.coe_mk, AddHom.coe_mk]
+    rw [@Polynomial.smul_monomial, @Polynomial.smul_monomial]
+
+
+@[simp]
+theorem monomial_xy_eq_zero_iff (t : F) (n m : ℕ) : monomial_xy n m t = 0 ↔ t = 0 := by
+  rw [monomial_xy]
+  simp
+
+theorem monomial_xy_eq_monomial_xy_iff {m n p q : ℕ} {a b : F} :
+    monomial_xy n m a = monomial_xy p q b ↔ n = p ∧ m = q ∧ a = b ∨ a = 0 ∧ b = 0 := by
+    unfold monomial_xy
+    simp
+    rw [@monomial_eq_monomial_iff, @monomial_eq_monomial_iff]
+    aesop
+
+def totalDegree (f : F[X][Y]) : ℕ :=
+  f.support.sup (fun m => m + (f.coeff m).natDegree)
+
+lemma monomial_xy_degree (n m : ℕ) (a : F) (ha : a ≠ 0) :
+  totalDegree (monomial_xy n m a) = n + m := by
+  sorry
+
+theorem totalDegree_prod (f g : F[X][Y]) : totalDegree (f * g) = totalDegree f + totalDegree g := by
+  unfold totalDegree
+  rw [@mul_eq_sum_sum]
+  sorry
+
 def evalAtX (a : F) (f : F[X][Y]) : Polynomial F :=
   ⟨Finsupp.mapRange (Polynomial.eval a) eval_zero f.toFinsupp⟩
 
---Katy: might delete this
-lemma evalAtX_deg_le_degY (a : F) (f : F[X][Y]) :
-  (evalAtX a f).natDegree ≤ f.natDegree := by
-  sorry
-
-
+-- Katy : Don't want the lemma below anymore. Any objections?
+-- lemma evalAtX_deg_le_degY (a : F) (f : F[X][Y]) :
+--   (evalAtX a f).natDegree ≤ f.natDegree := by
+--   sorry
 
 /--
 Evaluating a bivariate polynomial in the first variable `X` on a set of points resulting in a set of
@@ -103,7 +185,6 @@ def evalAtYOnASet (P : Finset F) (f : F[X][Y]) : Set (Polynomial F) :=
   {h : Polynomial F | ∃ a ∈ P, evalAtY a f = h}
 
 
-
 /--
 The bivariate quotient polynomial.
 -/
@@ -116,21 +197,61 @@ The quotient of two non-zero bivariate polynomials is non-zero.
 lemma quotientPoly_nezero (q : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0) (h_quot_XY : g = q * f)
   : q ≠ 0 := by
   rw [← @nonempty_support_iff]
-  sorry
+  simp only [support_nonempty, ne_eq]
+  intro hq
+  rw [hq, zero_mul] at h_quot_XY
+  tauto
+
+lemma nezero_iff_coeffs_nezero : f ≠ 0 ↔ f.coeff ≠ 0 := by
+  apply Iff.intro
+  ·
+    intro hf
+    have f_finsupp : f.toFinsupp ≠ 0 := by aesop
+    rw[coeff]
+    simp only [ne_eq, Finsupp.coe_eq_zero]
+    exact f_finsupp
+  ·
+    intro f_coeffs
+    rw[coeff] at f_coeffs
+    aesop
+
+
+lemma quotientPoly_nezero_iff_coeffs_nezero (q : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0)
+  (h_quot_XY : g = q * f) : q.coeff ≠ 0 := by
+  apply (nezero_iff_coeffs_nezero q).1
+  exact quotientPoly_nezero f g q hf hg h_quot_XY
+
+
 /--
 The `X` degree of the bivarate quotient is bounded above by the difference of the `X`-degrees of
 the divisor and divident.
 -/
 lemma quotientPoly_degX (q : F[X][Y]) (h_quot_XY : g = q * f) :
-  degreeX q ≤ degreeX g - degreeX f
-  := by sorry
+  degreeX'' q ≤ degreeX'' g - degreeX'' f := by
+  rw [h_quot_XY, degreeX_prod q f]
+  aesop
 
 /--
 The `Y` degree of the bivarate quotient is bounded above by the difference of the `Y`-degrees of
 the divisor and divident.
 -/
-lemma quotientPoly_degY (q : F[X][Y]) (h_quot_XY : g = q * f)
-  : degreeY q  ≤ degreeY g - degreeY f  := by sorry
+lemma quotientPoly_degY (q : F[X][Y]) (h_quot_XY : g = q * f) (hf : leadingCoeffY f ≠ 0)
+ (hg : leadingCoeffY g ≠ 0) : degreeY q  ≤ degreeY g - degreeY f  := by
+  rw[h_quot_XY, degreeY_prod q f]
+  aesop
+  rw[h_quot_XY] at hg
+  ·
+      have q_coeffs : q.coeff ≠ 0 := by rw [quotientPoly_nezero_iff_coeffs_nezero f g q hf hg h_quot_XY]
+      have q_deg : q.natDegree ≠ 0 := sorry
+      unfold leadingCoeffY
+      aesop
+
+  · exact hf
+
+
+
+ --- Katy TODO: continue refining the lemmas below
+
 
 
 /--
