@@ -18,77 +18,184 @@ namespace Bivariate
 noncomputable section
 
 variable {F : Type} [Semiring F]
-         (m n : ℕ)
-         (P P₁ P₂ : Finset F) [Nonempty P] [Nonempty P₁] [Nonempty P₁]
          (a : F)
          (f g : F[X][Y])
 
--- def coeffsOfBivPolynomial (f : F[X][Y]) : Fin f.natDegree → F[X] :=
--- fun ⟨y, _⟩ ↦ Polynomial.coeff f y
+/--
+The set of coeffiecients of a bivatiate polynomial.
+-/
+def coeffs : Finset F[X] := f.support.image (fun n => f.coeff n)
 
 /---
-The `X` polynomial which is a coeff of `Y^n`.
+The coeffiecient of `Y^n` is a polynomial in `X`.
 -/
-def coeff_Y_n (f : F[X][Y]) : F[X] :=
-  f.coeff n
+def coeff_Y_n : F[X] := f.coeff n
 
-def coeffs (f : F[X][Y]) : Finset F[X] :=
-  f.support.image (fun n => f.coeff n)
-
---Katy new def of degree X
---Katy TO DO: change sup to max' after I write a proof for f.toFinsupp.support.Nonempty
-def degreeX'' (f : F[X][Y]) : ℕ :=
-  f.toFinsupp.support.sup (fun n => (f.coeff n).natDegree)
-
-lemma degreeX_prod (f g : F[X][Y]) : degreeX'' (f * g) = degreeX'' f + degreeX'' g := by
-  unfold degreeX''
-  simp only [toFinsupp_mul]
-  rw [@mul_eq_sum_sum]
-  sorry
-
-
-
-/-the next def, lemmma and def give an alternative def of degreeX. the proof of nonempty
-forces the condition of `f ≠ 0`. So this definition is closer to the degree rather than
-natdegree one.. mayve still worth keeping?
+/--
+The `Y`-degree of a bivariate polynomial.
 -/
-def degreesXFinset' (f : F[X][Y]) : Finset ℕ :=
+def degreeY : ℕ := Polynomial.natDegree f
+
+-- Katy: The next def, lemma and def can be deleted. Just keeping for now in case we need
+-- the lemma for somethying
+def degreesYFinset : Finset ℕ :=
   f.toFinsupp.support
 
-lemma degreesXFinset'_nonempty (f : F[X][Y]) (hf : f ≠ 0) : (degreesXFinset' f).Nonempty := by
-  rw[degreesXFinset']
+lemma degreesYFinset_nonempty (hf : f ≠ 0) : (degreesYFinset f).Nonempty := by
+  rw [degreesYFinset]
   apply Finsupp.support_nonempty_iff.mpr
   intro h
   apply hf
   exact Polynomial.ext (fun n => by rw [← Polynomial.toFinsupp_apply, h]; rfl)
 
 
-def degreeX' (f : F[X][Y]) (hf : f ≠ 0) : ℕ :=
-  f.toFinsupp.support.max' (degreesXFinset'_nonempty f hf)
-
-
--- /--
--- Julian's deg def
--- -/
--- def degreeX (f : F[X][Y]) : ℕ :=
---   match f.toFinsupp.support.max with
---   | ⊥ => 0
---   | .some n => n
+def degreeY' (hf : f ≠ 0) : ℕ :=
+  f.toFinsupp.support.max' (degreesYFinset_nonempty f hf)
 
 /--
-The `Y` degree of a bivariate polynomial.
+The polynomial coefficient of the highest power of `Y`. This is the leading coefficient in the
+classical sense if the bivariate polynomial is interpreted as a univariate polynomial over `F[X]`.
 -/
-def degreeY (f : F[X][Y]) : ℕ := Polynomial.natDegree f
+def leadingCoeffY : F[X] := f.coeff (natDegree f)
 
-def leadingCoeffY (f : F[X][Y]) : F[X] := f.coeff (natDegree f)
+/--
+The polynomial coeffient of the highest power of `Y` is `0` if and only if the bivariate
+polynomial is the zero polynomial.
+-/
+theorem leadingCoeffY_eq_zero : leadingCoeffY f = 0 ↔ f = 0 :=
+  ⟨fun h =>
+    Classical.by_contradiction fun hp =>
+      mt mem_support_iff.1 (Classical.not_not.2 h) (Finset.mem_of_max (degree_eq_natDegree hp)),
+    fun h => h.symm ▸ leadingCoeff_zero⟩
 
--- def leadingCoeffY (f : F[X][Y]) : F := leadingCoeff (f.coeff (natDegree f))
+/--
+The polynomial coeffient of the highest power of `Y` is not `0` if and only if the
+bivariate polynomial is non-zero.
+-/
+lemma ne_zero_iff_leadingCoeffY_ne_zero : leadingCoeffY f ≠ 0 ↔ f ≠ 0 := by
+  rw [Ne, leadingCoeffY_eq_zero f]
 
+/--
+Over an intergal domain, the product of two non-zero bivariate polynomials is non-zero.
+-/
+lemma ne_zero_mul_ne_zero [IsDomain F] (hf : f ≠ 0) (hg : g ≠ 0) : f * g ≠ 0 := mul_ne_zero hf hg
 
-lemma degreeY_prod (f g : F[X][Y]) (hf : leadingCoeffY f ≠ 0) (hg : leadingCoeffY g ≠ 0)
+/--
+Over an integral domain, the `Y`-degree of the product of two non-zero bivariate polynomials is
+equal to the sum of their degrees.
+-/
+lemma degreeY_mul [IsDomain F] (hf : f ≠ 0) (hg : g ≠ 0)
   : degreeY (f * g) = degreeY f + degreeY g := by
   unfold degreeY
+  rw [←ne_zero_iff_leadingCoeffY_ne_zero] at hf
+  rw [←ne_zero_iff_leadingCoeffY_ne_zero] at hg
+  have h_lc : leadingCoeffY f * leadingCoeffY g ≠ 0 := mul_ne_zero hf hg
+  exact Polynomial.natDegree_mul' h_lc
+
+/--
+The `X`-degree of a bivariate polynomial.
+-/
+def degreeX : ℕ := f.toFinsupp.support.sup (fun n => (f.coeff n).natDegree)
+
+
+/--
+The `X`-degree of the product of two non-zero bivariate polynomials is
+equal to the sum of their degrees.
+-/
+lemma degreeX_mul [IsDomain F] (hf : f ≠ 0) (hg : g ≠ 0) :
+  degreeX (f * g) = degreeX f + degreeX g := by
+  unfold degreeX
   sorry
+
+/--
+The evaluation at a point of a bivariate polynomial in the first variable `X`.
+-/
+def evalX : Polynomial F :=
+  ⟨Finsupp.mapRange (Polynomial.eval a) eval_zero f.toFinsupp⟩
+
+/--
+Evaluating a bivariate polynomial in the first variable `X` on a set of points. This results in
+a set of univariate polynomials in `Y`.
+-/
+def evalSetX (P : Finset F) [Nonempty P]: Set (Polynomial F) :=
+  {h : Polynomial F | ∃ a ∈ P, evalX a f = h}
+
+/--
+The evaluation at a point of a bivariate polynomial in the second variable `Y`.
+-/
+def evalY : Polynomial F := Polynomial.eval (Polynomial.C a) f
+
+/--
+Evaluating a bivariate polynomial in the second variable `Y` on a set of points resulting
+in a set of univariate polynomials in `X`.
+-/
+def evalSetY (P : Finset F) [Nonempty P] : Set (Polynomial F) :=
+  {h : Polynomial F | ∃ a ∈ P, evalY a f = h}
+
+/--
+The bivariate quotient polynomial.
+-/
+def quotient : Prop := ∃ q : F[X][Y], g = q * f
+
+/--
+The quotient of two non-zero bivariate polynomials is non-zero.
+-/
+lemma quotient_nezero (q : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0) (h_quot_XY : g = q * f)
+  : q ≠ 0 := by
+  rw [← @nonempty_support_iff]
+  simp only [support_nonempty, ne_eq]
+  intro hq
+  rw [hq, zero_mul] at h_quot_XY
+  tauto
+
+/--
+A bivariate polynomial is non-zero if and only if all its coefficients are non-zero.
+-/
+lemma nezero_iff_coeffs_nezero : f ≠ 0 ↔ f.coeff ≠ 0 := by
+  apply Iff.intro
+  ·
+    intro hf
+    have f_finsupp : f.toFinsupp ≠ 0 := by aesop
+    rw [coeff]
+    simp only [ne_eq, Finsupp.coe_eq_zero]
+    exact f_finsupp
+  ·
+    intro f_coeffs
+    rw [coeff] at f_coeffs
+    aesop
+
+/--
+If a non-zero bivariate polynomial `f` divides a non-zero bivariate polynomial `g`, then
+all the coefficients of the quoetient are non-zero.
+-/
+lemma quotient_nezero_iff_coeffs_nezero (q : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0)
+  (h_quot_XY : g = q * f) : q.coeff ≠ 0 := by
+  apply (nezero_iff_coeffs_nezero q).1
+  exact quotient_nezero f g q hf hg h_quot_XY
+
+/--
+The `X` degree of the bivarate quotient is bounded above by the difference of the `X`-degrees of
+the divisor and divident.
+-/
+lemma quotient_degX [IsDomain F](q : F[X][Y]) (h_quot_XY : g = q * f) (hf : f ≠ 0) (hg : g ≠ 0) :
+  degreeX q ≤ degreeX g - degreeX f := by
+  rw [h_quot_XY, degreeX_mul q f]
+  · aesop
+  · rw [nezero_iff_coeffs_nezero]
+    exact quotient_nezero_iff_coeffs_nezero f g q hf hg h_quot_XY
+  · exact hf
+
+/--
+The `Y` degree of the bivarate quotient is bounded above by the difference of the `Y`-degrees of
+the divisor and divident.
+-/
+lemma quotient_degY [IsDomain F] (q : F[X][Y]) (h_quot_XY : g = q * f) (hf : f ≠ 0)
+  (hg : g ≠ 0) : degreeY q  ≤ degreeY g - degreeY f := by
+  rw [h_quot_XY, degreeY_mul q f]
+  · aesop
+  · rw [nezero_iff_coeffs_nezero q]
+    exact quotient_nezero_iff_coeffs_nezero f g q hf hg h_quot_XY
+  · exact hf
 
 #check Polynomial.monomial
 
@@ -119,7 +226,7 @@ theorem monomial_xy_mul_monomial_xy (n m p q : ℕ) (r s : F) :
 
 
 @[simp]
-theorem monomial_pow (n m k: ℕ) (r : F) :
+theorem monomial_pow (n m k : ℕ) (r : F) :
   monomial_xy n m r ^ k = monomial_xy (n * k) (m * k) (r ^ k) := by
   unfold monomial_xy
   simp only [ofFinsupp_single, LinearMap.coe_mk, AddHom.coe_mk, Polynomial.monomial_pow]
@@ -151,252 +258,10 @@ lemma monomial_xy_degree (n m : ℕ) (a : F) (ha : a ≠ 0) :
   totalDegree (monomial_xy n m a) = n + m := by
   sorry
 
-theorem totalDegree_prod (f g : F[X][Y]) : totalDegree (f * g) = totalDegree f + totalDegree g := by
+theorem totalDegree_prod : totalDegree (f * g) = totalDegree f + totalDegree g := by
   unfold totalDegree
   rw [@mul_eq_sum_sum]
   sorry
-
-def evalAtX (a : F) (f : F[X][Y]) : Polynomial F :=
-  ⟨Finsupp.mapRange (Polynomial.eval a) eval_zero f.toFinsupp⟩
-
--- Katy : Don't want the lemma below anymore. Any objections?
--- lemma evalAtX_deg_le_degY (a : F) (f : F[X][Y]) :
---   (evalAtX a f).natDegree ≤ f.natDegree := by
---   sorry
-
-/--
-Evaluating a bivariate polynomial in the first variable `X` on a set of points resulting in a set of
-univariate polynomials in `Y`.
--/
-def evalAtXOnASet (P : Finset F) (f : F[X][Y]) : Set (Polynomial F) :=
- {h : Polynomial F | ∃ a ∈ P, evalAtX a f = h}
-
-/--
-The evaluation at a point of a bivariate polynomial in the second variable `Y`.
--/
-def evalAtY (a : F) (f : F [X][Y]) : Polynomial F :=
-  Polynomial.eval (Polynomial.C a) f
-
-/--
-Evaluating a bivariate polynomial in the second variable `Y` on a set of points resulting
-in a set of univariate polynomials in `X`.
--/
-def evalAtYOnASet (P : Finset F) (f : F[X][Y]) : Set (Polynomial F) :=
-  {h : Polynomial F | ∃ a ∈ P, evalAtY a f = h}
-
-
-/--
-The bivariate quotient polynomial.
--/
-def quotientPoly : Prop :=
-  ∃ q : F[X][Y], g = q * f
-
-/--
-The quotient of two non-zero bivariate polynomials is non-zero.
--/
-lemma quotientPoly_nezero (q : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0) (h_quot_XY : g = q * f)
-  : q ≠ 0 := by
-  rw [← @nonempty_support_iff]
-  simp only [support_nonempty, ne_eq]
-  intro hq
-  rw [hq, zero_mul] at h_quot_XY
-  tauto
-
-lemma nezero_iff_coeffs_nezero : f ≠ 0 ↔ f.coeff ≠ 0 := by
-  apply Iff.intro
-  ·
-    intro hf
-    have f_finsupp : f.toFinsupp ≠ 0 := by aesop
-    rw[coeff]
-    simp only [ne_eq, Finsupp.coe_eq_zero]
-    exact f_finsupp
-  ·
-    intro f_coeffs
-    rw[coeff] at f_coeffs
-    aesop
-
-
-lemma quotientPoly_nezero_iff_coeffs_nezero (q : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0)
-  (h_quot_XY : g = q * f) : q.coeff ≠ 0 := by
-  apply (nezero_iff_coeffs_nezero q).1
-  exact quotientPoly_nezero f g q hf hg h_quot_XY
-
-
-/--
-The `X` degree of the bivarate quotient is bounded above by the difference of the `X`-degrees of
-the divisor and divident.
--/
-lemma quotientPoly_degX (q : F[X][Y]) (h_quot_XY : g = q * f) :
-  degreeX'' q ≤ degreeX'' g - degreeX'' f := by
-  rw [h_quot_XY, degreeX_prod q f]
-  aesop
-
-/--
-The `Y` degree of the bivarate quotient is bounded above by the difference of the `Y`-degrees of
-the divisor and divident.
--/
-lemma quotientPoly_degY (q : F[X][Y]) (h_quot_XY : g = q * f) (hf : leadingCoeffY f ≠ 0)
- (hg : leadingCoeffY g ≠ 0) : degreeY q  ≤ degreeY g - degreeY f  := by
-  rw[h_quot_XY, degreeY_prod q f]
-  aesop
-  rw[h_quot_XY] at hg
-  ·
-      have q_coeffs : q.coeff ≠ 0 := by rw [quotientPoly_nezero_iff_coeffs_nezero f g q hf hg h_quot_XY]
-      have q_deg : q.natDegree ≠ 0 := sorry
-      unfold leadingCoeffY
-      aesop
-
-  · exact hf
-
-
-
- --- Katy TODO: continue refining the lemmas below
-
-
-
-/--
-The quotient univariate polynomial in `Y` obtained after evaluating bivariate polynomials
-`f` and `g` in `X` at a point and dividing in the ring `F[Y]`.
--/
-def univQuotientY (a : F) : Prop :=
-  ∃ p : Polynomial F, evalAtX a g = p * (evalAtX a f)
-
-/--
-Degree bound of the `X`-univariate quotient polynomial (Julian's degree def).
--/
-lemma univQuotientY_deg (p : F[X]) :
-  evalAtX a g = p * (evalAtX a f) →
-    p.natDegree ≤ degreeX g - degreeX f := by
-    sorry
-
-/--
-Degree bound of the `X`-univariate quotient polynomial.
--/
-lemma univQuotientY_deg' (p : F[X]) (hf : f ≠ 0) (hg : g ≠ 0) :
-  evalAtX a g = p * (evalAtX a f) →
-    p.natDegree ≤ degreeX' g hg - degreeX' f hf := by
-    intro h
-    sorry
-/--
-Tighter bound of the `Y`-univariate quotient polynomial.
--/
-def univQuotientY_deg_bd (hmn : m ≥ n) : Prop :=
-  ∃ p, p.natDegree ≤ m - n ∧ evalAtX a g = p * (evalAtX a f)
-
-/--
-Univariate quotients in `Y` obtained after evaluating on a set of points.
--/
-def setUnivQuotientY (hmn : m ≥ n) : Prop :=
-  ∀ θ ∈ P, univQuotientY_deg_bd m n θ f g hmn
-
-/--
-The quotient univariate polynomial in `X` obtained after evaluating bivariate polynomials
-`f` and `g` in `Y` at a point and dividing in the ring `F[X]`.
--/
-def univQuotientX : Prop :=
-  ∃ p : Polynomial F, evalAtY a g = p * (evalAtY a f)
-
-
-def univQuotientX_deg_bd (hmn : m ≥ n) : Prop :=
-  ∃ p : Polynomial F, p.natDegree ≤ m - n ∧ evalAtY a g = p * (evalAtY a f)
-
-/--
-Degree bound of the univariate quotient polynomial.
--/
-lemma univQuotientX_deg (p : F[X]) :
-  evalAtY a g = p * (evalAtY a f) →
-    p.natDegree ≤ degreeY g - degreeY f := by
-    sorry
-
-/--
-Univariate quotients in `X` obtained after evaluating on a set of points.
--/
-def setUnivQuotientX (hmn : m ≥ n) : Prop :=
-  ∀ θ ∈ P, univQuotientX_deg_bd m n θ f g hmn
-
-
-
-
-
-
-
-
----František's lemmas in the bivariate case
-
--- lemma natDegreeBiv_lt_of_lbounded_zero_coeff {f : F[X][Y]} {deg : ℕ} [NeZero deg]
---   (h : ∀ i, deg ≤ i → f.coeff i = 0) : f.natDegree < deg := by
---   aesop (add unsafe [(by by_contra), (by specialize h f.natDegree)])
-
--- /--
--- Construct a bivariate polynomial in `X` and `Y` from a vector of coefficients,
--- which are polynomials in `X`.
--- -/
--- def polynomialOfCoeffsOfBiv {deg : ℕ} [NeZero deg] (coeffs : Fin deg → F[X]) : F[X][Y] :=
---  ⟨
---     Finset.map ⟨Fin.val, Fin.val_injective⟩ {i | coeffs i ≠ 0},
---     fun i ↦ if h : i < deg then coeffs ⟨i, h⟩ else 0,
---     fun a ↦ by aesop (add safe (by existsi a))
---                      (add simp [Fin.natCast_def, Nat.mod_eq_of_lt])
---   ⟩
-
--- @[simp]
--- lemma natDegree_polynomialOfCoeffsOfBiv_deg_lt_deg {deg : ℕ} [NeZero deg]
--- (coeffs : Fin deg → F[X]) :
---   (polynomialOfCoeffsOfBiv coeffs).natDegree < deg := by
---   aesop (add simp polynomialOfCoeffsOfBiv)
---         (add safe apply natDegreeBiv_lt_of_lbounded_zero_coeff)
-
--- @[simp]
--- lemma degree_polynomialOfCoeffsOfBiv_deg_lt_deg
---   {deg : ℕ} [NeZero deg] {coeffs : Fin deg → F[X]} :
---   (polynomialOfCoeffsOfBiv coeffs).degree < deg := by
---   aesop (add simp [polynomialOfCoeffsOfBiv, degree_lt_iff_coeff_zero])
-
--- @[simp]
--- lemma coeff_polynomialOfCoeffsOfBiv_eq_coeffs {deg : ℕ} [NeZero deg] {coeffs : Fin deg → F[X]} :
---   (polynomialOfCoeffsOfBiv coeffs).coeff ∘ Fin.val = coeffs := by -- NOTE TO SELF: `liftF' coeffs`!
---   aesop (add simp polynomialOfCoeffsOfBiv)
-
--- lemma coeff_polynomialOfCoeffsOfBiv_eq_coeffs' {deg : ℕ} [NeZero deg] {coeffs : Fin deg → F[X]} :
---   (polynomialOfCoeffsOfBiv coeffs).coeff = fun x ↦ if h : x < deg then coeffs ⟨x, h⟩ else 0 := by
---   aesop (add simp polynomialOfCoeffsOfBiv)
-
--- @[simp]
--- lemma polynomialOfCoeffsOfBiv_mem_degreeLT {deg : ℕ} [NeZero deg] {coeffs : Fin deg → F[X]} :
---   polynomialOfCoeffsOfBiv coeffs ∈ degreeLT F[X] deg := by
---   aesop (add simp Polynomial.mem_degreeLT)
-
-
--- @[simp]
--- lemma polynomialOfCoeffsOfBiv_eq_zero {deg : ℕ} [NeZero deg] {coeffs : Fin deg → F[X]} :
---   polynomialOfCoeffsOfBiv coeffs = 0 ↔ ∀ (x : ℕ) (h : x < deg), coeffs ⟨x, h⟩ = 0 := by
---   simp [polynomialOfCoeffsOfBiv, AddMonoidAlgebra.ext_iff]
-
--- lemma polynomialOfCoeffsBiv_coeffsOfPolynomialBiv (deg : ℕ) [NeZero deg]
---   {f : F[X][Y]} (h : f.natDegree + 1 = deg)
---   : polynomialOfCoeffsOfBiv (coeffsOfBivPolynomial deg f) = f := by sorry
-  -- ext x; symm
-  -- aesop (add simp [polynomialOfCoeffsOfBiv, coeffsOfBivPolynomial, coeff_polynomialOfCoeffsOfBiv_eq_coeffs'])
-  --       (add safe apply coeff_eq_zero_of_natDegree_lt)
-  --       (add safe (by omega))
-
-
--- @[simp]
--- lemma coeffsOfBivPolynomial_polynomialOfCoeffsOfBiv {deg : ℕ} [NeZero deg]
---   {coeffs : Fin deg → F[X]} : coeffsOfBivPolynomial deg (polynomialOfCoeffsOfBiv coeffs) = coeffs
---   := by
---   ext x; symm
---   aesop (add simp [
---       polynomialOfCoeffsOfBiv, coeffsOfBivPolynomial, coeff_polynomialOfCoeffsOfBiv_eq_coeffs'
---                    ])
---         (add safe (by omega))
-
--- @[simp]
--- lemma support_polynomialOfBivCoeffs (deg : ℕ) [NeZero deg] {coeffs : Fin deg → F[X]} :
---   (polynomialOfCoeffsOfBiv coeffs).support =
---   Finset.map ⟨Fin.val, Fin.val_injective⟩ {i | coeffs i ≠ 0} := rfl
-
-
 
 
 end
