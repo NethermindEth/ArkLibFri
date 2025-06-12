@@ -30,4 +30,9 @@ lemma Polishchuk_Spielman {F : Type} [Semiring F] [Field F]
         ∀ x ∈ Q_x, Bivariate.evalX x q = quot_Y x)
     ∧ (∃ Q_y : Finset F, Q_y.card ≥ n_y - a_y ∧ Q_y ⊆ P_y ∧
         ∀ y ∈ Q_y, Bivariate.evalX y q = quot_X y)
+<<<<<<< HEAD
     := sorry
+=======
+    := by
+  sorry
+>>>>>>> 7c65498 (division condition fixed, moved defs, some cleanup)
