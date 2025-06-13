@@ -205,6 +205,10 @@ def monomial_xy (n m : ℕ) : F →ₗ[F] F[X][Y] where
     rw[smul_monomial, smul_monomial]
     simp
 
+theorem monomial_xy_def (m n : ℕ) (c : F) : monomial_xy n m c = monomial m (monomial n c) := by
+  unfold monomial_xy
+  simp
+
 theorem monomial_xy_add (n m : ℕ) (r s : F) :
   monomial_xy n m (r + s) = monomial_xy n m r + monomial_xy n m s :=
   (monomial_xy n m).map_add _ _
@@ -250,9 +254,18 @@ def totalDegree (f : F[X][Y]) : ℕ :=
 
 lemma monomial_xy_degree (n m : ℕ) (a : F) (ha : a ≠ 0) :
   totalDegree (monomial_xy n m a) = n + m := by
-  sorry
+  unfold totalDegree
+  rw
+    [
+      monomial_xy_def,
+      Polynomial.support_monomial,
+      Finset.sup_singleton,
+      Nat.add_comm
+    ] <;> simp [ha]
 
-theorem totalDegree_prod : totalDegree (f * g) = totalDegree f + totalDegree g := by
+
+theorem totalDegree_prod (hf : f ≠ 0) (hg : g ≠ 0) :
+    totalDegree (f * g) = totalDegree f + totalDegree g := by
   unfold totalDegree
   rw [@mul_eq_sum_sum]
   sorry
