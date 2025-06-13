@@ -198,9 +198,12 @@ def monomial_y (n : ℕ) : F[X] →ₗ[F[X]] F[X][Y] where
 
 def monomial_xy (n m : ℕ) : F →ₗ[F] F[X][Y] where
   toFun t := ⟨Finsupp.single m ⟨(Finsupp.single n t)⟩⟩
-  map_add' x y := by sorry
-   --simp only [Finsupp.single_add, ofFinsupp_single]; rw[← monomial ]
-  map_smul' x y := by simp; rw[smul_monomial]; sorry
+  map_add' x y := by
+    simp only [ofFinsupp_single, Polynomial.monomial_add, Polynomial.monomial_add]
+  map_smul' x y := by
+    simp only [smul_eq_mul, ofFinsupp_single, RingHom.id_apply]
+    rw[smul_monomial, smul_monomial]
+    simp
 
 theorem monomial_xy_add (n m : ℕ) (r s : F) :
   monomial_xy n m (r + s) = monomial_xy n m r + monomial_xy n m s :=
