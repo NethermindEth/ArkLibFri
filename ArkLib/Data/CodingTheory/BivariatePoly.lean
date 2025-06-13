@@ -29,7 +29,7 @@ def coeffs : Finset F[X] := f.support.image (fun n => f.coeff n)
 /---
 The coeffiecient of `Y^n` is a polynomial in `X`.
 -/
-def coeff_Y_n : F[X] := f.coeff n
+def coeff_Y_n (n : ℕ) : F[X] := f.coeff n
 
 /--
 The `Y`-degree of a bivariate polynomial.
@@ -140,7 +140,7 @@ def quotient : Prop := ∃ q : F[X][Y], g = q * f
 /--
 The quotient of two non-zero bivariate polynomials is non-zero.
 -/
-lemma quotient_nezero (q : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0) (h_quot_XY : g = q * f)
+lemma quotient_nezero (q : F[X][Y]) (hg : g ≠ 0) (h_quot_XY : g = q * f)
   : q ≠ 0 := by
   rw [← @nonempty_support_iff]
   simp only [support_nonempty, ne_eq]
@@ -153,14 +153,12 @@ A bivariate polynomial is non-zero if and only if all its coefficients are non-z
 -/
 lemma nezero_iff_coeffs_nezero : f ≠ 0 ↔ f.coeff ≠ 0 := by
   apply Iff.intro
-  ·
-    intro hf
+  · intro hf
     have f_finsupp : f.toFinsupp ≠ 0 := by aesop
     rw [coeff]
     simp only [ne_eq, Finsupp.coe_eq_zero]
     exact f_finsupp
-  ·
-    intro f_coeffs
+  · intro f_coeffs
     rw [coeff] at f_coeffs
     aesop
 
@@ -168,10 +166,10 @@ lemma nezero_iff_coeffs_nezero : f ≠ 0 ↔ f.coeff ≠ 0 := by
 If a non-zero bivariate polynomial `f` divides a non-zero bivariate polynomial `g`, then
 all the coefficients of the quoetient are non-zero.
 -/
-lemma quotient_nezero_iff_coeffs_nezero (q : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0)
+lemma quotient_nezero_iff_coeffs_nezero (q : F[X][Y]) (hg : g ≠ 0)
   (h_quot_XY : g = q * f) : q.coeff ≠ 0 := by
   apply (nezero_iff_coeffs_nezero q).1
-  exact quotient_nezero f g q hf hg h_quot_XY
+  exact quotient_nezero f g q hg h_quot_XY
 
 /--
 The `X` degree of the bivarate quotient is bounded above by the difference of the `X`-degrees of
@@ -182,7 +180,7 @@ lemma quotient_degX [IsDomain F](q : F[X][Y]) (h_quot_XY : g = q * f) (hf : f �
   rw [h_quot_XY, degreeX_mul q f]
   · aesop
   · rw [nezero_iff_coeffs_nezero]
-    exact quotient_nezero_iff_coeffs_nezero f g q hf hg h_quot_XY
+    exact quotient_nezero_iff_coeffs_nezero f g q hg h_quot_XY
   · exact hf
 
 /--
@@ -194,10 +192,8 @@ lemma quotient_degY [IsDomain F] (q : F[X][Y]) (h_quot_XY : g = q * f) (hf : f �
   rw [h_quot_XY, degreeY_mul q f]
   · aesop
   · rw [nezero_iff_coeffs_nezero q]
-    exact quotient_nezero_iff_coeffs_nezero f g q hf hg h_quot_XY
+    exact quotient_nezero_iff_coeffs_nezero f g q hg h_quot_XY
   · exact hf
-
-#check Polynomial.monomial
 
 def monomial_y (n : ℕ) : F[X] →ₗ[F[X]] F[X][Y] where
   toFun t := ⟨Finsupp.single n t⟩
