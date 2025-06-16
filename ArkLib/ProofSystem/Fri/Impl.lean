@@ -15,7 +15,7 @@ variable (D : Subgroup Fˣ)
 variable (r : ℕ)
 
 def FriCommitSpec : OracleSpec Unit :=
-  fun _ ↦ (Unit, D)
+  fun _ ↦ (Unit, F)
 
 inductive Oracle where
   | RO
@@ -32,16 +32,12 @@ variable {F : Type} [NonBinaryField F] [DecidableEq F]
 variable {D : Subgroup Fˣ}
 variable {r : ℕ} [NeZero r]
 
-def getChallenge : (OracleComp (FriCommitSpec F D)) D
-  := OracleComp.lift (OracleSpec.query (spec := FriCommitSpec F D) () ())
+def getChallenge : (OracleComp (FriCommitSpec F)) F
+  := OracleComp.lift (OracleSpec.query (spec := FriCommitSpec F) () ())
 
 noncomputable def commit (f : Polynomial F)
-  : (OracleComp (FriCommitSpec F D)) (List (Polynomial F)) :=
-  scanlM (fun f i => do
-    let α <- getChallenge;
-    let α := α ^ i;
-    return foldα f α.val.val
-  ) f (List.range r)
+  : (OracleComp (FriCommitSpec F)) (List (Polynomial F)) :=
+  scanlM (fun f _ => getChallenge >>= pure ∘ foldα f) f (List.range r)
 
 def getEval (i : Fin r) (x : F)
   : (OracleComp (FriQuerySpec F D r)) F
@@ -64,7 +60,7 @@ noncomputable def query :
     mapM_ (fun (i : ℕ) => do
       let x₀ := challenges.getD i 0;
       let s₀ <- getChallengeQ;
-      let s₀ := s₀.val.val;
+      let s₀ := (s₀.val.val ^ (2 ^ i));
       let α₀ <- getEval i s₀;
       let α₁ <- getEval i (-s₀);
       let β <- getEval i.succ (s₀ ^ 2);
