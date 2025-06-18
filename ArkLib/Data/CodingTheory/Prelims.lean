@@ -89,3 +89,16 @@ end sInf
 @[simp]
 lemma Fintype.zero_lt_card {ι : Type*} [Fintype ι] [Nonempty ι] : 0 < Fintype.card ι := by
   have := Fintype.card_ne_zero (α := ι); omega
+
+namespace Finset
+
+@[simp]
+theorem card_univ_filter_eq {α : Type*} [Fintype α] [DecidableEq α] {e : α} :
+  #{x : α | x ≠ e} = #(Finset.univ (α := α)) - 1 := by
+  rw [
+    Finset.filter_congr (q := (· ∉ ({e} : Finset _))) (by simp),
+    ←Finset.sdiff_eq_filter, Finset.card_univ_diff
+  ]
+  simp
+
+end Finset
