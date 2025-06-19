@@ -93,7 +93,7 @@ private lemma hamming_weight_eq_sum [Zero F] {x : Fin n → F}
   : 
   ‖x‖₀ = ∑ i, if x i = 0 then 0 else 1 := by simp [hammingNorm, Finset.sum_ite]
 
-private lemma sum_hamming_weight_sum' [Zero F]
+private lemma sum_hamming_weight_sum [Zero F]
   :
   ∑ x ∈ B, (‖x‖₀ : ℚ) = n * B.card - ∑ i, K B i 0 := by 
   simp only [hamming_weight_eq_sum, Nat.cast_sum, Nat.cast_ite, CharP.cast_eq_zero, Nat.cast_one,
@@ -108,24 +108,24 @@ private lemma sum_hamming_weight_sum' [Zero F]
   simp_rw [←Finset.sum_filter, add_comm, Finset.sum_filter_add_sum_filter_not]
   simp
 
-private lemma k_and_e [Zero F] {B : Finset (Fin n → F)} 
+private lemma k_and_e [Zero F]
   (h_n : n ≠ 0)
   (h_B : B.card ≠ 0)
   :
-  k B = B.card * (n - e B 0)/n := by
+  k B = B.card * (n - e B 0) / n := by
   simp [e, k, sum_hamming_weight_sum]
   field_simp
 
-private lemma k_and_e' [Zero F] {B : Finset (Fin n → F)} 
+private lemma k_and_e' [Zero F]
   (h_n : n ≠ 0)
   (h_B : B.card ≠ 0)
   :
-  k B / B.card = (n - e B 0)/n := by
+  k B / B.card = (n - e B 0) / n := by
   rw [k_and_e h_n h_B]
   field_simp
   ring
 
-private lemma k_choose_2 [Zero F] {B : Finset (Fin n → F)} 
+private lemma k_choose_2' [Zero F] {B : Finset (Fin n → F)} 
   (h_n : n ≠ 0)
   (h_B : B.card ≠ 0)
   :
@@ -154,6 +154,38 @@ private lemma k_choose_2 [Zero F] {B : Finset (Fin n → F)}
     rfl 
     ext i
     rw [mul_comm]
+    rw [←mul_assoc]
+    rw [Field.mul_inv_cancel _ (by aesop)]
+    simp
+    rfl
+
+private lemma k_choose_2 [Zero F] {B : Finset (Fin n → F)} 
+  (h_n : n ≠ 0)
+  (h_B : B.card ≠ 0)
+  :
+  n * choose_2 (k B) ≤ ∑ i, choose_2 (K B i 0) := by
+  suffices n * choose_2 (∑ i, (fun _ ↦ (1 : ℚ) / n) i • (fun i ↦ ↑(K B i 0)) i) ≤
+           ∑ i : Fin n, choose_2 ↑(JohnsonBound.K B i 0) by
+    convert this
+    simp [k, Finset.mul_sum]
+  rw [mul_comm]
+  apply le_trans
+  apply (mul_le_mul_right (by simp; omega)).2
+  apply ConvexOn.map_sum_le (choose_2_convex) (by simp [w])
+    (by {
+      simp
+      rw [Field.mul_inv_cancel]
+      aesop
+    })
+    (by simp)
+  rw [Finset.sum_mul]
+  conv =>
+    lhs 
+    congr 
+    rfl 
+    ext i
+    rw [mul_comm]
+    simp
     rw [←mul_assoc]
     rw [Field.mul_inv_cancel _ (by aesop)]
     simp
