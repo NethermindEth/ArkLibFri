@@ -93,83 +93,19 @@ private lemma hamming_weight_eq_sum [Zero F] {x : Fin n → F}
   : 
   ‖x‖₀ = ∑ i, if x i = 0 then 0 else 1 := by simp [hammingNorm, Finset.sum_ite]
 
-private lemma sum_hamming_weight_sum [Zero F]
-  :
-  ∑ x ∈ B, (‖x‖₀ : ℚ) = n * B.card - ∑ i, K B i 0 := by 
-  conv =>
-    lhs 
-    congr 
-    rfl 
-    ext x
-    rw [hamming_weight_eq_sum]
-    simp
-    rfl
-  rw [Finset.sum_comm]
-  conv =>
-    rhs 
-    simp
-    congr
-    rfl
-    congr
-    rfl
-    ext x 
-    rw [K_eq_sum]
-    rfl
-  have h : (↑n : ℚ) = ∑ i : Fin n, 1 := by simp
-  rw [h, Finset.sum_mul]
-  rw [←Finset.sum_sub_distrib]
-  congr 
-  ext i
-  rw [one_mul _]
-  simp 
-  rw [Finset.sum_ite]
-  simp 
-  have h_card : B.card = B.attach.card := by simp
-  rw [h_card]
-  have h_card 
-    : B.attach.card = {x ∈ B.attach | x.1 i = 0}.card + ({x ∈ B.attach | x.1 i = 0}ᶜ).card  := by
-    simp
-  rw [h_card]
-  rw [Nat.cast_add]
-  field_simp
-  simp_rw [Finset.attach_eq_univ, Finset.compl_filter, Finset.card_filter]
-  rw [Finset.sum_bij' (i := fun a b ↦ (⟨a, b⟩ : {x : Fin n → F // x ∈ B})) (j := fun a  b ↦ a)] <;>
-  simp
-
 private lemma sum_hamming_weight_sum' [Zero F]
   :
   ∑ x ∈ B, (‖x‖₀ : ℚ) = n * B.card - ∑ i, K B i 0 := by 
   simp only [hamming_weight_eq_sum, Nat.cast_sum, Nat.cast_ite, CharP.cast_eq_zero, Nat.cast_one,
     K_eq_sum, Finset.sum_boole, Nat.cast_id]
-  
   simp_rw [Finset.card_filter]
   rw [Finset.sum_comm, eq_sub_iff_add_eq]
   simp_rw [Nat.cast_sum, Nat.cast_ite]
-  
-  
-  simp_rw []
-  simp_rw [Finset.sum_attach_eq_sum_dite]
-  simp
-  simp_rw [dite_eq_ite]
-
-  have h : (↑n : ℚ) = ∑ i : Fin n, 1 := by simp
-  rw [h, Finset.sum_mul]
-  rw [←Finset.sum_sub_distrib]
-  congr 
-  ext i
-  rw [one_mul _]
-  rw [Finset.sum_ite]
-  simp 
-  have h_card : B.card = B.attach.card := by simp
-  rw [h_card]
-  have h_card 
-    : B.attach.card = {x ∈ B.attach | x.1 i = 0}.card + ({x ∈ B.attach | x.1 i = 0}ᶜ).card  := by
-    simp
-  rw [h_card]
-  rw [Nat.cast_add]
-  field_simp
-  simp_rw [Finset.attach_eq_univ, Finset.compl_filter, Finset.card_filter]
-  rw [Finset.sum_bij' (i := fun a b ↦ (⟨a, b⟩ : {x : Fin n → F // x ∈ B})) (j := fun a  b ↦ a)] <;>
+  conv in Finset.sum _ _ => arg 2; ext; arg 2; ext; rw [←ite_not]
+  simp_rw [Finset.univ_eq_attach, Finset.sum_attach_eq_sum_dite]
+  simp only [Nat.cast_one, CharP.cast_eq_zero, dite_eq_ite, Finset.sum_ite_mem, Finset.univ_inter]
+  rw [←Finset.sum_add_distrib]
+  simp_rw [←Finset.sum_filter, add_comm, Finset.sum_filter_add_sum_filter_not]
   simp
 
 private lemma k_and_e [Zero F] {B : Finset (Fin n → F)} 
