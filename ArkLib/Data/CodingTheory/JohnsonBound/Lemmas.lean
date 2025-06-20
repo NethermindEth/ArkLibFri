@@ -229,7 +229,7 @@ private lemma F2i_card' {α : F} :
   letI Tα := (Fin n → F) × (Fin n → F)
   let S₁ : Finset Tα := {x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α}
   let S₂ : Finset _ := {x | x ∈ S₁ ∧ x.1 ≠ x.2}
-  let A := Fi B i α
+  set A := Fi B i α with eqA
   suffices S₂.card = 2 * choose_2 (K B i α) by simp [S₂, S₁, ←this]; congr; ext; tauto
   rw [
     show S₂ = S₁ \ ({x | x ∈ S₁ ∧ x.1 = x.2} : Finset _) by aesop,
@@ -237,9 +237,11 @@ private lemma F2i_card' {α : F} :
     show S₁ = A ×ˢ A by ext; rw [Finset.mem_product]; simp [S₁, Fi, A]; tauto,
     Finset.filter_and
   ]
-  simp; rw [Finset.card_prod_eq (s := A)]
+  simp; rw [Finset.card_prod_eq (s := A), Finset.card_product]
+  simp [choose_2, K, eqA.symm]
+  field_simp
   
-  
+
   have h :
     S₁ =
     ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α } : Finset _) \
