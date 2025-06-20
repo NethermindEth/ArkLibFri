@@ -48,6 +48,11 @@ private lemma K_eq_sum {α : F} : K B i α = ∑ (x : B), if x.1 i = α then 1 e
   simp_rw [Finset.card_filter, Finset.sum_attach_eq_sum_dite]
   apply Finset.sum_congr <;> aesop
 
+@[simp]
+private lemma K_le_card {α : F} : K B i α ≤ B.card := by
+  simp [K, Fi]
+  exact Finset.card_le_card fun _ ha ↦ by simp at ha; exact ha.1
+
 open Finset in
 private lemma sum_choose_K' [Zero F]
   (h_card : 2 ≤ (Fintype.card F))
@@ -125,176 +130,85 @@ private lemma k_and_e' [Zero F]
   field_simp
   ring
 
-private lemma k_choose_2' [Zero F] {B : Finset (Fin n → F)} 
-  (h_n : n ≠ 0)
-  (h_B : B.card ≠ 0)
-  :
-  n * choose_2 (k B) ≤ ∑ i, choose_2 (K B i 0) := by
-  simp [k]
-  rw [Finset.mul_sum]
-  let w : Fin n → ℚ := fun _ => (1:ℚ)/n 
-  let p : Fin n → ℚ := fun i => ↑(K B i 0)
-  have h : ∑ i, (↑n : ℚ)⁻¹ * ↑(K B i 0) = ∑ i, w i • p i := by simp [w, p] 
-  rw [h]
-  rw [mul_comm]
-  apply le_trans
-  apply (mul_le_mul_right (by simp; omega)).2
-  apply ConvexOn.map_sum_le (choose_2_convex) (by simp [w])
-    (by {
-      simp [w]
-      rw [Field.mul_inv_cancel]
-      aesop
-    })
-    (by simp)
-  simp [w, p]
-  rw [Finset.sum_mul]
-  conv =>
-    lhs 
-    congr 
-    rfl 
-    ext i
-    rw [mul_comm]
-    rw [←mul_assoc]
-    rw [Field.mul_inv_cancel _ (by aesop)]
-    simp
-    rfl
-
 private lemma k_choose_2 [Zero F] {B : Finset (Fin n → F)} 
   (h_n : n ≠ 0)
   (h_B : B.card ≠ 0)
   :
   n * choose_2 (k B) ≤ ∑ i, choose_2 (K B i 0) := by
-  suffices n * choose_2 (∑ i, (fun _ ↦ (1 : ℚ) / n) i • (fun i ↦ ↑(K B i 0)) i) ≤
-           ∑ i : Fin n, choose_2 ↑(JohnsonBound.K B i 0) by
-    convert this
+  suffices choose_2 (∑ i, (fun _ ↦ (1:ℚ) / n) i • (fun i ↦ K B i 0) i) * n ≤
+           ∑ i, choose_2 (K B i 0) by
+    rw [mul_comm]; convert this
     simp [k, Finset.mul_sum]
-  rw [mul_comm]
-  apply le_trans
+  transitivity
   apply (mul_le_mul_right (by simp; omega)).2
-  apply ConvexOn.map_sum_le (choose_2_convex) (by simp [w])
-    (by {
-      simp
-      rw [Field.mul_inv_cancel]
-      aesop
-    })
-    (by simp)
+          (ConvexOn.map_sum_le
+            choose_2_convex
+            (by simp)
+            (by field_simp)
+            (by simp))
   rw [Finset.sum_mul]
-  conv =>
-    lhs 
-    congr 
-    rfl 
-    ext i
-    rw [mul_comm]
-    simp
-    rw [←mul_assoc]
-    rw [Field.mul_inv_cancel _ (by aesop)]
-    simp
-    rfl
+  field_simp
 
 private def aux_frac (B : Finset (Fin n → F)) (x : ℚ) : ℚ := 
-  ((↑B.card : ℚ) - x)/(Fintype.card F - 1)
+  (B.card - x) / (Fintype.card F - 1)
 
-private lemma sum_1_over_n_aux_frac_k_i [Zero F] {B : Finset (Fin n → F)} 
-  (h_n : 0 < n)
-  (h_card : 2 ≤ Fintype.card F) 
-  : ∑ i, (1 : ℚ)/n * aux_frac B (K B i 0) = aux_frac B (k B) := by
+private lemma sum_1_over_n_aux_frac_k_i [Zero F] 
+  (h_n : 0 < n) : ∑ i, 1/n * aux_frac B (K B i 0) = aux_frac B (k B) := by
   simp [aux_frac]
-  rw [←Finset.mul_sum, ←Finset.sum_div]
-  have h : (↑(Fintype.card F) : ℚ) - 1 > 0 := by
-    simp 
-    omega 
-  rw [Field.div_eq_mul_inv]
-  rw [Field.div_eq_mul_inv]
-  rw [←mul_assoc]
-  have h_ne : (↑(Fintype.card F) - (1 : ℚ))⁻¹ ≠ 0 := by field_simp
-  suffices h : ((↑n : ℚ)⁻¹ * ∑ i, ((↑B.card : ℚ) - ↑(K B i 0)))
-    = (↑B.card - k B) by rw [h] 
-  simp
-  ring_nf 
-  rw [Field.mul_inv_cancel _ (by {
-    simp 
-    omega
-  })]
-  simp [k]
+  suffices (n : ℚ)⁻¹ * (↑n * B.card - ∑ x, JohnsonBound.K B x 0) = B.card - k B by
+    rw [←Finset.mul_sum, ←Finset.sum_div, ←this]
+    field_simp
+  field_simp [k]; ac_rfl
 
-private lemma aux_sum [Zero F] {B : Finset (Fin n → F)} 
+private lemma aux_sum [Zero F]
   (h_n : 0 < n)
-  (h_card : 2 ≤ Fintype.card F) 
-  : ↑n * choose_2 (aux_frac B (k B)) ≤ ∑ i, choose_2 (aux_frac B (K B i 0)) := by
-  rw [←sum_1_over_n_aux_frac_k_i h_n h_card]
-  let w : Fin n → ℚ := fun _ => (1 : ℚ)/n 
-  let p : Fin n → ℚ := fun i => aux_frac B ↑(K B i 0)
-  have h : (∑ i, 1 / ↑n * aux_frac B ↑(K B i 0)) = ∑ i, w i • p i := by 
-    simp [w,p]
-  rw [h]
-  rw [mul_comm]
-  apply le_trans
+  : n * choose_2 (aux_frac B (k B)) ≤ ∑ i, choose_2 (aux_frac B (K B i 0)) := by
+  suffices choose_2 (∑ i, (fun _ ↦ (1:ℚ)/n) i • (fun x ↦ aux_frac B (K B x 0)) i) * ↑n ≤
+           ∑ i, choose_2 (JohnsonBound.aux_frac B (JohnsonBound.K B i 0)) by
+    rw [←sum_1_over_n_aux_frac_k_i h_n, mul_comm]
+    convert this
+  transitivity
   apply (mul_le_mul_right (by simp; omega)).2
-  apply ConvexOn.map_sum_le choose_2_convex (by simp [w])
-    (by {
-      simp [w]
-      rw [Field.mul_inv_cancel]
-      simp 
-      omega
-    })
-    (by simp)
-  simp [w, p]
+          (ConvexOn.map_sum_le
+             choose_2_convex
+             (by simp)
+             (by field_simp )
+             (by simp))
   rw [Finset.sum_mul]
-  conv =>
-    lhs 
-    congr 
-    rfl 
-    ext i
-    rw [mul_comm]
-    rw [←mul_assoc]
-    rw [Field.mul_inv_cancel _ (by {
-      simp 
-      omega
-    })]
-    simp 
-    rfl
+  field_simp
 
-
-private lemma le_sum_sum_choose_K [Zero F] {B : Finset (Fin n → F)} 
+private lemma le_sum_sum_choose_K [Zero F]
   (h_n : 0 < n)
   (h_B : B.card ≠ 0)
-  (h_card : 2 ≤ (Fintype.card F))
+  (h_card : 2 ≤ Fintype.card F)
   : 
-  n * (choose_2 (k B) + ((Finset.univ (α := F)).card - 1 : ℚ) 
-    * choose_2 ((B.card - k B)/((Finset.univ (α := F)).card-1)))
+  n * (choose_2 (k B) + (Fintype.card (α := F) - 1) 
+    * choose_2 ((B.card - k B) / ((Fintype.card (α := F) - 1))))
   ≤ ∑ i, sum_choose_K B i := by 
-  rw [mul_add] 
-  apply le_trans 
-  apply add_le_add_right
-  exact k_choose_2 (n := n) (by omega) h_B
-  apply le_trans 
-  apply add_le_add_left (by {
-    have h := aux_sum (B := B) h_n h_card 
-    simp [aux_frac] at h 
-    rewrite [←mul_assoc]
-    rewrite [mul_comm (↑n : ℚ)] 
-    rewrite [mul_assoc] 
-    apply le_trans 
-    apply (mul_le_mul_left (by simp; omega)).2
-    exact h 
+  rw [mul_add]
+  transitivity
+  apply add_le_add_right (k_choose_2 (n := n) (by omega) h_B)
+  transitivity
+  apply add_le_add_left (by 
+    rewrite [←mul_assoc, mul_comm (n : ℚ), mul_assoc]
+    transitivity
+    apply (mul_le_mul_left (by simp; omega)).2 (aux_sum h_n)
     rfl
-  })
-  rw [Finset.mul_sum]
-  rw [←Finset.sum_add_distrib]
-  apply Finset.sum_le_sum
-  intro i _
-  exact le_sum_choose_K h_card
+  )
+  rw [Finset.mul_sum, ←Finset.sum_add_distrib]
+  exact Finset.sum_le_sum fun _ _ ↦ le_sum_choose_K h_card
 
 private def F2i (B : Finset (Fin n → F)) (i : Fin n) (α : F) : Finset ((Fin n → F) × (Fin n → F)) :=
-  { x | x ∈ Finset.product B B ∧ x.1 i = α ∧ x.2 i = α ∧ x.1 ≠ x.2 } 
+  { x | x ∈ B ×ˢ B ∧ x.1 i = α ∧ x.2 i = α ∧ x.1 ≠ x.2 } 
 
 private def Bi (B : Finset (Fin n → F)) (i : Fin n) : Finset ((Fin n → F) × (Fin n → F)) :=
-  { x | x ∈ Finset.product B B ∧ x.1 i = x.2 i ∧ x.1 ≠ x.2 }
+  { x | x ∈ B ×ˢ B ∧ x.1 i = x.2 i ∧ x.1 ≠ x.2 }
 
-private lemma Bi_biUnion_F2i {B : Finset (Fin n → F)} {i : Fin n} :
+private lemma Bi_biUnion_F2i :
   Bi B i = Finset.univ.biUnion (F2i B i) := by aesop (add simp [Bi, F2i])
 
-private lemma F2i_disjoint {B : Finset (Fin n → F)} {i : Fin n} :
+@[simp]
+private lemma F2i_disjoint :
   Set.PairwiseDisjoint Set.univ (F2i B i) := by 
   simp 
     [Set.PairwiseDisjoint
@@ -304,13 +218,83 @@ private lemma F2i_disjoint {B : Finset (Fin n → F)} {i : Fin n} :
     , Finset.Nonempty
     , Finset.subset_iff
     ] 
-  intro α₁ α₂ h_ne x h1 h2 x₁ x₂ contr 
-  specialize (h1 x₁ x₂ contr) 
-  specialize (h2 x₁ x₂ contr) 
+  intro _ _ _ _ h1 h2 x₁ x₂ contr 
+  specialize h1 x₁ x₂ contr
+  specialize h2 x₁ x₂ contr
   aesop
 
-private lemma F2i_card {B : Finset (Fin n → F)} {i : Fin n} {α : F} :
+private lemma F2i_card' {α : F} :
   (F2i B i α).card = 2 * choose_2 (K B i α) := by
+  simp [F2i]
+  letI Tα := (Fin n → F) × (Fin n → F)
+  let S₁ : Finset Tα := {x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α}
+  let S₂ : Finset _ := {x | x ∈ S₁ ∧ x.1 ≠ x.2}
+  let A := Fi B i α
+  suffices S₂.card = 2 * choose_2 (K B i α) by simp [S₂, S₁, ←this]; congr; ext; tauto
+  rw [
+    show S₂ = S₁ \ ({x | x ∈ S₁ ∧ x.1 = x.2} : Finset _) by aesop,
+    Finset.card_sdiff fun _ _ ↦ by aesop,
+    show S₁ = A ×ˢ A by ext; rw [Finset.mem_product]; simp [S₁, Fi, A]; tauto,
+    Finset.filter_and
+  ]
+  simp; rw [Finset.card_prod_eq (s := A)]
+  
+  
+  have h :
+    S₁ =
+    ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α } : Finset _) \
+    ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α ∧ x.1 = x.2} : Finset _) := by
+    aesop
+  rw [h]
+  rw [Finset.card_sdiff (by {
+    intro x hx 
+    simp at hx 
+    simp 
+    aesop
+  })]
+  have h : ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α} : Finset ((Fin n → F) × (Fin n → F)))
+    = (Finset.product (Fi B i α) (Fi B i α)) := by 
+    simp [Fi]
+    ext x 
+    simp
+    tauto
+  rw [h]
+  simp 
+  have h : ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α ∧ x.1 = x.2} : Finset ((Fin n → F) × (Fin n → F))) 
+    = ({ x | (x.1 = x.2) ∧ x.1 ∈ Fi B i α } : Finset ((Fin n → F) × (Fin n → F))) := by
+    ext x
+    simp [Fi]
+    aesop
+  rw [h]
+  have h : ({ x | (x.1 = x.2) ∧ x.1 ∈ Fi B i α } : Finset ((Fin n → F) × (Fin n → F))).card 
+    = (Fi B i α).card := Finset.card_bij
+        (i := fun a _ => a.1)
+        (by simp)
+        (by simp)
+        (by simp [Fi])
+  rw [h]
+  simp [choose_2, K]
+  ring_nf
+  rw [Nat.cast_sub (by {
+    by_cases h0 : (Fi B i α).card = 0 
+    · simp [h0]
+    · conv =>
+        lhs 
+        rw [←one_mul (Fi B i α).card]
+        rfl
+      apply le_trans
+      apply Nat.mul_le_mul_right (m := (Fi B i α).card) (Fi B i α).card 
+      omega
+      ring_nf 
+      rfl
+  })]
+  rw [pow_two]
+  simp 
+  ring 
+
+open Finset in
+private lemma F2i_card {α : F} :
+  #(F2i B i α) = 2 * choose_2 (K B i α) := by
   simp [F2i]
   have h : ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α ∧ ¬x.1 = x.2} : Finset ((Fin n → F) × (Fin n → F)))
     = ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α } : Finset _) 
