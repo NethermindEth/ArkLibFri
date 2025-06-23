@@ -29,16 +29,7 @@ require seq from git "https://github.com/Vtec234/lean4-seq.git"
 -/
 abbrev arklibOnlyLinters : Array LeanOption := #[
   -- ⟨`linter.docPrime, true⟩,
-  ⟨`linter.hashCommand, true⟩,
-  ⟨`linter.oldObtain, true,⟩,
   -- ⟨`linter.refine, true⟩,
-  ⟨`linter.style.cdot, true⟩,
-  ⟨`linter.style.dollarSyntax, true⟩,
-  ⟨`linter.style.lambdaSyntax, true⟩,
-  ⟨`linter.style.longLine, true⟩,
-  ⟨`linter.style.longFile, .ofNat 1500⟩,
-  ⟨`linter.style.missingEnd, true⟩,
-  ⟨`linter.style.setOption, true⟩
 ]
 
 /-- These options are passed as `leanOptions` to building arklib, as well as the
