@@ -102,7 +102,7 @@ theorem card_univ_filter_eq {α : Type*} [Fintype α] [DecidableEq α] {e : α} 
   simp
 
 @[simp]
-theorem card_prod_eq {α : Type*} [Fintype α] [DecidableEq α] {s : Finset α} :
+theorem card_prod_self_eq {α : Type*} [Fintype α] [DecidableEq α] {s : Finset α} :
   #(((s ×ˢ s : Finset _) ∩ ({x : α × α | x.1 = x.2} : Finset _)) : Finset _) = #s := by
   rw [Finset.card_eq_of_equiv]
   simp
@@ -111,6 +111,18 @@ theorem card_prod_eq {α : Type*} [Fintype α] [DecidableEq α] {s : Finset α} 
     (fun ⟨x, _⟩ ↦ by use ⟨x, x⟩),
     by simp [Function.LeftInverse],
     by simp [Function.RightInverse, Function.LeftInverse]
+  ⟩
+
+@[simp]
+theorem card_filter_prod_self_eq {α : Type*} [Fintype α] [DecidableEq α] {s : Finset α} :
+  #({x ∈ s ×ˢ s | x.1 = x.2}) = #s := by
+  rw [Finset.card_eq_of_equiv]
+  simp
+  exact ⟨
+    fun ⟨x, _⟩ ↦ ⟨x.1, by tauto⟩,
+    fun ⟨x, hx⟩ ↦ ⟨(x, x), by tauto⟩,
+    by simp [Function.LeftInverse],
+    by simp [Function.LeftInverse, Function.RightInverse]
   ⟩
 
 end Finset

@@ -223,7 +223,7 @@ private lemma F2i_disjoint :
   specialize h2 x₁ x₂ contr
   aesop
 
-private lemma F2i_card' {α : F} :
+private lemma F2i_card {α : F} :
   (F2i B i α).card = 2 * choose_2 (K B i α) := by
   simp [F2i]
   letI Tα := (Fin n → F) × (Fin n → F)
@@ -237,198 +237,38 @@ private lemma F2i_card' {α : F} :
     show S₁ = A ×ˢ A by ext; rw [Finset.mem_product]; simp [S₁, Fi, A]; tauto,
     Finset.filter_and
   ]
-  simp; rw [Finset.card_prod_eq (s := A), Finset.card_product]
+  simp; rw [Finset.card_prod_self_eq (s := A), Finset.card_product]
   simp [choose_2, K, eqA.symm]
-  field_simp
-  
-
-  have h :
-    S₁ =
-    ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α } : Finset _) \
-    ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α ∧ x.1 = x.2} : Finset _) := by
-    aesop
-  rw [h]
-  rw [Finset.card_sdiff (by {
-    intro x hx 
-    simp at hx 
-    simp 
-    aesop
-  })]
-  have h : ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α} : Finset ((Fin n → F) × (Fin n → F)))
-    = (Finset.product (Fi B i α) (Fi B i α)) := by 
-    simp [Fi]
-    ext x 
-    simp
-    tauto
-  rw [h]
-  simp 
-  have h : ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α ∧ x.1 = x.2} : Finset ((Fin n → F) × (Fin n → F))) 
-    = ({ x | (x.1 = x.2) ∧ x.1 ∈ Fi B i α } : Finset ((Fin n → F) × (Fin n → F))) := by
-    ext x
-    simp [Fi]
-    aesop
-  rw [h]
-  have h : ({ x | (x.1 = x.2) ∧ x.1 ∈ Fi B i α } : Finset ((Fin n → F) × (Fin n → F))).card 
-    = (Fi B i α).card := Finset.card_bij
-        (i := fun a _ => a.1)
-        (by simp)
-        (by simp)
-        (by simp [Fi])
-  rw [h]
-  simp [choose_2, K]
-  ring_nf
-  rw [Nat.cast_sub (by {
-    by_cases h0 : (Fi B i α).card = 0 
-    · simp [h0]
-    · conv =>
-        lhs 
-        rw [←one_mul (Fi B i α).card]
-        rfl
-      apply le_trans
-      apply Nat.mul_le_mul_right (m := (Fi B i α).card) (Fi B i α).card 
-      omega
-      ring_nf 
-      rfl
-  })]
-  rw [pow_two]
-  simp 
-  ring 
+  have : A.card ≤ A.card * A.card := Nat.le_mul_self _
+  field_simp [this]; ring
 
 open Finset in
-private lemma F2i_card {α : F} :
-  #(F2i B i α) = 2 * choose_2 (K B i α) := by
-  simp [F2i]
-  have h : ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α ∧ ¬x.1 = x.2} : Finset ((Fin n → F) × (Fin n → F)))
-    = ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α } : Finset _) 
-      \ ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α ∧ x.1 = x.2} : Finset _) := by
-    aesop
-  rw [h]
-  rw [Finset.card_sdiff (by {
-    intro x hx 
-    simp at hx 
-    simp 
-    aesop
-  })]
-  have h : ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α} : Finset ((Fin n → F) × (Fin n → F)))
-    = (Finset.product (Fi B i α) (Fi B i α)) := by 
-    simp [Fi]
-    ext x 
-    simp 
-    tauto
-  rw [h]
-  simp 
-  have h : ({x | (x.1 ∈ B ∧ x.2 ∈ B) ∧ x.1 i = α ∧ x.2 i = α ∧ x.1 = x.2} : Finset ((Fin n → F) × (Fin n → F))) 
-    = ({ x | (x.1 = x.2) ∧ x.1 ∈ Fi B i α } : Finset ((Fin n → F) × (Fin n → F))) := by
-    ext x
-    simp [Fi]
-    aesop
-  rw [h]
-  have h : ({ x | (x.1 = x.2) ∧ x.1 ∈ Fi B i α } : Finset ((Fin n → F) × (Fin n → F))).card 
-    = (Fi B i α).card := Finset.card_bij
-        (i := fun a _ => a.1)
-        (by simp)
-        (by simp)
-        (by simp [Fi])
-  rw [h]
-  simp [choose_2, K]
-  ring_nf
-  rw [Nat.cast_sub (by {
-    by_cases h0 : (Fi B i α).card = 0 
-    · simp [h0]
-    · conv =>
-        lhs 
-        rw [←one_mul (Fi B i α).card]
-        rfl
-      apply le_trans
-      apply Nat.mul_le_mul_right (m := (Fi B i α).card) (Fi B i α).card 
-      omega
-      ring_nf 
-      rfl
-  })]
-  rw [pow_two]
-  simp 
-  ring 
-
-private lemma sum_of_not_equals {B : Finset (Fin n → F)} {i : Fin n} :
-  ∑ x ∈ (Finset.product B B) with x.1 ≠ x.2, (if x.1 i ≠ x.2 i then 1 else 0) 
+private lemma sum_of_not_equals :
+  ∑ x ∈ B ×ˢ B with x.1 ≠ x.2, (if x.1 i ≠ x.2 i then 1 else 0) 
   = 
-  2 * choose_2 B.card - 2 * ∑ α, choose_2 (K B i α) 
-  := by 
-  have h : (∑ x ∈ {x ∈ B.product B | x.1 ≠ x.2}, if x.1 i ≠ x.2 i then (1 : ℚ) else 0)
-    = (∑ x ∈ ({x ∈ B.product B | x.1 ≠ x.2}), ((1 : ℚ) - if x.1 i = x.2 i then 1 else 0)) := by
-    congr 
-    ext x 
-    simp 
-    aesop
-  rw [h]
-  rw [Finset.sum_sub_distrib]
-  simp
-  have h : {x ∈ B ×ˢ B | ¬x.1 = x.2} = (B ×ˢ B) \ {x ∈ B ×ˢ B | x.1 = x.2} := by
-    ext x 
-    simp 
-    tauto
-  conv =>
-    lhs 
-    congr 
-    rw [h]
-    simp
-    rw [Finset.card_sdiff (by aesop)]
-    simp 
-    congr 
-    congr 
-    rfl 
-    rw [Finset.card_bij (t := B)
-      (i := fun a _ => a.1)
-      (by aesop)
-      (by {
-        simp 
-        intro a b ha hb heq
-        subst heq
-        intro α₁ b hα₁ hb heq 
-        subst heq 
-        tauto
-      })
-      (by simp)
+  2 * choose_2 #B - 2 * ∑ α, choose_2 (K B i α) 
+  := by
+  generalize eq₁ : {x ∈ B ×ˢ B | x.1 ≠ x.2} = s₁
+  suffices ↑(#s₁) - ↑(#(Bi B i)) =
+           2 * choose_2 ↑(#B) - 2 * ∑ α, choose_2 ↑(JohnsonBound.K B i α) by
+    rw [
+      show (∑ x ∈ s₁, if x.1 i ≠ x.2 i then 1 else 0)
+         = (∑ x ∈ s₁, ((1 : ℚ) - if x.1 i = x.2 i then 1 else 0)) by congr; aesop
     ]
-    rfl
-  suffices h : (↑{x ∈ {x ∈ B ×ˢ B | ¬x.1 = x.2} | x.1 i = x.2 i}.card : ℚ)
-    = 2 * ∑ α, choose_2 ↑(K B i α) by {
-    rw [h]
-    simp [choose_2]
-    field_simp
-    rw [Nat.cast_sub (by {
-      by_cases h0 : B.card = 0 
-      · simp [h0]
-      · conv =>
-          lhs 
-          rw [←one_mul B.card]
-          rfl
-        apply le_trans
-        apply Nat.mul_le_mul_right (m := B.card) B.card 
-        omega
-        ring_nf 
-        rfl
-    })]
-    simp 
-    ring_nf 
-  }
-  have h : ({x ∈ {x ∈ B ×ˢ B | ¬x.1 = x.2} | x.1 i = x.2 i} : Finset _)
-    = Bi B i := by 
-    ext x
-    simp [Bi]
-    tauto
-  rw [h]
-  rw [Bi_biUnion_F2i]
-  rw [Finset.card_biUnion (by simp [F2i_disjoint])]
-  simp
-  conv =>
-    lhs 
-    congr 
-    rfl
-    ext α
-    rw [F2i_card]
-    rfl
-  rw [Finset.mul_sum]
+    simp; convert this
+    ext; simp [←eq₁, Bi]; tauto
+  rw [
+    show #s₁ = 2 * choose_2 #B by
+      rw [
+        show s₁ = (B ×ˢ B) \ {x ∈ B ×ˢ B | x.1 = x.2} by ext; simp [eq₁.symm]; tauto,
+        card_sdiff (by simp)
+      ]
+      simp [choose_2]
+      zify [Nat.le_mul_self #B]
+      ring
+  ]
+  rw [Bi_biUnion_F2i, Finset.card_biUnion (by simp [F2i_disjoint])]
+  simp; simp_rw [F2i_card, mul_sum]
 
 private lemma hamming_dist_eq_sum {x y : Fin n → F} :
   ↑Δ₀(x, y) = ∑ i, if x i = y i then 0 else 1 := by
