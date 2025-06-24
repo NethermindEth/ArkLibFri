@@ -249,8 +249,7 @@ private lemma sum_of_not_equals :
   2 * choose_2 #B - 2 * ∑ α, choose_2 (K B i α) 
   := by
   generalize eq₁ : {x ∈ B ×ˢ B | x.1 ≠ x.2} = s₁
-  suffices ↑(#s₁) - ↑(#(Bi B i)) =
-           2 * choose_2 ↑(#B) - 2 * ∑ α, choose_2 ↑(JohnsonBound.K B i α) by
+  suffices #s₁ - #(Bi B i) = 2 * choose_2 #B - 2 * ∑ α, choose_2 (JohnsonBound.K B i α) by
     rw [
       show (∑ x ∈ s₁, if x.1 i ≠ x.2 i then 1 else 0)
          = (∑ x ∈ s₁, ((1 : ℚ) - if x.1 i = x.2 i then 1 else 0)) by congr; aesop
@@ -277,7 +276,7 @@ private lemma hamming_dist_eq_sum {x y : Fin n → F} :
 private lemma d_eq_sum {B : Finset (Fin n → F)} 
   (h_B : 2 ≤ B.card)
   :
-  2 * choose_2 B.card * d B = ∑ i, ∑ x ∈ (Finset.product B B) with x.1 ≠ x.2, (if x.1 i ≠ x.2 i then 1 else 0) := by
+  2 * choose_2 B.card * d B = ∑ i, ∑ x ∈ B ×ˢ B with x.1 ≠ x.2, (if x.1 i ≠ x.2 i then 1 else 0) := by
   simp [d]
   rw [mul_assoc]
   rw [←mul_assoc (choose_2 (↑B.card))]
