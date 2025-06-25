@@ -50,3 +50,23 @@ example : WeightedDegree (let X := (Polynomial.X : Polynomial F)
     rw [←contr]
     simp
   simp at h
+
+def coeff (p : Polynomial (Polynomial F)) (i j : ℕ) : F := 
+  (p.coeff j).coeff i
+
+variable [DecidableEq F]
+
+def rootMultiplicity₀ (p : Polynomial (Polynomial F)) : Option ℕ :=
+  let deg := WeightedDegree p 1 1
+  match deg with
+  | none => none 
+  | some deg => List.max? 
+    (List.map 
+      (fun x => if _root_.coeff p x.1 x.2 ≠ 0 then x.1 + x.2 else 0) 
+      (List.product (List.range deg.succ) (List.range deg.succ)))
+
+noncomputable def rootMultiplicity (p : Polynomial (Polynomial F)) (x y : F) : Option ℕ :=
+  let X := (Polynomial.X : Polynomial F)
+  let Y := (Polynomial.X : Polynomial (Polynomial F))
+  rootMultiplicity₀ ((p.comp (Y + (C (C y)))).map (Polynomial.compRingHom (X + C x)))
+
