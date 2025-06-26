@@ -5,6 +5,7 @@ Authors: František Silváši, Ilia Vlasov
 -/
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Polynomial.Basic
+import Mathlib.Data.Real.Sqrt
 
 import ArkLib.Data.CodingTheory.Basic
 
@@ -88,7 +89,14 @@ structure GuruswamiSudanCondition (k r D : ℕ) (ωs f : Fin n → F) (Q : Polyn
 
 opaque decoder (k r D e : ℕ) (ωs f : Fin n → F) : List F[X] := sorry
 
-lemma decoder_radius {k r D e : ℕ} {ωs f : Fin n → F} {p : F[X]}
+theorem decoder_mem {k r D e : ℕ} {ωs f : Fin n → F} {p : F[X]}
   (h_in : p ∈ decoder k r D e ωs f)
+  (h_e : e ≤ n - Real.sqrt (k * n))
   :
   Δ₀(f, p.eval ∘ ωs) ≤ e := by sorry
+
+theorem decoder_empty {k r D e : ℕ} {ωs f : Fin n → F} {p : F[X]}
+  (h_nil : decoder k r D e ωs f = [])
+  (h_e : e ≤ n - Real.sqrt (k * n))
+  :
+  ¬∃ (p : F[X]), Δ₀(f, p.eval ∘ ωs) ≤ e := by sorry
