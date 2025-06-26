@@ -10,14 +10,14 @@ import ArkLib.Data.CodingTheory.Basic
 
 variable {F : Type} [Field F]
 
-def WeightedDegree (p : Polynomial (Polynomial F)) (u v : ℕ) : Option ℕ := 
+def weightedDegree (p : Polynomial (Polynomial F)) (u v : ℕ) : Option ℕ := 
   List.max? (List.map (fun n => u * (p.coeff n).natDegree + v * n) (List.range p.natDegree.succ))
 
 open Polynomial
-example : WeightedDegree (let X := (Polynomial.X : Polynomial F)
+example : weightedDegree (let X := (Polynomial.X : Polynomial F)
   let Y := (Polynomial.X : Polynomial (Polynomial F))
   (C X) * Y + (C (X^2) * Y)) 1 2 = some 4 := by
-  unfold WeightedDegree
+  unfold weightedDegree
   have h : ((C X * X + C (X ^ 2) * X) : Polynomial (Polynomial F)).natDegree = 1 := by
     rw [←add_mul]
     rw [Polynomial.natDegree_mul (by {
@@ -57,7 +57,7 @@ def coeff (p : Polynomial (Polynomial F)) (i j : ℕ) : F :=
 variable [DecidableEq F]
 
 def rootMultiplicity₀ (p : Polynomial (Polynomial F)) : Option ℕ :=
-  let deg := WeightedDegree p 1 1
+  let deg := weightedDegree p 1 1
   match deg with
   | none => none 
   | some deg => List.max? 
@@ -70,3 +70,25 @@ noncomputable def rootMultiplicity (p : Polynomial (Polynomial F)) (x y : F) : O
   let Y := (Polynomial.X : Polynomial (Polynomial F))
   rootMultiplicity₀ ((p.comp (Y + (C (C y)))).map (Polynomial.compRingHom (X + C x)))
 
+/- This should be true -/
+/- lemma rootMultiplicity₀_some_implies_root {p : Polynomial (Polynomial F)} {x y : F}   -/
+/-   (h0 : 0 < p.degree) -/
+/-   (h : some 0 < (rootMultiplicity₀ p)) -/
+/-   : -/
+/-   (p.eval 0).eval 0 = 0 -/
+/-   := by -/
+/-   sorry -/
+  
+variable {n : ℕ}
+
+structure GuruswamiSudanCondition (k r D : ℕ) (ωs f : Fin n → F) (Q : Polynomial (Polynomial F)) where 
+   Q_deg : weightedDegree Q 1 (k-1) ≤ D 
+   Q_roots : ∀ i, (Q.eval (C <| f i)).eval (ωs i) = 0
+   Q_multiplicity : ∀ i, r = _root_.rootMultiplicity Q (ωs i) (f i)
+
+opaque decoder (k r D e : ℕ) (ωs f : Fin n → F) : List F[X] := sorry
+
+lemma decoder_radius {k r D e : ℕ} {ωs f : Fin n → F} {p : F[X]}
+  (h_in : p ∈ decoder k r D e ωs f)
+  :
+  Δ₀(f, p.eval ∘ ωs) ≤ e := by sorry
