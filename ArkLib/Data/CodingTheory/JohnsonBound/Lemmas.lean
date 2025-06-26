@@ -269,136 +269,71 @@ private lemma sum_of_not_equals :
   rw [Bi_biUnion_F2i, Finset.card_biUnion (by simp [F2i_disjoint])]
   simp; simp_rw [F2i_card, mul_sum]
 
+omit [Fintype F] in
 private lemma hamming_dist_eq_sum {x y : Fin n → F} :
-  ↑Δ₀(x, y) = ∑ i, if x i = y i then 0 else 1 := by
+  Δ₀(x, y) = ∑ i, if x i = y i then 0 else 1 := by
   simp [hammingDist, Finset.sum_ite] 
 
+omit [Fintype F] [DecidableEq F] in
+private lemma choose_2_card_ne_zero (h : 2 ≤ B.card) : choose_2 ↑B.card ≠ 0 := by
+  simp [choose_2, sub_eq_zero]
+  aesop (add safe (by omega))
+
+omit [Fintype F] in
 private lemma d_eq_sum {B : Finset (Fin n → F)} 
   (h_B : 2 ≤ B.card)
   :
-  2 * choose_2 B.card * d B = ∑ i, ∑ x ∈ B ×ˢ B with x.1 ≠ x.2, (if x.1 i ≠ x.2 i then 1 else 0) := by
-  simp [d]
-  rw [mul_assoc]
-  rw [←mul_assoc (choose_2 (↑B.card))]
-  rw [←mul_assoc (choose_2 (↑B.card)), Field.mul_inv_cancel _ (by {
-    simp [choose_2]
-    apply And.intro 
-    aesop
-    intro contr 
-    have h : ↑B.card = (1 : ℚ) := by
-      rw [←zero_add (1 : ℚ)]  
-      rw [←contr]
-      simp
-    simp at h
-    omega
-  })]
-  field_simp
+  2 * choose_2 B.card * d B =
+  ∑ i, ∑ x ∈ B ×ˢ B with x.1 ≠ x.2, (if x.1 i ≠ x.2 i then 1 else 0) := by
+  field_simp [d, choose_2_card_ne_zero h_B]
   rw [Finset.sum_comm]
-  congr 
-  ext x 
-  rw [hamming_dist_eq_sum]
-  simp
+  simp_rw [hamming_dist_eq_sum]
+  field_simp
 
-private lemma sum_sum_K_i_eq_n_sub_d {B : Finset (Fin n → F)} 
+private lemma sum_sum_K_i_eq_n_sub_d
   (h_B : 2 ≤ B.card)
   :
   ∑ i, sum_choose_K B i = choose_2 B.card * (n - d B) := by
-  rw [mul_sub]
-  have h : choose_2 B.card = ((1 : ℚ)/2) * (2 * choose_2 B.card) := by
-    field_simp
-  rw [h, mul_assoc (1/2), mul_assoc (1/2), ←mul_sub (1/2)] 
-  rw [d_eq_sum h_B]
-  conv =>
-    rhs 
-    congr 
-    rfl 
-    congr 
-    rfl 
-    congr 
-    rfl
-    ext i
-    rw [sum_of_not_equals]
-    rfl
-  simp 
-  ring_nf
-  simp [sum_choose_K]
-  rw [Finset.sum_mul]
-  field_simp
+  rw [show
+    choose_2 B.card * (n - d B) = choose_2 B.card * n - (2 * choose_2 B.card * d B) / 2 by ring
+  ]
+  simp_rw [d_eq_sum h_B, sum_of_not_equals]
+  field_simp [←Finset.mul_sum, sum_choose_K]
+  ring
 
-private lemma almost_johnson [Zero F] {B : Finset (Fin n → F)} 
+private lemma almost_johnson [Zero F]
   (h_n : 0 < n)
   (h_B : 2 ≤ B.card)
   (h_card : 2 ≤ (Fintype.card F))
   :
-  n * (choose_2 (k B) + ((Finset.univ (α := F)).card - 1 : ℚ) 
-    * choose_2 ((B.card - k B)/((Finset.univ (α := F)).card-1)))
+  n * (choose_2 (k B) + (Fintype.card F - 1) 
+    * choose_2 ((B.card - k B) / (Fintype.card F - 1)))
   ≤
-  choose_2 B.card * (n - d B) := by
-  apply le_trans 
-  exact le_sum_sum_choose_K h_n (by aesop) h_card 
-  rw [sum_sum_K_i_eq_n_sub_d h_B]
+  choose_2 B.card * (n - d B) :=
+  le_trans (le_sum_sum_choose_K h_n (by omega) h_card) (sum_sum_K_i_eq_n_sub_d h_B ▸ le_refl _)
 
-private lemma almost_johnson_choose_2_elimed [Zero F] {B : Finset (Fin n → F)} 
+private lemma almost_johnson_choose_2_elimed [Zero F]
   (h_n : 0 < n)
   (h_B : 2 ≤ B.card)
-  (h_card : 2 ≤ (Fintype.card F))
+  (h_card : 2 ≤ Fintype.card F)
   :
   (k B * (k B - 1)  +  
-    (B.card - k B) * ((B.card - k B)/((Finset.univ (α := F)).card-1) - 1))
+    (B.card - k B) * ((B.card - k B)/(Fintype.card F-1) - 1))
   ≤
   B.card * (B.card - 1) * (n - d B)/n := by
-  have h := almost_johnson h_n h_B h_card 
-  have h_den_ne_0 : (↑(Fintype.card F) - (1 : ℚ)) ≠ 0 := by
-    intro contr 
-    have h : ↑(Fintype.card F) = (1 : ℚ) := by
-      rw [←zero_add 1, ← contr]
-      simp
-    simp at h
-    omega
-  have h_lhs : 
-    n * ((1:ℚ)/2) * ((k B) * (k B - 1) + ((Finset.univ (α := F)).card - 1 : ℚ) 
-    * ((B.card - k B)/((Finset.univ (α := F)).card-1)) * ((B.card - k B)/((Finset.univ (α := F)).card-1) - 1))
-    =
-    n * (choose_2 (k B) + ((Finset.univ (α := F)).card - 1 : ℚ) 
-      * choose_2 ((B.card - k B)/((Finset.univ (α := F)).card-1))) := by
-    simp [choose_2]
-    ring_nf
-  rw [←h_lhs] at h
-  simp [choose_2] at h 
-  have h_rhs : ↑B.card * (↑B.card - 1) / 2 * (↑n - d B)
-    = ↑n * 2⁻¹ * (↑n)⁻¹ * ↑B.card * (↑B.card - 1) * (↑n - d B) := by 
-    rw [mul_comm (↑n : ℚ)]
-    rw [mul_assoc, mul_assoc (2⁻¹)]
-    rw [Field.mul_inv_cancel _ (by simp; omega)]
-    field_simp
-    ring
-  rw [h_rhs] at h 
-  apply le_of_mul_le_mul_left (a := (↑n : ℚ) * (2⁻¹))
-  have h_rhs : ↑n * 2⁻¹ * (↑n)⁻¹ * ↑B.card * (↑B.card - 1) * (↑n - d B)
-    = ↑n * 2⁻¹ * (↑B.card * (↑B.card - 1) * (↑n - d B) / ↑n)  := by
-    ring
-  rw [h_rhs] at h
-  apply le_trans' h
-  simp 
-  conv =>
-    rhs 
-    congr 
-    congr 
-    congr 
-    rfl 
-    rfl 
-    congr 
-    rfl
-    congr 
-    rw [Field.div_eq_mul_inv, mul_comm, mul_assoc]
-    congr 
-    rfl
-    rw [mul_comm, Field.mul_inv_cancel _ (by aesop)]
-    rfl
-    rfl
-  simp
-  simp
-  assumption
+  have h := almost_johnson h_n h_B h_card; simp [choose_2] at h
+  set C := (Fintype.card F : ℚ) - 1
+  set δ := B.card - k B
+  exact le_of_mul_le_mul_left
+    (a0 := show 0 < (n : ℚ) * 2⁻¹ by simp [h_n])
+    (le_trans (b := ↑n * 2⁻¹ * (k B * (k B - 1) + C * (δ / C) * (δ / C - 1)))
+              (by rw [mul_div_cancel₀ _ (by simp [sub_eq_zero, C]; omega)])
+              (le_trans
+                (b := B.card * (B.card - 1) / 2 * (n - d B))
+                (by convert h using 1; field_simp; ring_nf; tauto)
+                (by rw [show n * 2⁻¹ * (B.card * (B.card - 1) * (n - d B) / n) = 
+                             n * (↑n)⁻¹ * 2⁻¹ * (B.card * (B.card - 1) * (n - d B)) by ring]
+                    field_simp)))
 
 private lemma almost_johnson_lhs_div_B_card [Zero F] {B : Finset (Fin n → F)} 
   (h_n : 0 < n)
