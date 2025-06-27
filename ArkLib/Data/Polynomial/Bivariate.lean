@@ -56,56 +56,17 @@ def rootMultiplicity₀ : Option ℕ :=
       (fun x => if coeff f x.1 x.2 ≠ 0 then x.1 + x.2 else 0) 
       (List.product (List.range deg.succ) (List.range deg.succ)))
 
--- variable [CommSemiring F]
-
-noncomputable def rootMultiplicity {F : Type} [CommSemiring F] {f : F[X][Y]} (x y : F) : Option ℕ :=
+noncomputable def rootMultiplicity {F : Type} [CommSemiring F] (f : F[X][Y]) (x y : F) : Option ℕ :=
   let X := (Polynomial.X : Polynomial F)
   rootMultiplicity₀ (F := F) ((f.comp (Y + (C (C y)))).map (Polynomial.compRingHom (X + C x)))
 
-/- section  -/
-/--/
-/- variable [Field F] -/
-/--/
-/- example  : weightedDegree (F := F) ( -/
-/-   (C X) * Y + (C (X^2) * Y)) 1 2 = some 4 := by -/
-/-   unfold weightedDegree -/
-/-   have hh : Field F := by aesop -/
-/-   have h : ((C X * X + C (X ^ 2) * X) : Polynomial (Polynomial F)).natDegree = 1 := by -/
-/-     rw [←add_mul] -/
-/-     rw [Polynomial.natDegree_mul (by { -/
-/-       intro contr  -/
-/-       rw [←Polynomial.C_add] at contr -/
-/-       rw [Polynomial.C_eq_zero] at contr  -/
-/-       rw [pow_two] at contr  -/
-/-       rw [add_eq_zero_iff_eq_neg] at contr -/
-/-       have h: (X : Polynomial F).coeff 1 = 0 := by  -/
-/-         rw [contr] -/
-/-         simp -/
-/-       simp at h -/
-/-     }) (by aesop)] -/
-/-     simp -/
-/-   rw [h, List.range_succ] -/
-/-   simp -/
-/-   rw [←Polynomial.C_pow, Polynomial.coeff_C] -/
-/-   simp -/
-/-   rw [pow_two]  -/
-/-   have h : (X : F[X]) + X * X = X * (1 + X) := by ring -/
-/-   rw [h] -/
-/-   rw [Polynomial.natDegree_mul,] -/
-/-   rw [add_comm (b := X), ←Polynomial.C_1] -/
-/-   rw [Polynomial.natDegree_X_add_C] -/
-/-   simp -/
-/-   simp -/
-/-   intro contr  -/
-/-   rw [add_eq_zero_iff_eq_neg] at contr -/
-/-   have h : ((- (X : F[X])).coeff 0) = 1 := by  -/
-/-     rw [←contr] -/
-/-     simp -/
-/-   simp at h -/
-/--/
-/- end -/
-
-
+lemma rootMultiplicity_some_implies_root {F : Type} [CommSemiring F] {x y : F} (f : F[X][Y])
+  (h : some 0 < (rootMultiplicity (f := f) x y))
+  :
+  (f.eval 0).eval 0 = 0
+  := by
+  sorry
+ 
 -- Katy: The next def, lemma and def can be deleted. Just keeping for now in case we need
 -- the lemma for somethying
 def degreesYFinset : Finset ℕ :=
@@ -220,11 +181,11 @@ lemma nezero_iff_coeffs_nezero : f ≠ 0 ↔ f.coeff ≠ 0 := by
   apply Iff.intro
   · intro hf
     have f_finsupp : f.toFinsupp ≠ 0 := by aesop
-    rw [coeff]
+    rw [Polynomial.coeff]
     simp only [ne_eq, Finsupp.coe_eq_zero]
     exact f_finsupp
   · intro f_coeffs
-    rw [coeff] at f_coeffs
+    rw [Polynomial.coeff] at f_coeffs
     aesop
 
 /--

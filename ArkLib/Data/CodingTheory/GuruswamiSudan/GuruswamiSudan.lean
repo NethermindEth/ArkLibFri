@@ -8,44 +8,46 @@ import Mathlib.Algebra.Polynomial.Basic
 import Mathlib.Data.Real.Sqrt
 
 import ArkLib.Data.CodingTheory.Basic
+import ArkLib.Data.Polynomial.Bivariate
+
+namespace GuruswamiSudan 
 
 variable {F : Type} [Field F]
-
+variable [DecidableEq F]
+variable {n : ℕ}
 
 open Polynomial
 
-def coeff (p : Polynomial (Polynomial F)) (i j : ℕ) : F := 
-  (p.coeff j).coeff i
-
-variable [DecidableEq F]
-
-
-/- This should be true -/
-/- lemma rootMultiplicity₀_some_implies_root {p : Polynomial (Polynomial F)} {x y : F}   -/
-/-   (h0 : 0 < p.degree) -/
-/-   (h : some 0 < (rootMultiplicity₀ p)) -/
-/-   : -/
-/-   (p.eval 0).eval 0 = 0 -/
-/-   := by -/
-/-   sorry -/
-  
-variable {n : ℕ}
-
+/--
+Guruswami-Sudan conditions for the polynomial searched by the decoder.
+As in the Berlekamp-Welch case, this can be shown to be equivalent to a 
+a system of linear equations.
+-/
 structure GuruswamiSudanCondition (k r D : ℕ) (ωs f : Fin n → F) (Q : Polynomial (Polynomial F)) where 
-   Q_deg : weightedDegree Q 1 (k-1) ≤ D 
-   Q_roots : ∀ i, (Q.eval (C <| f i)).eval (ωs i) = 0
-   Q_multiplicity : ∀ i, r = _root_.rootMultiplicity Q (ωs i) (f i)
+  /-- Degree of the polynomial. -/
+  Q_deg : Bivariate.weightedDegree Q 1 (k-1) ≤ D 
+  /-- (ωs i, f i) must be root of the polynomial Q. -/
+  Q_roots : ∀ i, (Q.eval (C <| f i)).eval (ωs i) = 0
+  /-- Multiplicity of the roots is equal to r. -/
+  Q_multiplicity : ∀ i, r = Bivariate.rootMultiplicity Q (ωs i) (f i)
 
+/-- Guruswami-Sudan decoder. -/
 opaque decoder (k r D e : ℕ) (ωs f : Fin n → F) : List F[X] := sorry
 
-theorem decoder_mem {k r D e : ℕ} {ωs f : Fin n → F} {p : F[X]}
+/-- Each decoded codeword has to be e-far from the received message. -/
+theorem decoder_mem_impl_dist {k r D e : ℕ} {ωs f : Fin n → F} {p : F[X]}
   (h_in : p ∈ decoder k r D e ωs f)
   (h_e : e ≤ n - Real.sqrt (k * n))
   :
   Δ₀(f, p.eval ∘ ωs) ≤ e := by sorry
 
-theorem decoder_empty {k r D e : ℕ} {ωs f : Fin n → F} {p : F[X]}
-  (h_nil : decoder k r D e ωs f = [])
+/-- If a codeword is e-far from the received message it appears in the output of 
+the decoder.
+-/
+theorem decoder_dist_impl_mem {k r D e : ℕ} {ωs f : Fin n → F} {p : F[X]}
   (h_e : e ≤ n - Real.sqrt (k * n))
+  (h_dist : Δ₀(f, p.eval ∘ ωs) ≤ e)
   :
-  ¬∃ (p : F[X]), Δ₀(f, p.eval ∘ ωs) ≤ e := by sorry
+  p ∈ decoder k r D e ωs f := by sorry 
+
+end GuruswamiSudan 
