@@ -56,8 +56,9 @@ def rootMultiplicity₀ : Option ℕ :=
       (fun x => if coeff f x.1 x.2 ≠ 0 then x.1 + x.2 else 0) 
       (List.product (List.range deg.succ) (List.range deg.succ)))
 
-variable [CommSemiring F]
-noncomputable def rootMultiplicity (x y : F) : Option ℕ :=
+-- variable [CommSemiring F]
+
+noncomputable def rootMultiplicity {F : Type} [CommSemiring F] {f : F[X][Y]} (x y : F) : Option ℕ :=
   let X := (Polynomial.X : Polynomial F)
   rootMultiplicity₀ (F := F) ((f.comp (Y + (C (C y)))).map (Polynomial.compRingHom (X + C x)))
 
