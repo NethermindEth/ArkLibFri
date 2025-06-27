@@ -395,53 +395,15 @@ private lemma almost_johnson_lhs_div_B_card [Zero F] {B : Finset (Fin n → F)}
   = 
   (1 - e B 0 / n) ^ 2 * B.card + B.card * (e B 0) ^ 2 / ((Fintype.card F - 1) * n^2) - 1 := by
   letI E := (n - e B 0) / n
-  have Eq : E = k B / B.card := by unfold E; rw [k_and_e'] <;> omega 
+  generalize eqrhs : (_ + _ - 1 : ℚ) = rhs
+  have eqE : E = k B / B.card := by unfold E; rw [k_and_e'] <;> omega 
   suffices
-    (B.card * E - 1) * E + ((B.card - B.card * E) / (Fintype.card F - 1) - 1) * (1 - E) ≤ _ by
-    
-    done
-  rw [add_div]
-  conv => 
-    lhs 
-    congr 
-    rw [mul_comm, ←mul_div]
-    rw [k_and_e' (by omega) (by omega)]
-    rw [k_and_e (by omega) (by omega)]
-    rfl
-    rw [mul_comm, ←mul_div, sub_div (c := (B.card : ℚ))]
-    rw [k_and_e' (by omega) (by omega)]
-    rw [Field.div_eq_mul_inv _ (B.card : ℚ)]
-    rw [Field.mul_inv_cancel _ (by {
-      simp
-      aesop
-    })]
-    rw [k_and_e (by omega) (by omega)]
-    rfl
-  have hn : (↑n : ℚ) / ↑n = 1 := by field_simp
-  conv =>
-    lhs
-    congr 
-    rw [sub_mul]
-    rw [←mul_div, mul_assoc, ←pow_two, one_mul]
-    rw [sub_div, hn]
-    rfl
-    rw [←mul_div]
-    rw [sub_div (c := (↑n : ℚ)), hn]
-    simp 
-    rw [sub_mul]
-    simp
-    rw [←mul_one (B.card : ℚ)]
-    rw [mul_assoc]
-    rw [←mul_sub (B.card : ℚ)]
-    simp 
-    rw [mul_comm, mul_div, mul_div]
-    rfl
-  have h : (e B 0 / ↑n * (↑B.card * e B 0 / ↑n) / (↑(Fintype.card F) - 1) - e B 0 / ↑n)
-    = ↑B.card * (e B 0)^2/ (↑n^2 *  (↑(Fintype.card F) - 1)) - e B 0 / ↑n:= by
-    field_simp
-    ring_nf 
-  rw [h]
-  ring_nf
+    (B.card * E - 1) * E + ((B.card - B.card * E) / (Fintype.card F - 1) - 1) * (1 - E) = rhs by
+    rw [eqE, mul_div_cancel₀ _ (by simp only [ne_eq, Rat.natCast_eq_zero]; omega)] at this
+    rw [←this]
+    field_simp; ring
+  rw [←eqrhs, show E = 1 - (e B 0) / n by field_simp [E]]
+  ring_nf; field_simp; ring
 
 private lemma johnson_unrefined [Zero F] {B : Finset (Fin n → F)} 
   (h_n : 0 < n)
