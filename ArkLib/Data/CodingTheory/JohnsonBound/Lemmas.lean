@@ -413,22 +413,16 @@ private lemma johnson_unrefined [Zero F] {B : Finset (Fin n → F)}
   (1 - e B 0 / n) ^ 2 * B.card + B.card * (e B 0) ^ 2 / ((Fintype.card F - 1) * n^2) - 1 
   ≤
   (B.card - 1) * (1 - d B/n) := by
-  have h : ((1 : ℚ) - d B / ↑n) = (↑n - d B) / ↑n := by
-    field_simp
-  rw [h]
-  rw [←almost_johnson_lhs_div_B_card h_n h_B]
-  apply le_of_mul_le_mul_left (a := (B.card : ℚ)) 
-  rw [Field.div_eq_mul_inv _ (↑B.card : ℚ)]
-  rw [mul_comm]
-  rw [mul_assoc, mul_comm _ ((↑B.card) : ℚ), Field.mul_inv_cancel _ (by aesop)]
-  simp 
-  rw [←mul_assoc]
-  apply le_trans 
-  apply almost_johnson_choose_2_elimed h_n h_B h_card
-  field_simp 
-  simp
-  rw [Finset.nonempty_iff_ne_empty]
-  aesop
+  suffices k B * (k B - 1) + (B.card - k B) * ((B.card - k B) / (Fintype.card F - 1) - 1) ≤
+           B.card * (B.card - 1) * ((n - d B) / n) by
+    rw [
+      show (1 - d B / n) = (n - d B) / n by field_simp,
+      ←almost_johnson_lhs_div_B_card h_n h_B,
+      div_le_iff₀ (by simp only [Nat.cast_pos]; omega)
+    ]
+    linarith
+  apply le_trans (almost_johnson_choose_2_elimed h_n h_B h_card)
+  field_simp
 
 private lemma johnson_unrefined_by_M [Zero F] {B : Finset (Fin n → F)} 
   (h_n : 0 < n)
