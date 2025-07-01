@@ -109,7 +109,7 @@ classical sense if the bivariate polynomial is interpreted as a univariate polyn
 def leadingCoeffY : F[X] := f.coeff (natDegree f)
 
 /--
-The polynomial coeffient of the highest power of `Y` is `0` if and only if the bivariate
+The polynomial coefficient of the highest power of `Y` is `0` if and only if the bivariate
 polynomial is the zero polynomial.
 -/
 theorem leadingCoeffY_eq_zero : leadingCoeffY f = 0 ↔ f = 0 :=
@@ -119,7 +119,7 @@ theorem leadingCoeffY_eq_zero : leadingCoeffY f = 0 ↔ f = 0 :=
     fun h => h.symm ▸ leadingCoeff_zero⟩
 
 /--
-The polynomial coeffient of the highest power of `Y` is not `0` if and only if the
+The polynomial coefficient of the highest power of `Y` is not `0` if and only if the
 bivariate polynomial is non-zero.
 -/
 lemma ne_zero_iff_leadingCoeffY_ne_zero : leadingCoeffY f ≠ 0 ↔ f ≠ 0 := by
