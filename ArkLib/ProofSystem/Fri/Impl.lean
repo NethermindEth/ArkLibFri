@@ -61,8 +61,8 @@ noncomputable def query :
       let x₀ := challenges.getD i 0;
       let s₀ <- getChallengeQ;
       let s₀ := (s₀.val.val ^ (2 ^ i));
-      let α₀ <- getEval i s₀;
-      let α₁ <- getEval i (-s₀);
-      let β <- getEval i.succ (s₀ ^ 2);
+      let α₀ <- getEval (Fin.ofNat _ i) s₀;
+      let α₁ <- getEval (Fin.ofNat _ i) (-s₀);
+      let β <- getEval (Fin.ofNat _ i.succ) (s₀ ^ 2);
       guard (consistency_check x₀ s₀ (-s₀) α₀ α₁ β)
     ) (List.range r)
