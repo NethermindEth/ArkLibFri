@@ -4,6 +4,7 @@ import ArkLib.OracleReduction.Security.Basic
 import ArkLib.OracleReduction.ProtocolSpec
 import ArkLib.ProofSystem.Fri.RoundConsistency
 import ArkLib.ProofSystem.Fri.Domain
+import ArkLib.ProofSystem.Fri.Spec.Oracle
 
 namespace Fri
 
@@ -11,14 +12,12 @@ open Polynomial MvPolynomial OracleSpec OracleComp ProtocolSpec Finset Domain
 
 namespace Spec
 
-namespace Simple
+namespace SingleRound
 
-variable {F : Type} [NonBinaryField F]
-variable (gen : Fˣ)
-variable {n : ℕ}
+variable {F : Type} [NonBinaryField F] [Finite F]
+variable (gen : Fˣ) {n : ℕ} (i : Fin n)
 
-variable [Finite F]
-variable (i : Fin n)
+
 @[reducible, simp]
 def StmtIn (_ : Fin n) : Type := Unit
 
@@ -43,9 +42,6 @@ def WitOut (F : Type) [Field F] (_ : Fin n) := F[X]
 
 @[reducible]
 def pSpec : ProtocolSpec 2 := ![(.V_to_P, F), (.P_to_V, (evalDomain gen i.succ) → F)]
-
-def oSpec (n : ℕ) : OracleSpec (Fin n) :=
-  fun i ↦ (Unit, evalDomain gen i.castSucc)
 
 def getChallengeQ (i : Fin n) :
     OracleComp (oSpec gen n) (evalDomain gen i.castSucc) :=
@@ -96,7 +92,7 @@ noncomputable def reduction [DecidableEq F] :
   prover := prover gen i
   verifier := verifier gen i
 
-end Simple
+end SingleRound
 
 end Spec
 
