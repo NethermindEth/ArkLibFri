@@ -5,7 +5,6 @@ import ArkLib.OracleReduction.Security.Basic
 import ArkLib.OracleReduction.ProtocolSpec
 import ArkLib.ProofSystem.Fri.RoundConsistency
 import ArkLib.ProofSystem.Fri.Domain
-import ArkLib.ProofSystem.Fri.Spec.Oracle
 
 /-!
 # The FRI protocol
