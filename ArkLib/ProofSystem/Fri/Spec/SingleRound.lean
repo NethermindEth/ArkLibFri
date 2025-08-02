@@ -158,9 +158,7 @@ noncomputable def oracleReduction [DecidableEq F] (i : Fin (n - 1)) :
   prover := by
     have : (n - 1) + 1 = n := Nat.succ_pred_eq_of_ne_zero n_nezero.out
     have x := prover gen i.castSucc
-    sorry
-    -- simp [this.symm]
-    -- simpa [this] using prover gen i.castSucc
+    sorry -- exact this ▸ x
   verifier := oracleVerifier gen i
 
 -- TODO: need to define the final query step of the FRI protocol.
@@ -249,13 +247,17 @@ noncomputable def oracleVerifierFinal [DecidableEq F] :
     unfold OracleStatement pSpec
     aesop
 
--- noncomputable def oracleReductionFinal [DecidableEq F] (i : Fin n) :
---   OracleReduction (oSpec gen n)
---     (Statement F (Fin.last n)) (OracleStatement gen (Fin.last n)) (Witness F)
---     (Statement F (Fin.last n)) (OracleStatement gen (Fin.last n)) (Witness F)
---     (pSpec gen  (Fin.last n)) where
---   prover := prover gen (Fin.last (n - 1))
---   verifier := oracleVerifierFinal gen (Fin.last (n - 1))
+noncomputable def oracleReductionFinal [DecidableEq F] :
+  OracleReduction (oSpec gen n)
+    (Statement F (⟨n - 1, Nat.sub_lt_succ _ _⟩ : Fin (n + 1)))
+    (OracleStatement gen (⟨n - 1, Nat.sub_lt_succ _ _⟩ : Fin (n + 1)))
+    (Witness F)
+    (Statement F (Fin.last n))
+    (OracleStatement gen (Fin.last n))
+    (Witness F)
+    (pSpec gen  (Fin.last n)) where
+  prover :=  Nat.succ_pred_eq_of_ne_zero n_nezero.out ▸ prover gen (Fin.last (n - 1))
+  verifier := oracleVerifierFinal gen 0
 
 end SingleRound
 
