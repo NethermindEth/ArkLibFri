@@ -158,7 +158,7 @@ noncomputable def oracleReduction [DecidableEq F] (i : Fin (n - 1)) :
   prover := by
     have : (n - 1) + 1 = n := Nat.succ_pred_eq_of_ne_zero n_nezero.out
     have x := prover gen i.castSucc
-    sorry -- exact this ▸ x
+    convert x <;> exact this.symm
   verifier := oracleVerifier gen i
 
 -- TODO: need to define the final query step of the FRI protocol.
@@ -172,13 +172,12 @@ def sampleCodeword (i : Fin n) (x : evalDomain gen i.castSucc) :
       (ι := Fin (n - 1 + 1))
       [OracleStatement gen ⟨n - 1, Nat.sub_lt_succ _ _⟩]ₒ
       F :=
-  let i := (Nat.succ_pred_eq_of_ne_zero n_nezero.out) ▸ i;
   OracleComp.lift
     (
       OracleSpec.query
         (spec := [OracleStatement gen ⟨n - 1, Nat.sub_lt_succ _ _⟩]ₒ)
-        i
-        sorry -- x
+        ⟨i.1, by dsimp; omega⟩
+        x
     )
 
 def getConst :
@@ -190,7 +189,7 @@ def getConst :
           OracleSpec.query
             (spec := [(pSpec gen (Fin.last n)).Message]ₒ)
             ⟨1, by simp⟩
-            sorry -- 1
+            ⟨1, ⟨0, by simp⟩⟩
         )
 
 noncomputable def oracleVerifierFinal [DecidableEq F] :
@@ -204,17 +203,14 @@ noncomputable def oracleVerifierFinal [DecidableEq F] :
               (fun (i : Fin (n - 1)) =>
                 do
                   let x₀ := prevChallenges i;
-                  let i' : Fin n := (Nat.succ_pred_eq_of_ne_zero n_nezero.out) ▸ i.succ;
-                  let i  : Fin n := (Nat.succ_pred_eq_of_ne_zero n_nezero.out) ▸ i.castSucc;
+                  let i' : Fin n := ⟨i.1.succ, by omega⟩;
+                  let i : Fin n := ⟨i.1, by omega⟩;
                   let s₀ ← getSample (n := n) gen i;
                   let s₁ := (domain_neg_inst (i := i) gen).neg s₀;
                   let α₀ ← sampleCodeword gen i s₀;
                   let α₁ ← sampleCodeword gen i s₁;
                   let h' := sqr_mem_D_succ_i_of_mem_D_i s₀.2;
-                  have : i.succ = i'.castSucc := by
-                    dsimp [i, i']
-                    sorry;
-                  let β  ← sampleCodeword gen i' (this ▸ lift_to_subgroup h');
+                  let β  ← sampleCodeword gen i' (lift_to_subgroup h');
                   guard (consistency_check x₀ s₀.1.1 s₁.1.1 α₀ α₁ β)
               )
     let x₀ : F := roundChallenge ⟨0, by simp⟩;
