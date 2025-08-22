@@ -114,7 +114,7 @@ structure ProverRound {ι : Type} (oSpec : OracleSpec ι) {n : ℕ} (pSpec : Pro
     PrvState i.1.castSucc → OracleComp oSpec (pSpec.Message i × PrvState i.1.succ)
   /-- Receive a challenge and update the prover's state -/
   receiveChallenge (i : ChallengeIdx pSpec) :
-    PrvState i.1.castSucc → (pSpec.Challenge i) → PrvState i.1.succ
+    PrvState i.1.castSucc → pSpec.Challenge i → PrvState i.1.succ
 
 /-- The output of the prover, which is a function from the prover's state to the output witness -/
 @[ext]

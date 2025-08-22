@@ -254,6 +254,31 @@ Note that this is definitionally equal to `Transcript (Fin.last n) pSpec`. -/
 @[reducible, inline, specialize]
 def FullTranscript (pSpec : ProtocolSpec n) := (i : Fin n) → pSpec.getType i
 
+inductive Whatever where
+  | first
+  | second (n : ℕ)
+  | third (m n : ℕ)
+
+abbrev FullTranscript' (pSpec : ProtocolSpec n) := List Whatever
+
+opaque pSpec_1 (pSpec : ProtocolSpec n) : Prop 
+opaque pSpec_2 (pSpec : ProtocolSpec n) : Prop 
+opaque pSpec_3 (pSpec : ProtocolSpec n) : Prop 
+
+lemma FullTranscript'.length {n : ℕ} {pSpec : ProtocolSpec n} {x : FullTranscript' pSpec} :
+  x.length = n := sorry
+
+opaque ft_1 (l : List Whatever) : Prop
+opaque ft_2 (l : List Whatever) : Prop
+def ft_3 (l : List Whatever) (i : Nat) (h : i < l.length) : Prop :=
+  l[i] matches .second 42
+
+lemma FullTranscript'.ofpSpec_1 {n : ℕ} {pSpec : ProtocolSpec n} {x : FullTranscript' pSpec}
+  (h : pSpec_1 pSpec) : ft_1 x := sorry
+
+lemma FullTranscript'.ofpSpec_3 {n : ℕ} {pSpec : ProtocolSpec n} {x : FullTranscript' pSpec}
+  (h : pSpec_3 pSpec) : ft_3 x 4 sorry := sorry
+
 namespace FullTranscript
 
 @[reducible, inline, specialize]
