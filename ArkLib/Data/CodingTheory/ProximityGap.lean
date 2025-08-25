@@ -265,4 +265,88 @@ lemma lemma_5_7
 
 end ProximityGapSection5
 
+
+section ProximityGapSection6
+variable {F : Type} [Field F] [DecidableEq F] [DecidableEq (RatFunc F)]
+variable {n k m : ℕ}
+
+def curve [Field F] (u : List (Fin n → F)) (z : F) : Fin n → F :=
+    List.zip u (List.map (fun i => z ^ i) (List.range u.length)) 
+    |> List.map (fun (u, z) i => (u i) * z)
+    |> List.sum 
+
+def the_S_multi
+  [Finite F] (δ : ℚ) (u : List (Fin n → F)) (V : Finset (Fin n → F)) : Finset F :=
+  @Set.toFinset _ { z | ∀ v ∈ V, Δ₀(curve u z, v) ≤ δ} sorry
+
+theorem theorem_6_1
+  [Field F]
+  [Finite F]
+  {rho : ℚ}
+  {δ : ℚ}
+  {V : Finset (Fin n → F)}
+  (hδ : δ ≤ (1 - rho) / 2)
+  {u : List (Fin n → F)}
+  (hS : n * u.length < (the_S_multi δ u V).card)
+  :
+  the_S_multi δ u V = F ∧
+  ∃ (v : List (Fin n → F)) (z : F),
+    v.length = u.length ∧
+    Δ₀(curve u z, curve v z) ≤ δ ∧
+    ({ x : Fin n | 
+      List.map (fun el => el x) u 
+      ≠ List.map (fun el => el x) v } : Finset _).card ≤ δ * n := sorry
+
+noncomputable def δ₀ (rho : ℚ) (m : ℕ) : ℝ :=
+  1 - Real.sqrt rho - Real.sqrt rho / (2 * m)
+
+theorem theorem_6_2
+  [Field F]
+  [Finite F]
+  {m : ℕ}
+  {rho : ℚ}
+  {δ : ℚ}
+  (hm : 3 ≤ m)
+  {V : Finset (Fin n → F)}
+  (hδ : δ ≤ δ₀ rho m)
+  {u : List (Fin n → F)}
+  (hS : ((1 + 1 / (2 * m)) ^ 7 * m ^ 7) / (3 * (Real.sqrt rho) ^ 3)
+    * n ^ 2 * u.length < (the_S_multi δ u V).card)
+  :
+  ∃ (v : List (Fin n → F)),
+  ∀ i ≤ v.length, v.getD (fallback := fun _ => 0) i ∈ V ∧ v.length = u.length ∧
+  (1 - δ) * n ≤ ({x : Fin n | ∀ i ≤ u.length, u.getD i (fun _ => 0)
+    = v.getD i (fun _ => 0) } : Finset _).card := sorry
+
+section
+open NNReal Finset Function
+
+open scoped BigOperators
+
+variable {ι : Type*} [Fintype ι] [Nonempty ι]
+         {F : Type*} [Field F] [Fintype F] [DecidableEq F]
+
+open Uniform in
+theorem lemma_6_3 [DecidableEq ι] [DecidableEq F] {k : ℕ} {u : List (ι → F)}
+  {deg : ℕ} {domain : ι ↪ F} {δ : ℝ≥0}
+  (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
+  (hproximity :
+    (PMF.uniformOfFinset (@Set.toFinset _ sorry
+      (s := (AffineSubspace.carrier
+        <| affineSpan F
+          (let set := { x  | ∃ v ∈ (List.tail u), x = u.headD 0 + v };
+            set)))) (hs := sorry)).toOuterMeasure
+      {y : ι → F | Code.relHammingDistToCode y (ReedSolomon.code domain deg) ≤ δ} >
+      (ProximityGap.errorBound δ deg domain)) :
+  ∀ x ∈ (AffineSubspace.carrier
+  <| affineSpan F 
+    (let set := { x  | ∃ v ∈ (List.tail u), x = v }; 
+      set
+      )), Code.relHammingDistToCode x (ReedSolomon.code domain deg) ≤ δ
+  := by sorry
+
+end
+
+end ProximityGapSection6
+
 end ProximityGap
