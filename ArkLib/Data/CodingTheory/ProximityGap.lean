@@ -349,4 +349,219 @@ end
 
 end ProximityGapSection6
 
+section ProximityGapSection7
+
+variable {F : Type} [Field F] [DecidableEq F] [DecidableEq (RatFunc F)]
+variable {n k m : ℕ}
+
+namespace WeightedAgreement
+  
+open NNReal Finset Function
+
+open scoped BigOperators
+
+section
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+variable {ι : Type*} [Fintype ι] [Nonempty ι]
+variable {F : Type*} [Field F] [Fintype F] [DecidableEq F]
+
+variable (C : Submodule F (n → F)) [DecidablePred (· ∈ C)]
+
+noncomputable def agree (μ : ι → Set.Icc (0 : ℝ) 1) (u v : ι → F) : ℝ :=
+  1 / (Fintype.card ι) * ∑ i ∈ { i | u i = v i }, (μ i).1
+
+noncomputable def agree_set (μ : ι → Set.Icc (0 : ℝ) 1) (u : ι → F) (V : Finset (ι → F)) : ℝ :=
+  sSup (Finset.map ⟨fun v ↦ (Δ₀(u, v) : ℝ), by sorry⟩ V)
+
+noncomputable def mu_set.{u} {ι : Type u} (μ : ι → Set.Icc (0 : ℝ) 1) (V : Finset.{u} ι) : ℝ :=
+  1/V.card * ∑ i ∈ V, (μ i).1
+
+noncomputable def weightedCorrelatedAgreement.{u} {ι : Type u} [Fintype ι] (μ : ι → Set.Icc (0 : ℝ) 1)
+    (C : Set (ι → F)) (δ : ℝ≥0) {k : ℕ} (W : Fin k → ι → F) : ℝ :=
+  sSup { x | ∃ D ⊆ (Finset.univ.{u} (α := ι)), x = mu_set.{u} μ D ∧ 
+    ∃ v : Fin k → ι → F, ∀ i, v i ∈ C ∧ ∀ j ∈ D,  v i j = W i j } 
+
+theorem theorem_7_1 [DecidableEq ι] [Fintype ι] [DecidableEq F] {k : ℕ} {u : List (ι → F)}
+  {deg : ℕ} {domain : ι ↪ F} {δ : ℝ≥0}
+  {μ : ι → Set.Icc (0 : ℝ) 1}
+  {M : ℕ}
+  (hμ : ∀ i, ∃ n : ℤ, (μ i).1 = (n : ℚ) / (M : ℚ))
+  {α : ℝ}
+  (hα : (ReedSolomonCode.sqrtRate deg domain) < α)
+  (hα₁ : α < 1)
+  (hproximity :
+    (PMF.uniformOfFinset
+      (@Set.toFinset _
+        { z : List F |  z.length = u.length } sorry)
+      (hs := sorry)).toOuterMeasure
+      { z : List F | agree_set μ 
+        (∑ i < z.length, fun ι => z.getD i 0 * u.getD i 0 ι) 
+        (@Set.toFinset _ (ReedSolomon.code domain deg).carrier sorry) ≥ α } >
+      u.length * (ProximityGap.errorBound δ deg domain))
+  (h_additionally :
+    (PMF.uniformOfFinset
+      (@Set.toFinset _
+        { z : List F |  z.length = u.length } sorry)
+      (hs := sorry)).toOuterMeasure
+      { z : List F | agree_set μ 
+        (∑ i < z.length, fun ι => z.getD i 0 * u.getD i 0 ι) 
+        (@Set.toFinset _ (ReedSolomon.code domain deg).carrier sorry) ≥ α } ≥
+      (ENNReal.ofReal <|
+      (u.length * (M * Fintype.card ι + 1) : ℝ) / (Fintype.card F : ℝ)
+      * (1 / min
+        (α - ReedSolomonCode.sqrtRate deg domain)
+        (3 / ReedSolomonCode.sqrtRate deg domain))))
+      :
+  ∃ ι' ⊆ Finset.univ (α := ι), ∃ v : List (ι → F), 
+    (∀ i < v.length, v.getD i 0 ∈ (ReedSolomon.code domain deg)) ∧ 
+    mu_set μ ι' ≥ α ∧
+    u.length = v.length ∧ 
+    ∀ i < u.length, ∀ x ∈ ι', u.getD i 0 x = v.getD i 0 x
+  := by sorry
+
+theorem theorem_7_2 [DecidableEq ι] [Fintype ι] [DecidableEq F] {k : ℕ} {u : List (ι → F)}
+  {deg : ℕ} {domain : ι ↪ F} {δ : ℝ≥0}
+  {μ : ι → Set.Icc (0 : ℝ) 1}
+  {M m : ℕ}
+  (hm : 3 ≤ m)
+  (hμ : ∀ i, ∃ n : ℤ, (μ i).1 = (n : ℚ) / (M : ℚ))
+  {α : ℝ}
+  (hα : (ReedSolomonCode.sqrtRate deg domain) * (1 + 1 / (2 * m : ℝ)) < α)
+  (hS : { z : F | agree_set μ (fun i => ∑ j < u.length, z ^ j * u.getD j 0 i) 
+          (@Set.toFinset _ (ReedSolomon.code domain deg).carrier sorry) >
+          max 
+            ((1 + 1 / (2 * m : ℝ))^7 * m^7 * (Fintype.card ι)^2 * u.length 
+              / (3 * (ReedSolomonCode.sqrtRate deg domain)^2))
+            ((2 * m + 1) * (M * (Fintype.card ι) + 1) * u.length 
+              / (ReedSolomonCode.sqrtRate deg domain
+              |> NNReal.toReal))
+          })
+  :
+  ∃ v : List (ι → F), v.length = u.length ∧  
+  (∀ i < v.length, v.getD i 0 ∈ (ReedSolomon.code domain deg)) ∧ 
+  mu_set μ (@Set.toFinset _ { i ∈ (Finset.univ (α := ι)) 
+    | ∀ j ≤ u.length, u.getD j 0 i = v.getD j 0 i  } sorry) ≥ α
+  := by sorry
+
+open Uniform in
+theorem theorem_7_3 [DecidableEq ι] [Fintype ι] [DecidableEq F] {k : ℕ} {u : List (ι → F)}
+  {deg : ℕ} {domain : ι ↪ F}
+  {μ : ι → Set.Icc (0 : ℝ) 1}
+  {α : ℝ}
+  (hα : (ReedSolomonCode.sqrtRate deg domain) < α)
+  (hα₁ : α < 1)
+  {M : ℕ}
+  (hμ : ∀ i, ∃ n : ℤ, (μ i).1 = (n : ℚ) / (M : ℚ))
+  (hproximity :
+    (PMF.uniformOfFinset (@Set.toFinset _ sorry
+      (s := (AffineSubspace.carrier
+        <| affineSpan F
+          (let set := { x  | ∃ v ∈ (List.tail u), x = u.headD 0 + v };
+            set)))) (hs := sorry)).toOuterMeasure
+      {y : ι → F 
+        | agree_set μ y (@Set.toFinset _ (ReedSolomon.code domain deg).carrier sorry) ≥ α } >
+      (ProximityGap.errorBound (Real.toNNReal α) deg domain))
+  (h_additionally :
+    (PMF.uniformOfFinset (@Set.toFinset _ sorry
+    (s := (AffineSubspace.carrier
+      <| affineSpan F
+        (let set := { x  | ∃ v ∈ (List.tail u), x = u.headD 0 + v };
+          set)))) (hs := sorry)).toOuterMeasure
+    {y : ι → F | agree_set μ y (@Set.toFinset _ (ReedSolomon.code domain deg).carrier sorry) ≥ α }
+      ≥
+      (ENNReal.ofReal <|
+      ((M * Fintype.card ι + 1) : ℝ) / (Fintype.card F : ℝ)
+      * (1 / min
+        (α - ReedSolomonCode.sqrtRate deg domain)
+        (3 / ReedSolomonCode.sqrtRate deg domain))))
+  :
+  ∃ ι' ⊆ Finset.univ (α := ι), ∃ v : List (ι → F), 
+    (∀ i < v.length, v.getD i 0 ∈ (ReedSolomon.code domain deg)) ∧ 
+    mu_set μ ι' ≥ α ∧
+    u.length = v.length ∧ 
+    ∀ i < u.length, ∀ x ∈ ι', u.getD i 0 x = v.getD i 0 x
+  := by sorry
+
+open Uniform in
+theorem theorem_7_4 [DecidableEq ι] [Fintype ι] [DecidableEq F] {k : ℕ} {u : List (ι → F)}
+  {deg : ℕ} {domain : ι ↪ F}
+  {μ : ι → Set.Icc (0 : ℝ) 1}
+  {α : ℝ}
+  {M m : ℕ}
+  (hm : 3 ≤ m)
+  (hμ : ∀ i, ∃ n : ℤ, (μ i).1 = (n : ℚ) / (M : ℚ))
+  (hα : (ReedSolomonCode.sqrtRate deg domain) * (1 + 1 / (2 * m : ℝ)) < α)
+  (hproximity :
+    (PMF.uniformOfFinset (@Set.toFinset _ sorry
+      (s := (AffineSubspace.carrier
+        <| affineSpan F
+          (let set := { x  | ∃ v ∈ (List.tail u), x = u.headD 0 + v };
+            set)))) (hs := sorry)).toOuterMeasure
+      {y : ι → F 
+        | agree_set μ y (@Set.toFinset _ (ReedSolomon.code domain deg).carrier sorry) ≥ α } >
+      (ProximityGap.errorBound (Real.toNNReal α) deg domain))
+  (h_additionally :
+    (PMF.uniformOfFinset (@Set.toFinset _ sorry
+    (s := (AffineSubspace.carrier
+      <| affineSpan F
+        (let set := { x  | ∃ v ∈ (List.tail u), x = u.headD 0 + v };
+          set)))) (hs := sorry)).toOuterMeasure
+    {y : ι → F | agree_set μ y (@Set.toFinset _ (ReedSolomon.code domain deg).carrier sorry) ≥ α }
+      ≥
+          (Real.toEReal <| max
+            ((1 + 1 / (2 * m : ℝ)) ^ 7 * m ^ 7 * (Fintype.card ι) ^ 2
+              / (3 * (ReedSolomonCode.sqrtRate deg domain) ^ 2))
+            ((2 * m + 1) * (M * (Fintype.card ι) + 1) / (ReedSolomonCode.sqrtRate deg domain
+              |> NNReal.toReal))))
+  :
+  ∃ ι' ⊆ Finset.univ (α := ι), ∃ v : List (ι → F), 
+    (∀ i < v.length, v.getD i 0 ∈ (ReedSolomon.code domain deg)) ∧ 
+    mu_set μ ι' ≥ α ∧
+    u.length = v.length ∧ 
+    ∀ i < u.length, ∀ x ∈ ι', u.getD i 0 x = v.getD i 0 x
+  := by sorry
+
+lemma lemma_7_5 [DecidableEq ι] [Fintype ι] [DecidableEq F] {k : ℕ} {u : List (ι → F)}
+  {deg : ℕ} {domain : ι ↪ F}
+  {μ : ι → Set.Icc (0 : ℝ) 1}  
+  {α : ℝ}
+  (hα : 0 ≤ α)
+  {v : List (ι → F)}
+  (hv : ∀ i < v.length, v.getD i 0 ∈ (ReedSolomon.code domain deg))
+  (h_len : u.length = v.length)
+  {S' : Finset F}
+  (hS'_card : S'.card > u.length)
+  (hS'_agree : ∀ z ∈ S', agree μ (fun x => ∑ i < u.length, z ^ i * u.getD i 0 x)
+    (fun x => ∑ i < v.length, z ^ i * v.getD i 0 x) ≥ α)
+  :
+  mu_set μ (@Set.toFinset _ { x : ι | ∀ i < u.length, u.getD i 0 x = v.getD i 0 x} sorry)
+    ≥ α - (u.length : ℝ) / (S'.card - u.length) := by sorry
+
+
+lemma lemma_7_6 [DecidableEq ι] [Fintype ι] [DecidableEq F] {k : ℕ} {u : List (ι → F)}
+  {deg : ℕ} {domain : ι ↪ F}
+  {μ : ι → Set.Icc (0 : ℝ) 1}  
+  {α : ℝ}
+  {M : ℕ}
+  (hμ : ∀ i, ∃ n : ℤ, (μ i).1 = (n : ℚ) / (M : ℚ))
+  (hα : 0 ≤ α)
+  {v : List (ι → F)}
+  (hv : ∀ i < v.length, v.getD i 0 ∈ (ReedSolomon.code domain deg))
+  (h_len : u.length = v.length)
+  {S' : Finset F}
+  (hS'_card : S'.card > u.length)
+  (hS'_card₁ : S'.card > (M * Fintype.card ι + 1) * u.length)
+  (hS'_agree : ∀ z ∈ S', agree μ (fun x => ∑ i < u.length, z ^ i * u.getD i 0 x)
+    (fun x => ∑ i < v.length, z ^ i * v.getD i 0 x) ≥ α)
+  :
+  mu_set μ (@Set.toFinset _ { x : ι | ∀ i < u.length, u.getD i 0 x = v.getD i 0 x} sorry)
+    ≥ α := by sorry
+end
+
+end WeightedAgreement
+
+end ProximityGapSection7
+
 end ProximityGap
