@@ -7,6 +7,7 @@ Authors: Katerina Hristova, František Silváši, Julian Sutherland
 import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Algebra.Polynomial.Bivariate
 import Mathlib.Data.Fintype.Defs
+import Mathlib.FieldTheory.Separable
 
 open Polynomial
 open Polynomial.Bivariate
@@ -26,8 +27,10 @@ The set of coefficients of a bivariate polynomial.
 -/
 def coeffs [DecidableEq F] : Finset F[X] := f.support.image (fun n => f.coeff n)
 
-/-- The coeffiecient of `Y^n` is a polynomial in `X`.
--/
+/-- (i, j)-coefficient of a polynomial. -/
+def coeff.{u} {F : Type u} [Semiring F] (f : F[X][Y]) (i j : ℕ) : F := (f.coeff j).coeff i 
+
+/-- The coeffiecient of `Y^n` is a polynomial in `X`. -/
 def coeff_Y_n (n : ℕ) : F[X] := f.coeff n
 
 /--
@@ -35,6 +38,88 @@ The `Y`-degree of a bivariate polynomial.
 -/
 def degreeY : ℕ := Polynomial.natDegree f
 
+/--
+`(u,v)`-weighted degree of a polynomial. 
+The maximal `u * i + v * j` such that the polynomial `p`
+contains a monomial `x^i * y * j`.
+-/
+def weightedDegree.{u} {F : Type u} [Semiring F] (p : F[X][Y]) (u v : ℕ) : Option ℕ := 
+  List.max? <|
+    List.map (fun n => u * (p.coeff n).natDegree + v * n) (List.range p.natDegree.succ)
+
+def rootMultiplicity₀.{u} {F : Type u} [Semiring F] [DecidableEq F] (f : F[X][Y]) : Option ℕ :=
+  let deg := weightedDegree f 1 1
+  match deg with
+  | none => none 
+  | some deg => List.max? 
+    (List.map 
+      (fun x => if coeff f x.1 x.2 ≠ 0 then x.1 + x.2 else 0) 
+      (List.product (List.range deg.succ) (List.range deg.succ)))
+
+noncomputable def rootMultiplicity.{u}
+  {F : Type u} 
+  [CommSemiring F] 
+  [DecidableEq F] (f : F[X][Y]) (x y : F) : Option ℕ :=
+  let X := (Polynomial.X : Polynomial F)
+  rootMultiplicity₀ (F := F) ((f.comp (Y + (C (C y)))).map (Polynomial.compRingHom (X + C x)))
+
+lemma rootMultiplicity_some_implies_root {F : Type} [CommSemiring F] 
+  [DecidableEq F]
+  {x y : F} (f : F[X][Y])
+  (h : some 0 < (rootMultiplicity (f := f) x y))
+  :
+  (f.eval 0).eval 0 = 0
+  := by
+  sorry
+
+/-- Pad a list `l` with zeros on the right to length `n` -/
+def padRight (l : List F) (n : Nat) : List F :=
+  l ++ List.replicate (n - l.length) 0
+
+/-- Rotate a list to the right by 1 position -/
+def rotateRight (l : List F) : List F :=
+  match l.reverse with
+  | [] => []
+  | x::xs => x :: xs.reverse
+
+/-- Build the Sylvester matrix of two polynomials -/
+def sylvesterMatrix {F : Type} [Semiring F] 
+    [Inhabited F]
+    (p q : Polynomial F) 
+    : Matrix (Fin ((p.natDegree + q.natDegree) - 1)) (Fin ((p.natDegree + q.natDegree) - 1)) F :=
+  let coeffs1 := p.coeffs.toList.reverse
+  let coeffs2 := q.coeffs.toList.reverse 
+  let l1 := coeffs1.length
+  let l2 := coeffs2.length
+  let N := l1 + l2 - 2
+  let rowP : List (List F) :=
+    List.range (l2 - 1) |>.map (fun i =>
+      let padded := padRight coeffs1 N
+      let iterated := List.iterate rotateRight padded i
+      (List.getD iterated iterated.length.pred padded))
+  let rowQ : List (List F) :=
+    List.range (l1 - 1) |>.map (fun i =>
+      let padded := padRight coeffs2 N
+      let iterated := List.iterate rotateRight padded i
+      (List.getD iterated iterated.length.pred padded))
+  let rows := rowP ++ rowQ
+  Matrix.of (fun i j => (rows[i]!)[j]!)
+where
+  m := p.natDegree + 1
+  n := q.natDegree + 1
+
+def resultant {F : Type} [CommRing F] [Inhabited F] (f g : F[X]) : F :=
+  (sylvesterMatrix f g).det
+
+def discriminant {F : Type} [Field F] [Inhabited F] (f : F[X]) : F :=
+  1/f.leadingCoeff * resultant f (Polynomial.derivative f) 
+
+opaque discr_y {F : Type} [CommSemiring F] (f : F[X][Y]) : F[X] :=
+  sorry
+
+lemma separable_iff_discr_eq_zero {F : Type} [Field F] [Inhabited F] (f : F[X]) : 
+  f.Separable ↔ discriminant f = 0 := by sorry
+ 
 -- Katy: The next def, lemma and def can be deleted. Just keeping for now in case we need
 -- the lemma for somethying
 def degreesYFinset : Finset ℕ :=
@@ -149,11 +234,11 @@ lemma nezero_iff_coeffs_nezero : f ≠ 0 ↔ f.coeff ≠ 0 := by
   apply Iff.intro
   · intro hf
     have f_finsupp : f.toFinsupp ≠ 0 := by aesop
-    rw [coeff]
+    rw [Polynomial.coeff]
     simp only [ne_eq, Finsupp.coe_eq_zero]
     exact f_finsupp
   · intro f_coeffs
-    rw [coeff] at f_coeffs
+    rw [Polynomial.coeff] at f_coeffs
     aesop
 
 /--

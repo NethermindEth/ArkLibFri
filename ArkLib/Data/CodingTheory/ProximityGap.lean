@@ -1,4 +1,16 @@
+import Mathlib.Algebra.Field.Basic
+import Mathlib.Algebra.Polynomial.Basic
+import Mathlib.Algebra.Group.Irreducible.Defs
+import Mathlib.Data.Real.Sqrt
+import Mathlib.FieldTheory.RatFunc.Defs
+import Mathlib.FieldTheory.RatFunc.Basic
+import Mathlib.FieldTheory.Separable
+
 import ArkLib.Data.CodingTheory.Basic
+import ArkLib.Data.CodingTheory.GuruswamiSudan
+import ArkLib.Data.CodingTheory.ReedSolomon
+import ArkLib.Data.Polynomial.Bivariate
+import Mathlib.FieldTheory.RatFunc.AsPolynomial
 import ArkLib.Data.CodingTheory.ReedSolomon
 import ArkLib.Data.CodingTheory.Prelims
 import Mathlib.Probability.Distributions.Uniform
@@ -139,4 +151,118 @@ theorem correlatedAgreement_affine_spaces {k : ℕ} [NeZero k] {u : Fin k → ι
   correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
 
 end
+
+namespace Trivariate
+section Trivariate
+
+variable {F : Type} [Field F] [DecidableEq F] [DecidableEq (RatFunc F)]
+
+open Polynomial
+
+opaque eval_on_Z₀ [Field F] [DecidableEq (RatFunc F)] (p : (RatFunc F)[X]) (z : F) : F := 
+  sorry 
+
+opaque eval_on_Z₁ [Field F] [DecidableEq (RatFunc F)] (p : (RatFunc F)[X]) (z : F) : F[X] := 
+  sorry
+
+opaque eval_on_Z₂ [Field F] [DecidableEq (RatFunc F)] (p : (RatFunc F)[X][X]) (z : F) : F[X][X] := 
+  sorry
+
+notation3:max R "[Z][X]" => Polynomial (Polynomial R)
+
+notation3:max R "[Z][X][Y]" => Polynomial (Polynomial (Polynomial (R)))
+
+notation3:max "Y" => Polynomial.X (R := Polynomial _)
+
+notation3:max "Z" => Polynomial.X (R := Polynomial (Polynomial _))
+
+end Trivariate
+end Trivariate
+
+section ProximityGapSection5
+variable {F : Type} [Field F] [DecidableEq F] [DecidableEq (RatFunc F)]
+variable {n k m : ℕ}
+
+open Polynomial in
+open RatFunc in
+lemma proximity_gap_claim_5_4 {ωs u₀ u₁ : Fin n → F} 
+  :
+  ∃ Q : Polynomial (Polynomial (RatFunc F)) , Q ≠ 0 
+    ∧ ∀ i, Bivariate.rootMultiplicity (F := RatFunc F)
+      (C (C (RatFunc.mk (C (ωs i)) 1)) 
+        : Polynomial (Polynomial (RatFunc F))) 
+      (RatFunc.mk (C <| ωs i) 1 : RatFunc F)
+      ((RatFunc.mk (C <| u₀ i) 1 + 
+        (RatFunc.mk X 1) * 
+          (RatFunc.mk (C <| u₁ i) 1)): RatFunc F) ≥ m := by sorry 
+
+open GuruswamiSudan
+
+/-- Lemma 5.3 from the Proximity gap paper -/ 
+lemma guruswami_sudan_for_proximity_gap_existence {ωs f : Fin n → F} 
+  :
+  ∃ Q, GuruswamiSudanCondition k m (proximity_gap_degree_bound (n := n) k m) ωs f Q := by
+  sorry
+
+open Polynomial
+
+lemma guruswami_sudan_for_proximity_gap_property 
+  {ωs f : Fin n → F} 
+  {Q : F[X][X]} {p : F[X]} 
+  (h : Δ₀(f, p.eval ∘ f) ≤ proximity_gap_johnson (n := n) k m)
+  :
+  ((X : F[X][X]) - Polynomial.C p) ∣ Q := by sorry 
+
+noncomputable def D_X (rho : ℚ) (m : ℕ) : ℕ := Nat.floor <| (m + (1 : ℚ)/2) * Real.sqrt rho * n
+def D_Y (Q : F[X][X]) : ℕ := Bivariate.degreeY Q 
+def D_YZ (Q : F[X][X]) : ℕ := Bivariate.totalDegree Q
+
+def the_S [Field F] (δ : ℚ) (V : LinearCode (ι := Fin n) (F := F)) (u₀ u₁ : Fin n → F) 
+  : Finset F := 
+    @Set.toFinset _ { z | ∀ v ∈ V.carrier, Δ₀(u₀ + (fun _ => z) * u₁, v) ≤ δ} sorry
+
+opaque C₀ (Q : F[Z][X][Y]) : F[Z][X] := sorry
+opaque R₀ (Q : F[Z][X][Y]) : List F[Z][X][Y] := sorry
+opaque f₀ (Q : F[Z][X][Y]) : List ℕ := sorry
+opaque e₀ (Q : F[Z][X][Y]) : List ℕ := sorry
+
+lemma eq_5_12 {Q : F[Z][X][Y]} : 
+  let C := C₀ Q
+  let R := R₀ Q
+  let f := f₀ Q
+  let e := e₀ Q
+  R.length = f.length ∧
+  f.length = e.length ∧
+  ∀ eᵢ∈ e, 1 ≤ eᵢ∧
+  ∀ Rᵢ ∈ R, Rᵢ.Separable ∧
+  ∀ Rᵢ ∈ R, Irreducible Rᵢ ∧
+  Q = (Polynomial.C C) * 
+    (List.prod 
+      <| List.map 
+        (fun ((R, f), e) => (R.comp ((Y : F[Z][X][Y]) ^ f))^e) (List.zip (List.zip R f) e)) 
+    := sorry
+
+lemma lemma_5_6
+  {Q  : F[Z][X][Y]}
+  :
+  ∃ x₀,
+  ∀ R ∈ R₀ Q,
+  Bivariate.evalX x₀ (Bivariate.discr_y R) ≠ 0 := by sorry
+
+open Trivariate in
+lemma lemma_5_7 
+  {V : LinearCode (ι := Fin n) F} {δ: ℚ} {x₀ : F} {f u₀ u₁ : Fin n → F} 
+  {Q : (RatFunc F)[X][X]} {p : (RatFunc F)[X]} 
+  :
+  ∃ R H, R ∣ Q ∧ Irreducible H ∧ H ∣ (Bivariate.evalX (RatFunc.mk (Polynomial.C x₀) 1) R) ∧ 
+   ({ z ∈ the_S (F := F) δ V u₀ u₁ | 
+      (eval_on_Z₂ R z).comp (Polynomial.C (eval_on_Z₁ p z)) = 0
+      ∧ (eval_on_Z₁ H z).comp (eval_on_Z₁ p z) = 0 }).card ≥ (the_S (F := F) δ V u₀ u₁).card 
+        / (Bivariate.degreeY Q)  
+      ∧ (the_S (F := F) δ V u₀ u₁).card 
+        / (Bivariate.degreeY Q) > 2 * D_Y Q ^ 2 * (D_X (n := n) (rho := k/n) m) * D_YZ Q
+    := by sorry 
+
+end ProximityGapSection5
+
 end ProximityGap
