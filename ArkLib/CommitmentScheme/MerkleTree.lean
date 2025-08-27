@@ -7,6 +7,8 @@ Authors: Quang Dao
 import VCVio
 import ArkLib.Data.Math.Basic
 import ArkLib.CommitmentScheme.Basic
+import ArkLib.Data.Tree.Binary
+import ArkLib.Data.Tree.General
 import Mathlib.Data.Vector.Snoc
 
 /-!
@@ -68,11 +70,13 @@ def Cache.upper (n : ℕ) (cache : Cache α (n + 1)) :
 def Cache.leaves (n : ℕ) (cache : Cache α (n + 1)) :
     List.Vector α (2 ^ (n + 1)) := cache (Fin.last _)
 
+omit [DecidableEq α] [Inhabited α] [Fintype α] in
 @[simp]
 lemma Cache.upper_cons (n : ℕ) (leaves : List.Vector α (2 ^ (n + 1))) (cache : Cache α n) :
     Cache.upper α n (Cache.cons α n leaves cache) = cache := by
   simp [Cache.upper, Cache.cons]
 
+omit [DecidableEq α] [Inhabited α] [Fintype α] in
 @[simp]
 lemma Cache.leaves_cons (n : ℕ) (leaves : List.Vector α (2 ^ (n + 1))) (cache : Cache α n) :
     Cache.leaves α n (Cache.cons α n leaves cache) = leaves := by
@@ -130,9 +134,9 @@ theorem getRoot_trivial (a : α) : getRoot α <$> (buildMerkleTree α 0 ⟨[a], 
 @[simp]
 theorem getRoot_single (a b : α) :
     getRoot α <$> buildMerkleTree α 1 ⟨[a, b], rfl⟩ = (query (spec := spec α) () (a, b)) := by
-  simp [buildMerkleTree, buildLayer, List.Vector.ofFn, List.Vector.head, List.Vector.get]
+  simp [buildMerkleTree, buildLayer, List.Vector.ofFn, List.Vector.get]
   unfold Cache.cons getRoot
-  simp [map_flatMap, Fin.snoc]
+  simp [Fin.snoc]
 
 section
 
@@ -144,7 +148,7 @@ def generateProof {n : ℕ} (i : Fin (2 ^ n)) (cache : Cache α n) :
     List.Vector α n :=
   match n with
   | 0 => List.Vector.nil
-  | n + 1 => List.Vector.snoc (generateProof (i/2) (cache.upper))
+  | n + 1 => List.Vector.snoc (generateProof ⟨i.val / 2, by omega⟩ (cache.upper))
                               ((cache.leaves).get (findNeighbors i (Fin.last _)))
 
 /--
@@ -155,21 +159,22 @@ according to its index.
 -/
 def getPutativeRoot {n : ℕ} (i : Fin (2 ^ n)) (leaf : α) (proof : List.Vector α n) :
     OracleComp (spec α) α := do
-  if h : n = 0 then
+  match h : n with
+  | 0 => do
     -- When we have an empty proof, the root is just the leaf
     return leaf
-  else
+  | n + 1 => do
     -- Get the sign bit of `i`
     let signBit := i.val % 2
     -- Show that `i / 2` is in `Fin (2 ^ (n - 1))`
-    let i' : Fin (2 ^ (n - 1)) := i.val / 2
+    let i' : Fin (2 ^ n) := ⟨i.val / 2, by omega⟩
     if signBit = 0 then
       -- `i` is a left child
-      let newLeaf ← query (spec := spec α) () ⟨leaf, proof.get ⟨n - 1, by omega⟩⟩
+      let newLeaf ← query (spec := spec α) () ⟨leaf, proof.get (Fin.last n)⟩
       getPutativeRoot i' newLeaf (proof.drop 1)
     else
       -- `i` is a right child
-      let newLeaf ← query (spec := spec α) () ⟨proof.get ⟨n - 1, by omega⟩, leaf⟩
+      let newLeaf ← query (spec := spec α) () ⟨proof.get (Fin.last n), leaf⟩
       getPutativeRoot i' newLeaf (proof.drop 1)
 
 /-- Verify a Merkle proof `proof` that a given `leaf` at index `i` is in the Merkle tree with given
@@ -187,7 +192,7 @@ theorem buildLayer_neverFails (α : Type) [inst : DecidableEq α] [inst_1 : Sele
     (leaves : List.Vector α (2 ^ (n + 1))) :
     ((simulateQ randomOracle (buildLayer α n leaves)).run preexisting_cache).neverFails := by
   simp_rw [buildLayer]
-  simp [neverFails_query_bind]
+  simp only [range_def, Prod.mk.eta, eq_mp_eq_cast, cast_eq, bind_pure]
   -- I now require a "neverFails_mmap_iff" lemma, but I don't see one in VCVio.
   -- Feels like evidence for avoiding Vector-based merkle trees in favor of inductive-based ones.
   sorry
@@ -204,7 +209,7 @@ theorem buildMerkleTree_neverFails (α : Type) [DecidableEq α] [SelectableType 
   -- and therefore can't fail.
   induction n generalizing preexisting_cache with
   | zero =>
-    simp [buildMerkleTree, getRoot, generateProof, verifyProof, getPutativeRoot]
+    simp [buildMerkleTree]
   | succ n ih =>
     simp [buildMerkleTree, neverFails_bind_iff]
     constructor
@@ -250,8 +255,10 @@ theorem completeness [SelectableType α] {n : ℕ}
 --     simp [Fin.instGetElemFinVal]
 --   | succ n ih =>
 --     -- simp_all [Fin.getElem_fin, Vector.getElem_eq_get, Fin.eta, getRoot, Fin.val_zero,
---     --   Nat.pow_zero, Fin.zero_eta, Vector.get_zero, bind_pure_comp, id_map', probFailure_eq_zero_iff,
---     --   neverFails_bind_iff, buildMerkleTree, generateProof, LawfulMonad.bind_assoc, bind_map_left,
+--     --   Nat.pow_zero, Fin.zero_eta, Vector.get_zero, bind_pure_comp,
+-- id_map', probFailure_eq_zero_iff,
+--     --   neverFails_bind_iff, buildMerkleTree, generateProof,
+-- LawfulMonad.bind_assoc, bind_map_left,
 --     --   Cache.upper_cons, Cache.leaves_cons]
 --     -- refine ⟨?_, ?_⟩
 --     -- ·
@@ -312,59 +319,7 @@ end MerkleTree
 
 -- Alternative definition of Merkle tree using inductive type
 
-/-- A binary tree with (possibly null) values stored at both leaf and internal nodes. -/
-inductive BinaryTree (α : Type*) where
-  | leaf : α → BinaryTree α
-  | node : α → BinaryTree α → BinaryTree α → BinaryTree α
-  | nil : BinaryTree α
-  deriving Inhabited, Repr
-
--- Example:
---        1
---       / \
---      2   3
---     / \   \
---    4   5   6
---       /
---      7
--- A tree with values at both leaf and internal nodes
-def BinaryTree.example : BinaryTree (Fin 10) :=
-  .node 1
-    (.node 2
-      (.leaf 4)
-      (.node 5 (.leaf 7) .nil))
-    (.node 3
-      .nil
-      (.leaf 6))
-
-/-- A binary tree where only leaf nodes can have values.
-
-Used as input to Merkle tree construction. -/
-inductive LeafTree (α : Type*) where
-  | leaf : α → LeafTree α
-  | node : LeafTree α → LeafTree α → LeafTree α
-  | nil : LeafTree α
-deriving Inhabited, Repr
-
 variable {α : Type}
-
-/-- Get the root value of a Merkle tree, if it exists. -/
-def getRoot : BinaryTree α → Option α
-  | BinaryTree.nil => none
-  | BinaryTree.leaf a => some a
-  | BinaryTree.node a _ _ => some a
-
-/-- Find the path from root to a leaf with the given value. -/
-def findPath [DecidableEq α] (a : α) : BinaryTree α → Option (List Bool)
-  | BinaryTree.nil => none
-  | BinaryTree.leaf b => if a = b then some [] else none
-  | BinaryTree.node _ left right =>
-    match findPath a left with
-    | some path => some (false :: path)
-    | none =>
-      match findPath a right with
-      | some path => some (true :: path)
-      | none => none
 
 /-- Helper function to get the proof for a value at a given path. -/
 def getProofHelper [DecidableEq α] : List Bool → BinaryTree α → List α
@@ -372,18 +327,18 @@ def getProofHelper [DecidableEq α] : List Bool → BinaryTree α → List α
   | _, BinaryTree.leaf _ => []
   | [], BinaryTree.node _ _ _ => []
   | false :: rest, BinaryTree.node _ l r =>
-    match getRoot r with
+    match BinaryTree.getRoot r with
     | none => getProofHelper rest l
     | some v => v :: getProofHelper rest l
   | true :: rest, BinaryTree.node _ l r =>
-    match getRoot l with
+    match BinaryTree.getRoot l with
     | none => getProofHelper rest r
     | some v => v :: getProofHelper rest r
 
 /-- Generate a Merkle proof for a leaf with value 'a'.
     The proof consists of the sibling hashes needed to recompute the root. -/
 def generateProof [DecidableEq α] (a : α) (tree : BinaryTree α) : Option (List α) :=
-  match findPath a tree with
+  match BinaryTree.findPath a tree with
   | none => none
   | some path => some (getProofHelper path tree)
 

@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Katerina Hristova, František Silváši
 -/
 
+import ArkLib.Data.CodingTheory.Basic
 import ArkLib.Data.CodingTheory.ReedSolomon
 import Mathlib.Order.CompletePartialOrder
 import Mathlib.Probability.Distributions.Uniform
@@ -98,17 +99,33 @@ def distToCode [DecidableEq F] (U : Matrix κ ι F) (IC : MatrixSubmodule κ ι 
 notation "Δ(" U "," IC ")" => distToCode U IC
 
 /--
+Relative distance between codewords of an interleaved code.
+ -/
+def relDistCodewords [DecidableEq F] (U V : Matrix κ ι F) : ℝ :=
+  (Matrix.neqCols U V).card / Fintype.card ι
+
+/--list of codewords of IC r-close to U,
+  with respect to relative distance of interleaved codes.-/
+def relHammingBallInterleavedCode [DecidableEq F] (U : Matrix κ ι F)
+  (IC : MatrixSubmodule κ ι F) (r : ℝ) :=
+    {V | V ∈ IC ∧ relDistCodewords U V < r}
+
+/--`Λᵢ(U, IC, r)` denotes the list of codewords of IC r-close to U-/
+notation "Λᵢ(" U "," IC "," r ")" => relHammingBallInterleavedCode U IC r
+
+/--
   The minimal distance of an interleaved code is the same as
   the minimal distance of its underlying linear code.
 -/
 lemma minDist_eq_minDist [DecidableEq F] {IC : LawfulInterleavedCode κ ι F} :
-  LinearCode.minDist (F := F) IC.1.LC = minDist IC.1.MF := by sorry
+  Code.minDist (IC.1.LC : Set (ι → F)) = minDist IC.1.MF := by sorry
 
 end InterleavedCode
 
 noncomputable section
 
 open InterleavedCode
+open Code
 
 variable {F : Type*} [Field F] [Finite F] [DecidableEq F]
          {κ : Type*} [Fintype κ] {ι : Type*} [Fintype ι]
@@ -121,7 +138,7 @@ local instance : Fintype F := Fintype.ofFinite F
 lemma distInterleavedCodeToCodeLB
   {IC : LawfulInterleavedCode κ ι F} {U : Matrix κ ι F} {e : ℕ}
   (hF: Fintype.card F ≥ e)
-  (he : (e : ℚ) ≤ (codeDist (IC.1.LC : Set (ι → F)) / 3)) (hU : e < Δ(U,IC.1.MF)) :
+  (he : (e : ℚ) ≤ (minDist (IC.1.LC : Set (ι → F)) / 3)) (hU : e < Δ(U,IC.1.MF)) :
   ∃ v ∈ Matrix.rowSpan U , e < distFromCode v IC.1.LC := sorry
 
 namespace ProximityToRS
