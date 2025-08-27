@@ -87,7 +87,7 @@ instance {i : Fin k} : ∀ j, OracleInterface ((pSpec D i).Message j)
   | ⟨1, _⟩ => instOracleInterfaceForall
 
 /-- The prover for the `i`-th round of the FRI protocol. It first receives the challenge -/
-noncomputable def prover :
+noncomputable def foldProver :
   OracleProver (oSpec D) (Statement F i.castSucc) (OracleStatement D i.castSucc) (Witness F)
     (Statement F i.succ) (OracleStatement D i.succ) (Witness F) (pSpec D i) where
   -- This may be difficult to reason about, given that the degree does get divided by 2 each round.
@@ -129,7 +129,7 @@ noncomputable def prover :
     ⟩
 
 /-- The oracle verifier for the `i`-th round of the FRI protocol. -/
-noncomputable def verifier :
+noncomputable def foldVerifier :
   OracleVerifier (oSpec D)
     (Statement F i.castSucc) (OracleStatement D i.castSucc)
     (Statement F i.succ) (OracleStatement D i.succ)
@@ -149,13 +149,13 @@ noncomputable def verifier :
     aesop
 
 /-- The oracle reduction that is the `i`-th round of the FRI protocol. -/
-noncomputable def oracleReduction :
+noncomputable def foldOracleReduction :
   OracleReduction (oSpec D)
     (Statement F i.castSucc) (OracleStatement D i.castSucc) (Witness F)
     (Statement F i.succ) (OracleStatement D i.succ) (Witness F)
     (pSpec D i) where
-  prover := prover D i
-  verifier := verifier D i
+  prover := foldProver D i
+  verifier := foldVerifier D i
 
 end FoldPhase
 
@@ -171,7 +171,7 @@ instance : ∀ j, OracleInterface ((pSpec F).Message j) := fun j =>
     simp only [Message, Matrix.cons_val_fin_one]
     exact instOracleInterfaceForall
 
-noncomputable def proverFinal :
+noncomputable def queryProver :
   OracleProver
     (oSpec D)
     (Statement F (Fin.last k)) (OracleStatement D (Fin.last k)) (Witness F)
@@ -224,7 +224,7 @@ def getConst :
               (by simpa using ())
         )
 
-noncomputable def verifierFinal [DecidableEq F] :
+noncomputable def queryVerifier [DecidableEq F] :
   OracleVerifier (oSpec D)
     (Statement F (Fin.last k))
     (OracleStatement D (Fin.last k))
@@ -233,7 +233,8 @@ noncomputable def verifierFinal [DecidableEq F] :
   verify := fun prevChallenges roundChallenge => do
     for _ in [0:l] do
       let s₀ ← getChallenge D;
-      let _ ← (List.finRange k).mapM
+      discard <|
+        (List.finRange k).mapM
               (fun (i : Fin k) =>
                 do
                   let x₀ := prevChallenges i;
@@ -267,7 +268,7 @@ noncomputable def verifierFinal [DecidableEq F] :
     aesop
 
 
-noncomputable def oracleReductionFinal [DecidableEq F] :
+noncomputable def queryOracleReduction [DecidableEq F] :
   OracleReduction (oSpec D)
     (Statement F (Fin.last k))
     (OracleStatement D (Fin.last k))
@@ -276,8 +277,8 @@ noncomputable def oracleReductionFinal [DecidableEq F] :
     (OracleStatement D (Fin.last k))
     (Witness F)
     (pSpec F) where
-  prover := proverFinal D
-  verifier := verifierFinal D k_le_n l
+  prover := queryProver D
+  verifier := queryVerifier D k_le_n l
 
 end QueryRound
 
