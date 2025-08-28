@@ -13,7 +13,7 @@ import Mathlib.FieldTheory.RatFunc.Basic
 import ArkLib.Data.CodingTheory.Basic
 import ArkLib.Data.Polynomial.Bivariate
 
-namespace GuruswamiSudan 
+namespace GuruswamiSudan
 
 variable {F : Type} [Field F]
 variable [DecidableEq F]
@@ -22,45 +22,64 @@ variable {n : ℕ}
 open Polynomial
 
 /--
-Guruswami-Sudan conditions for the polynomial searched by the decoder.
-As in the Berlekamp-Welch case, this can be shown to be equivalent to a 
-a system of linear equations.
+Guruswami–Sudan conditions for the polynomial searched by the decoder.
+
+These conditions characterize the existence of a nonzero bivariate
+polynomial `Q(X,Y)` that vanishes with sufficiently high multiplicity
+at all interpolation points `(ωs i, f i)`. As in the Berlekamp–Welch
+case, this can be shown to be equivalent to solving a system of linear
+equations.
+
+Parameters:
+* `k : ℕ` — Message length parameter of the code.
+* `r : ℕ` — Multiplicity parameter; controls how many derivatives of `Q`
+  must vanish at each interpolation point.
+* `D : ℕ` — Degree bound for `Q` under the weighted degree measure.
+* `ωs : Fin n ↪ F` — The domain of evaluation.
+* `f : Fin n → F` — Received word (evaluation of the encoded polynomial,
+  possibly corrupted).
+* `Q : Polynomial (Polynomial F)` — The candidate bivariate polynomial
+  in variables `X` and `Y`.
 -/
-structure GuruswamiSudanCondition (k r D : ℕ) (ωs f : Fin n → F) (Q : Polynomial (Polynomial F)) where 
+structure Condition
+  (k r D : ℕ)
+  (ωs : Fin n ↪ F)
+  (f : Fin n → F)
+  (Q : Polynomial (Polynomial F)) where
   /-- Q ≠ 0 -/
   Q_ne_0 : Q ≠ 0
   /-- Degree of the polynomial. -/
-  Q_deg : Bivariate.weightedDegree Q 1 (k-1) ≤ D 
+  Q_deg : Bivariate.weightedDegree Q 1 (k-1) ≤ D
   /-- (ωs i, f i) must be root of the polynomial Q. -/
   Q_roots : ∀ i, (Q.eval (C <| f i)).eval (ωs i) = 0
-  /-- Multiplicity of the roots is equal to r. -/
-  Q_multiplicity : ∀ i, r = Bivariate.rootMultiplicity Q (ωs i) (f i)
+  /-- Multiplicity of the roots is at least r. -/
+  Q_multiplicity : ∀ i, r ≤ Bivariate.rootMultiplicity Q (ωs i) (f i)
 
 /-- Guruswami-Sudan decoder. -/
-opaque decoder (k r D e : ℕ) (ωs f : Fin n → F) : List F[X] := sorry
+opaque decoder (k r D e : ℕ) (ωs : Fin n ↪ F) (f : Fin n → F) : List F[X] := sorry
 
 /-- Each decoded codeword has to be e-far from the received message. -/
-theorem decoder_mem_impl_dist {k r D e : ℕ} {ωs f : Fin n → F} {p : F[X]}
-  (h_in : p ∈ decoder k r D e ωs f)
+theorem decoder_mem_impl_dist
+  {k r D e : ℕ}
   (h_e : e ≤ n - Real.sqrt (k * n))
+  {ωs : Fin n ↪ F}
+  {f : Fin n → F}
+  {p : F[X]}
+  (h_in : p ∈ decoder k r D e ωs f)
   :
   Δ₀(f, p.eval ∘ ωs) ≤ e := by sorry
 
-/-- If a codeword is e-far from the received message it appears in the output of 
+/-- If a codeword is e-far from the received message it appears in the output of
 the decoder.
 -/
-theorem decoder_dist_impl_mem {k r D e : ℕ} {ωs f : Fin n → F} {p : F[X]}
+theorem decoder_dist_impl_mem
+  {k r D e : ℕ}
   (h_e : e ≤ n - Real.sqrt (k * n))
+  {ωs : Fin n ↪ F}
+  {f : Fin n → F}
+  {p : F[X]}
   (h_dist : Δ₀(f, p.eval ∘ ωs) ≤ e)
   :
-  p ∈ decoder k r D e ωs f := by sorry 
-
-noncomputable def proximity_gap_degree_bound (k m : ℕ) : ℕ :=
-  let rho := (k + 1 : ℚ) / n
-  Nat.floor ((((m : ℚ) + (1 : ℚ)/2)*(Real.sqrt rho))*n)
-
-noncomputable def proximity_gap_johnson (k m : ℕ) : ℕ :=
-  let rho := (k + 1 : ℚ) / n
-  Nat.floor ((1 : ℝ) - Real.sqrt rho - Real.sqrt rho / (2 * m))
+  p ∈ decoder k r D e ωs f := by sorry
 
 end GuruswamiSudan 

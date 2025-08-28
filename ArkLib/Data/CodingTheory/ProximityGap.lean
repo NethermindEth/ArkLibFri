@@ -60,9 +60,7 @@ def proximityGap (d : ℕ) (bound : ℕ) : Prop :=
   for all `i`. -/
 def correlatedAgreement (C : Set (n → F)) (δ : ℝ≥0) {k : ℕ} (W : Fin k → n → F) : Prop :=
   ∃ S : Finset n, #(S) ≥ (1 - δ) * (Fintype.card n) ∧
-    ∃ v : Fin k → n → F, ∀ i, v i ∈ C ∧ {j | v i j = W i j} ⊆ S
-
-end
+    ∃ v : Fin k → n → F, ∀ i, v i ∈ C ∧ {j | v i j = W i j} = S
 
 section
 variable {ι : Type*} [Fintype ι] [Nonempty ι]
@@ -168,9 +166,6 @@ notation3:max "Y" => Polynomial.X (R := Polynomial _)
 
 notation3:max "Z" => Polynomial.X (R := Polynomial (Polynomial _))
 
-noncomputable def C (x : F) : (RatFunc F)[X][X] := 
-  (Polynomial.C (Polynomial.C (RatFunc.mk (Polynomial.C x) 1)))
-
 end Trivariate
 end Trivariate
 
@@ -184,19 +179,45 @@ open GuruswamiSudan
 open Polynomial.Bivariate
 open RatFunc
 
-/-- Lemma 5.3 from the Proximity gap paper -/ 
-lemma guruswami_sudan_for_proximity_gap_existence {ωs f : Fin n → F} 
-  :
-  ∃ Q, GuruswamiSudanCondition k m (proximity_gap_degree_bound (n := n) k m) ωs f Q := by
+/-- The degree bound (a.k.a. `D_X`) for instantiation of Guruswami-Sudan 
+    in lemma 5.3 of the Proximity Gap paper.
+    D_X(m) = (m + 1/2)√ρn.
+-/
+noncomputable def proximity_gap_degree_bound (k m : ℕ) : ℕ :=
+  let rho := (k + 1 : ℚ) / n
+  Nat.floor ((((m : ℚ) + (1 : ℚ)/2)*(Real.sqrt rho))*n)
+
+/-- The ball radius from lemma 5.3 of the Proximity Gap paper,
+    which follows from the Johnson bound.
+    δ₀(ρ, m) = 1 - √ρ - √ρ/2m.
+-/ 
+noncomputable def proximity_gap_johnson (k m : ℕ) : ℕ :=
+  let rho := (k + 1 : ℚ) / n
+  Nat.floor ((1 : ℝ) - Real.sqrt rho - Real.sqrt rho / (2 * m))
+
+
+/-- The first part of lemma 5.3 from the Proximity gap paper. 
+    Given the D_X (`proximity_gap_degree_bound`) and δ₀ (`proximity_gap_johnson`),
+    a solution to Guruswami-Sudan system exists.
+-/
+lemma guruswami_sudan_for_proximity_gap_existence {k m : ℕ} {ωs : Fin n ↪ F} {f : Fin n → F}:
+  ∃ Q, Condition k m (proximity_gap_degree_bound (n := n) k m) ωs f Q := by
   sorry
 
 open Polynomial in
-lemma guruswami_sudan_for_proximity_gap_property 
-  {ωs f : Fin n → F} 
-  {Q : F[X][X]} {p : F[X]} 
-  (h : Δ₀(f, p.eval ∘ f) ≤ proximity_gap_johnson (n := n) k m)
+/-- The second part of lemma 5.3 from the Proximity gap paper.
+    For any solution Q of the Guruswami-Sudan system, and for any
+    polynomial P ∈ RS[n, k, ρ] such that Δ(w, P) ≤ δ₀(ρ, m), 
+    we have that Y - P(X) divides Q(X, Y) in the polynomial ring
+    F[X][Y].
+-/
+lemma guruswami_sudan_for_proximity_gap_property {k m : ℕ} {ωs : Fin n ↪ F}
+  {f : Fin n → F}
+  {Q : F[X][X]} 
+  {p : ReedSolomon.code ωs n}
+  (h : Δ₀(f, (ReedSolomon.codewordToPoly p).eval ∘ f) ≤ proximity_gap_johnson (n := n) k m)
   :
-  ((X : F[X][X]) - Polynomial.C p) ∣ Q := by sorry 
+  ((X : F[X][X]) - Polynomial.C (ReedSolomon.codewordToPoly p)) ∣ Q := by sorry
 
 
 section 
@@ -204,7 +225,7 @@ section
 open Polynomial 
 
 noncomputable def D_X (rho : ℚ) (n m : ℕ) : ℕ := Nat.floor <| (m + (1 : ℚ)/2) * Real.sqrt rho * n
-def D_Y (Q : F[X][X]) : ℕ := Bivariate.degreeY Q 
+def D_Y (Q : F[X][X]) : ℕ := Bivariate.natDegreeY Q 
 def D_YZ (Q : F[X][X]) : ℕ := Bivariate.totalDegree Q
 
 end
@@ -216,8 +237,8 @@ lemma proximity_gap_claim_5_4 {ωs u₀ u₁ : Fin n → F}
     Q ≠ 0 
     ∧ weightedDegree Q 1 k ≤ D_X (k + 1 / (n : ℚ)) n m
     ∧ ∀ i,  Polynomial.Bivariate.rootMultiplicity Q
-              (C <| ωs i)
-              ((C <| u₀ i) + X * (C <| u₁ i)) 
+              (RatFunc.C <| ωs i)
+              ((RatFunc.C <| u₀ i) + X * (RatFunc.C <| u₁ i)) 
             ≥ m
     ∧ D_Y Q < D_X (k + 1 / (n : ℚ)) / k
     ∧ D_YZ Q ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt (k + 1 / n))
@@ -268,11 +289,11 @@ lemma lemma_5_7
    ({ z ∈ the_S (F := F) δ V u₀ u₁ | 
       (eval_on_Z₂ R z).comp (Polynomial.C (eval_on_Z₁ p z)) = 0
       ∧ (eval_on_Z₁ H z).comp (eval_on_Z₁ p z) = 0 }).card ≥ (the_S (F := F) δ V u₀ u₁).card 
-        / (Bivariate.degreeY Q)  
+        / (Bivariate.natDegreeY Q)  
       ∧ (the_S (F := F) δ V u₀ u₁).card 
-        / (Bivariate.degreeY Q) > 2 * D_Y Q ^ 2 * (D_X (n := n) (rho := k/n) m) * D_YZ Q
+        / (Bivariate.natDegreeY Q) > 2 * D_Y Q ^ 2 * (D_X (n := n) (rho := k/n) m) * D_YZ Q
     := by sorry 
 
 end ProximityGapSection5
-
+end
 end ProximityGap

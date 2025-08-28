@@ -36,19 +36,26 @@ namespace ReedSolomon
 
 open Polynomial NNReal
 
-variable {F : Type*} [Semiring F] {ι : Type*} (domain : ι ↪ F)
+variable {F : Type*} {ι : Type*} (domain : ι ↪ F)
 
 /-- The evaluation of a polynomial at a set of points specified by `domain : ι ↪ F`, as a linear
   map. -/
-def evalOnPoints : F[X] →ₗ[F] (ι → F) where
+def evalOnPoints [Semiring F] : F[X] →ₗ[F] (ι → F) where
   toFun := fun p => fun x => p.eval (domain x)
   map_add' := fun x y => by simp; congr
   map_smul' := fun m x => by simp; congr
 
 /-- The Reed-Solomon code for polynomials of degree less than `deg` and evaluation points `domain`.
 -/
-def code (deg : ℕ) : Submodule F (ι → F) :=
+def code (deg : ℕ) [Semiring F]: Submodule F (ι → F) :=
   (Polynomial.degreeLT F deg).map (evalOnPoints domain)
+
+noncomputable def codewordToPoly
+  [Fintype ι] [Field F] [DecidableEq ι]
+  {deg : ℕ} {domain : ι ↪ F} (f : code domain deg) : F[X] :=
+  Lagrange.interpolate Finset.univ domain.toFun f
+
+variable [Semiring F]
 
 /-- The generator matrix of the Reed-Solomon code of degree `deg` and evaluation points `domain`. -/
 def genMatrix (deg : ℕ) : Matrix (Fin deg) ι F :=
@@ -418,7 +425,7 @@ variable {F : Type*} [Field F] [DecidableEq F]
   their decoded univariate polynomials are of degree < 2ᵐ for some m ∈ ℕ. -/
 def smoothCode
   (domain : ι ↪ F) [Smooth domain]
-  (m : ℕ): Submodule F (ι → F) := ReedSolomon.code domain (2^m)
+  (m : ℕ) : Submodule F (ι → F) := ReedSolomon.code domain (2^m)
 
 /-- The linear map that maps Smooth Reed Solomon Code words
     to their decoded degree wise linear `m`-variate polynomial -/
