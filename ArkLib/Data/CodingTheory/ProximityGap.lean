@@ -1,27 +1,19 @@
 import Mathlib.Algebra.Field.Basic
-import Mathlib.Algebra.Polynomial.Basic
-import Mathlib.Algebra.Group.Irreducible.Defs
-import Mathlib.Data.Real.Sqrt
-import Mathlib.FieldTheory.RatFunc.Defs
-import Mathlib.FieldTheory.RatFunc.Basic
-import Mathlib.FieldTheory.Separable
-
-import ArkLib.Data.CodingTheory.Basic
-import ArkLib.Data.CodingTheory.GuruswamiSudan
-import ArkLib.Data.CodingTheory.ReedSolomon
-import ArkLib.Data.Polynomial.Bivariate
-import Mathlib.FieldTheory.RatFunc.AsPolynomial
-import ArkLib.Data.CodingTheory.ReedSolomon
-import ArkLib.Data.CodingTheory.Prelims
-import Mathlib.Probability.Distributions.Uniform
-import Mathlib.Data.Real.Basic
-import Mathlib.Data.Real.Sqrt
-import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
-import Mathlib.Data.Finset.BooleanAlgebra
-import Mathlib.Data.Set.Defs
 import Mathlib.Algebra.Lie.OfAssociative
+import Mathlib.Algebra.Polynomial.Basic
+import Mathlib.Data.Finset.BooleanAlgebra
+import Mathlib.Data.Real.Sqrt
+import Mathlib.Data.Set.Defs
+import Mathlib.FieldTheory.RatFunc.AsPolynomial
+import Mathlib.FieldTheory.Separable
+import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
 import Mathlib.Probability.Distributions.Uniform
 import Mathlib.RingTheory.Henselian
+
+import ArkLib.Data.CodingTheory.GuruswamiSudan
+import ArkLib.Data.CodingTheory.Prelims
+import ArkLib.Data.CodingTheory.ReedSolomon
+import ArkLib.Data.Polynomial.Bivariate
 
 
 /-!
@@ -159,13 +151,13 @@ variable {F : Type} [Field F] [DecidableEq F] [DecidableEq (RatFunc F)]
 
 open Polynomial
 
-opaque eval_on_Z₀ [Field F] [DecidableEq (RatFunc F)] (p : (RatFunc F)[X]) (z : F) : F := 
+opaque eval_on_Z₀ (p : (RatFunc F)[X]) (z : F) : F := 
   sorry 
 
-opaque eval_on_Z₁ [Field F] [DecidableEq (RatFunc F)] (p : (RatFunc F)[X]) (z : F) : F[X] := 
+opaque eval_on_Z₁ (p : (RatFunc F)[X]) (z : F) : F[X] := 
   sorry
 
-opaque eval_on_Z₂ [Field F] [DecidableEq (RatFunc F)] (p : (RatFunc F)[X][X]) (z : F) : F[X][X] := 
+opaque eval_on_Z₂ (p : (RatFunc F)[X][X]) (z : F) : F[X][X] := 
   sorry
 
 notation3:max R "[Z][X]" => Polynomial (Polynomial R)
@@ -176,6 +168,9 @@ notation3:max "Y" => Polynomial.X (R := Polynomial _)
 
 notation3:max "Z" => Polynomial.X (R := Polynomial (Polynomial _))
 
+noncomputable def C (x : F) : (RatFunc F)[X][X] := 
+  (Polynomial.C (Polynomial.C (RatFunc.mk (Polynomial.C x) 1)))
+
 end Trivariate
 end Trivariate
 
@@ -183,20 +178,11 @@ section ProximityGapSection5
 variable {F : Type} [Field F] [DecidableEq F] [DecidableEq (RatFunc F)]
 variable {n k m : ℕ}
 
-open Polynomial in
-open RatFunc in
-lemma proximity_gap_claim_5_4 {ωs u₀ u₁ : Fin n → F} 
-  :
-  ∃ Q : Polynomial (Polynomial (RatFunc F)) , Q ≠ 0 
-    ∧ ∀ i, Bivariate.rootMultiplicity (F := RatFunc F)
-      (C (C (RatFunc.mk (C (ωs i)) 1)) 
-        : Polynomial (Polynomial (RatFunc F))) 
-      (RatFunc.mk (C <| ωs i) 1 : RatFunc F)
-      ((RatFunc.mk (C <| u₀ i) 1 + 
-        (RatFunc.mk X 1) * 
-          (RatFunc.mk (C <| u₁ i) 1)): RatFunc F) ≥ m := by sorry 
+section
 
 open GuruswamiSudan
+open Polynomial.Bivariate
+open RatFunc
 
 /-- Lemma 5.3 from the Proximity gap paper -/ 
 lemma guruswami_sudan_for_proximity_gap_existence {ωs f : Fin n → F} 
@@ -204,8 +190,7 @@ lemma guruswami_sudan_for_proximity_gap_existence {ωs f : Fin n → F}
   ∃ Q, GuruswamiSudanCondition k m (proximity_gap_degree_bound (n := n) k m) ωs f Q := by
   sorry
 
-open Polynomial
-
+open Polynomial in
 lemma guruswami_sudan_for_proximity_gap_property 
   {ωs f : Fin n → F} 
   {Q : F[X][X]} {p : F[X]} 
@@ -213,9 +198,32 @@ lemma guruswami_sudan_for_proximity_gap_property
   :
   ((X : F[X][X]) - Polynomial.C p) ∣ Q := by sorry 
 
-noncomputable def D_X (rho : ℚ) (m : ℕ) : ℕ := Nat.floor <| (m + (1 : ℚ)/2) * Real.sqrt rho * n
+
+section 
+
+open Polynomial 
+
+noncomputable def D_X (rho : ℚ) (n m : ℕ) : ℕ := Nat.floor <| (m + (1 : ℚ)/2) * Real.sqrt rho * n
 def D_Y (Q : F[X][X]) : ℕ := Bivariate.degreeY Q 
 def D_YZ (Q : F[X][X]) : ℕ := Bivariate.totalDegree Q
+
+end
+
+lemma proximity_gap_claim_5_4 {ωs u₀ u₁ : Fin n → F} 
+  {n k : ℕ} {rho : ℚ}
+  :
+  ∃ Q : Polynomial (Polynomial (RatFunc F)) , 
+    Q ≠ 0 
+    ∧ weightedDegree Q 1 k ≤ D_X (k + 1 / (n : ℚ)) n m
+    ∧ ∀ i,  Polynomial.Bivariate.rootMultiplicity Q
+              (C <| ωs i)
+              ((C <| u₀ i) + X * (C <| u₁ i)) 
+            ≥ m
+    ∧ D_Y Q < D_X (k + 1 / (n : ℚ)) / k
+    ∧ D_YZ Q ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt (k + 1 / n))
+    := by sorry 
+
+end
 
 def the_S [Field F] (δ : ℚ) (V : LinearCode (ι := Fin n) (F := F)) (u₀ u₁ : Fin n → F) 
   : Finset F := 
@@ -225,6 +233,8 @@ opaque C₀ (Q : F[Z][X][Y]) : F[Z][X] := sorry
 opaque R₀ (Q : F[Z][X][Y]) : List F[Z][X][Y] := sorry
 opaque f₀ (Q : F[Z][X][Y]) : List ℕ := sorry
 opaque e₀ (Q : F[Z][X][Y]) : List ℕ := sorry
+
+open Polynomial
 
 lemma eq_5_12 {Q : F[Z][X][Y]} : 
   let C := C₀ Q
