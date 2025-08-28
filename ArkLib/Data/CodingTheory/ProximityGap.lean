@@ -66,8 +66,7 @@ section
 variable {ι : Type*} [Fintype ι] [Nonempty ι]
          {F : Type*}
 
-/--
-  Definition 1.1 in [BCIKS20].
+/-- Definition 1.1 in [BCIKS20].
 -/
 noncomputable def generalProximityGap {α : Type*} [DecidableEq α] [Nonempty α]
   (P : Finset (ι → α)) (C : Set (Finset (ι → α))) (δ ε : ℝ≥0) : Prop :=
@@ -79,8 +78,7 @@ end
 section
 variable {ι : Type*} [Fintype ι] [Nonempty ι]
          {F : Type*} [Field F] [Fintype F] [DecidableEq F]
-/--
-  The error bound `ε` in the pair of proximity and error parameters `(δ,ε)` for Reed-Solomon codes
+/-- The error bound `ε` in the pair of proximity and error parameters `(δ,ε)` for Reed-Solomon codes
   defined up to the Johnson bound. More precisely, let `ρ` be the rate of the Reed-Solomon code.
   Then for `δ ∈ (0, 1 - √ρ)`, we define the relevant error parameter `ε` for the unique decoding
   bound, i.e. `δ ∈ [0, (1-√ρ)/2]` and Johnson bound, i.e. `δ ∈ [(1-√ρ)/2 , 1 - √ρ]`.
@@ -93,8 +91,7 @@ noncomputable def errorBound (δ : ℝ≥0) (deg : ℕ) (domain : ι ↪ F) : �
             ⟨(deg ^ 2 : ℝ≥0) / ((2 * m) ^ 7 * (Fintype.card F : ℝ)), by positivity⟩
        else 0
 
-/--
-  Theorem 1.2 Proximity Gaps for Reed-Solomon codes in [BCIKS20].
+/-- Theorem 1.2 Proximity Gaps for Reed-Solomon codes in [BCIKS20].
 -/
 theorem proximity_gap_RSCodes {k t : ℕ} [NeZero k] [NeZero t] {deg : ℕ} {domain : ι ↪ F}
   (C : Fin t → (Fin k → (ι → F))) {δ : ℝ≥0} (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain)) :
@@ -104,8 +101,7 @@ theorem proximity_gap_RSCodes {k t : ℕ} [NeZero k] [NeZero t] {deg : ℕ} {dom
     δ
     (errorBound δ deg domain) := by sorry
 
-/--
-  Theorem 1.4 (Main Theorem — Correlated agreement over lines) in [BCIKS20].
+/-- Theorem 1.4 (Main Theorem — Correlated agreement over lines) in [BCIKS20].
 -/
 theorem correlatedAgreement_lines {u : Fin 2 → ι → F} {deg : ℕ} {domain : ι ↪ F} {δ : ℝ≥0}
   (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
@@ -115,8 +111,7 @@ theorem correlatedAgreement_lines {u : Fin 2 → ι → F} {deg : ℕ} {domain :
       errorBound δ deg domain) :
   correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
 
-/--
-  Theorem 1.5 (Correlated agreement for low-degree parameterised curves) in [BCIKS20].
+/-- Theorem 1.5 (Correlated agreement for low-degree parameterised curves) in [BCIKS20].
 -/
 theorem correlatedAgreement_affine_curves [DecidableEq ι] {k : ℕ} {u : Fin k → ι → F}
   {deg : ℕ} {domain : ι ↪ F} {δ : ℝ≥0}
@@ -149,13 +144,13 @@ variable {F : Type} [Field F] [DecidableEq F] [DecidableEq (RatFunc F)]
 
 open Polynomial
 
-opaque eval_on_Z₀ (p : (RatFunc F)[X]) (z : F) : F := 
-  sorry 
-
-opaque eval_on_Z₁ (p : (RatFunc F)[X]) (z : F) : F[X] := 
+opaque eval_on_Z₀ (p : (RatFunc F)[X]) (z : F) : F :=
   sorry
 
-opaque eval_on_Z₂ (p : (RatFunc F)[X][X]) (z : F) : F[X][X] := 
+opaque eval_on_Z₁ (p : (RatFunc F)[X]) (z : F) : F[X] :=
+  sorry
+
+opaque eval_on_Z₂ (p : (RatFunc F)[X][X]) (z : F) : F[X][X] :=
   sorry
 
 notation3:max R "[Z][X]" => Polynomial (Polynomial R)
@@ -179,7 +174,7 @@ open GuruswamiSudan
 open Polynomial.Bivariate
 open RatFunc
 
-/-- The degree bound (a.k.a. `D_X`) for instantiation of Guruswami-Sudan 
+/-- The degree bound (a.k.a. `D_X`) for instantiation of Guruswami-Sudan
     in lemma 5.3 of the Proximity Gap paper.
     D_X(m) = (m + 1/2)√ρn.
 -/
@@ -190,64 +185,64 @@ noncomputable def proximity_gap_degree_bound (k m : ℕ) : ℕ :=
 /-- The ball radius from lemma 5.3 of the Proximity Gap paper,
     which follows from the Johnson bound.
     δ₀(ρ, m) = 1 - √ρ - √ρ/2m.
--/ 
+-/
 noncomputable def proximity_gap_johnson (k m : ℕ) : ℕ :=
   let rho := (k + 1 : ℚ) / n
   Nat.floor ((1 : ℝ) - Real.sqrt rho - Real.sqrt rho / (2 * m))
 
 
-/-- The first part of lemma 5.3 from the Proximity gap paper. 
+/-- The first part of lemma 5.3 from the Proximity gap paper.
     Given the D_X (`proximity_gap_degree_bound`) and δ₀ (`proximity_gap_johnson`),
     a solution to Guruswami-Sudan system exists.
 -/
-lemma guruswami_sudan_for_proximity_gap_existence {k m : ℕ} {ωs : Fin n ↪ F} {f : Fin n → F}:
+lemma guruswami_sudan_for_proximity_gap_existence {k m : ℕ} {ωs : Fin n ↪ F} {f : Fin n → F} :
   ∃ Q, Condition k m (proximity_gap_degree_bound (n := n) k m) ωs f Q := by
   sorry
 
 open Polynomial in
 /-- The second part of lemma 5.3 from the Proximity gap paper.
     For any solution Q of the Guruswami-Sudan system, and for any
-    polynomial P ∈ RS[n, k, ρ] such that Δ(w, P) ≤ δ₀(ρ, m), 
+    polynomial P ∈ RS[n, k, ρ] such that Δ(w, P) ≤ δ₀(ρ, m),
     we have that Y - P(X) divides Q(X, Y) in the polynomial ring
     F[X][Y].
 -/
 lemma guruswami_sudan_for_proximity_gap_property {k m : ℕ} {ωs : Fin n ↪ F}
   {f : Fin n → F}
-  {Q : F[X][X]} 
+  {Q : F[X][X]}
   {p : ReedSolomon.code ωs n}
   (h : Δ₀(f, (ReedSolomon.codewordToPoly p).eval ∘ f) ≤ proximity_gap_johnson (n := n) k m)
   :
   ((X : F[X][X]) - Polynomial.C (ReedSolomon.codewordToPoly p)) ∣ Q := by sorry
 
 
-section 
+section
 
-open Polynomial 
+open Polynomial
 
 noncomputable def D_X (rho : ℚ) (n m : ℕ) : ℕ := Nat.floor <| (m + (1 : ℚ)/2) * Real.sqrt rho * n
-def D_Y (Q : F[X][X]) : ℕ := Bivariate.natDegreeY Q 
+def D_Y (Q : F[X][X]) : ℕ := Bivariate.natDegreeY Q
 def D_YZ (Q : F[X][X]) : ℕ := Bivariate.totalDegree Q
 
 end
 
-lemma proximity_gap_claim_5_4 {ωs u₀ u₁ : Fin n → F} 
+lemma proximity_gap_claim_5_4 {ωs u₀ u₁ : Fin n → F}
   {n k : ℕ} {rho : ℚ}
   :
-  ∃ Q : Polynomial (Polynomial (RatFunc F)) , 
-    Q ≠ 0 
+  ∃ Q : Polynomial (Polynomial (RatFunc F)) ,
+    Q ≠ 0
     ∧ weightedDegree Q 1 k ≤ D_X (k + 1 / (n : ℚ)) n m
     ∧ ∀ i,  Polynomial.Bivariate.rootMultiplicity Q
               (RatFunc.C <| ωs i)
-              ((RatFunc.C <| u₀ i) + X * (RatFunc.C <| u₁ i)) 
+              ((RatFunc.C <| u₀ i) + X * (RatFunc.C <| u₁ i))
             ≥ m
     ∧ D_Y Q < D_X (k + 1 / (n : ℚ)) / k
     ∧ D_YZ Q ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt (k + 1 / n))
-    := by sorry 
+    := by sorry
 
 end
 
-def the_S [Field F] (δ : ℚ) (V : LinearCode (ι := Fin n) (F := F)) (u₀ u₁ : Fin n → F) 
-  : Finset F := 
+def the_S [Field F] (δ : ℚ) (V : LinearCode (ι := Fin n) (F := F)) (u₀ u₁ : Fin n → F)
+  : Finset F :=
     @Set.toFinset _ { z | ∀ v ∈ V.carrier, Δ₀(u₀ + (fun _ => z) * u₁, v) ≤ δ} sorry
 
 opaque C₀ (Q : F[Z][X][Y]) : F[Z][X] := sorry
@@ -257,7 +252,7 @@ opaque e₀ (Q : F[Z][X][Y]) : List ℕ := sorry
 
 open Polynomial
 
-lemma eq_5_12 {Q : F[Z][X][Y]} : 
+lemma eq_5_12 {Q : F[Z][X][Y]} :
   let C := C₀ Q
   let R := R₀ Q
   let f := f₀ Q
@@ -267,32 +262,32 @@ lemma eq_5_12 {Q : F[Z][X][Y]} :
   ∀ eᵢ∈ e, 1 ≤ eᵢ∧
   ∀ Rᵢ ∈ R, Rᵢ.Separable ∧
   ∀ Rᵢ ∈ R, Irreducible Rᵢ ∧
-  Q = (Polynomial.C C) * 
-    (List.prod 
-      <| List.map 
-        (fun ((R, f), e) => (R.comp ((Y : F[Z][X][Y]) ^ f))^e) (List.zip (List.zip R f) e)) 
+  Q = (Polynomial.C C) *
+    (List.prod
+      <| List.map
+        (fun ((R, f), e) => (R.comp ((Y : F[Z][X][Y]) ^ f))^e) (List.zip (List.zip R f) e))
     := sorry
 
 lemma lemma_5_6
-  {Q  : F[Z][X][Y]}
+  {Q : F[Z][X][Y]}
   :
   ∃ x₀,
   ∀ R ∈ R₀ Q,
   Bivariate.evalX x₀ (Bivariate.discr_y R) ≠ 0 := by sorry
 
 open Trivariate in
-lemma lemma_5_7 
-  {V : LinearCode (ι := Fin n) F} {δ: ℚ} {x₀ : F} {f u₀ u₁ : Fin n → F} 
-  {Q : (RatFunc F)[X][X]} {p : (RatFunc F)[X]} 
+lemma lemma_5_7
+  {V : LinearCode (ι := Fin n) F} {δ : ℚ} {x₀ : F} {f u₀ u₁ : Fin n → F}
+  {Q : (RatFunc F)[X][X]} {p : (RatFunc F)[X]}
   :
-  ∃ R H, R ∣ Q ∧ Irreducible H ∧ H ∣ (Bivariate.evalX (RatFunc.mk (Polynomial.C x₀) 1) R) ∧ 
-   ({ z ∈ the_S (F := F) δ V u₀ u₁ | 
+  ∃ R H, R ∣ Q ∧ Irreducible H ∧ H ∣ (Bivariate.evalX (RatFunc.mk (Polynomial.C x₀) 1) R) ∧
+   ({ z ∈ the_S (F := F) δ V u₀ u₁ |
       (eval_on_Z₂ R z).comp (Polynomial.C (eval_on_Z₁ p z)) = 0
-      ∧ (eval_on_Z₁ H z).comp (eval_on_Z₁ p z) = 0 }).card ≥ (the_S (F := F) δ V u₀ u₁).card 
-        / (Bivariate.natDegreeY Q)  
-      ∧ (the_S (F := F) δ V u₀ u₁).card 
+      ∧ (eval_on_Z₁ H z).comp (eval_on_Z₁ p z) = 0 }).card ≥ (the_S (F := F) δ V u₀ u₁).card
+        / (Bivariate.natDegreeY Q)
+      ∧ (the_S (F := F) δ V u₀ u₁).card
         / (Bivariate.natDegreeY Q) > 2 * D_Y Q ^ 2 * (D_X (n := n) (rho := k/n) m) * D_YZ Q
-    := by sorry 
+    := by sorry
 
 end ProximityGapSection5
 end
