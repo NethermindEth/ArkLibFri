@@ -42,7 +42,7 @@ def natDegreeY : ℕ := Polynomial.natDegree f
 
 /-- `(u,v)`-weighted degree of a polynomial.
   The maximal `u * i + v * j` such that the polynomial `p`
-  contains a monomial `x^i * y * j`.
+  contains a monomial `x^i * y^j`.
 -/
 def weightedDegree (p : F[X][Y]) (u v : ℕ) : WithBot ℕ :=
   Finset.max (Finset.image (fun n => u * (p.coeff n).natDegree + v * n) p.support)

@@ -178,17 +178,15 @@ open RatFunc
     in lemma 5.3 of the Proximity Gap paper.
     D_X(m) = (m + 1/2)√ρn.
 -/
-noncomputable def proximity_gap_degree_bound (k m : ℕ) : ℕ :=
-  let rho := (k + 1 : ℚ) / n
-  Nat.floor ((((m : ℚ) + (1 : ℚ)/2)*(Real.sqrt rho))*n)
+noncomputable def proximity_gap_degree_bound (ρ : ℚ) (m n : ℕ) : ℕ :=
+  Nat.floor <| (m + 1/2) * (Real.sqrt ρ) * n
 
 /-- The ball radius from lemma 5.3 of the Proximity Gap paper,
     which follows from the Johnson bound.
     δ₀(ρ, m) = 1 - √ρ - √ρ/2m.
 -/
-noncomputable def proximity_gap_johnson (k m : ℕ) : ℕ :=
-  let rho := (k + 1 : ℚ) / n
-  Nat.floor ((1 : ℝ) - Real.sqrt rho - Real.sqrt rho / (2 * m))
+noncomputable def proximity_gap_johnson (ρ : ℚ) (m : ℕ) : ℕ :=
+  Nat.floor <| (1 : ℝ) - Real.sqrt ρ - Real.sqrt ρ / (2 * m)
 
 
 /-- The first part of lemma 5.3 from the Proximity gap paper.
@@ -196,97 +194,96 @@ noncomputable def proximity_gap_johnson (k m : ℕ) : ℕ :=
     a solution to Guruswami-Sudan system exists.
 -/
 lemma guruswami_sudan_for_proximity_gap_existence {k m : ℕ} {ωs : Fin n ↪ F} {f : Fin n → F} :
-  ∃ Q, Condition k m (proximity_gap_degree_bound (n := n) k m) ωs f Q := by
+  ∃ Q, Condition (k + 1) m (proximity_gap_degree_bound ((k + 1 : ℚ) / n) m n) ωs f Q := by
   sorry
 
 open Polynomial in
 /-- The second part of lemma 5.3 from the Proximity gap paper.
     For any solution Q of the Guruswami-Sudan system, and for any
-    polynomial P ∈ RS[n, k, ρ] such that Δ(w, P) ≤ δ₀(ρ, m),
+    polynomial P ∈ RS[n, k, ρ] such that δᵣ(w, P) ≤ δ₀(ρ, m),
     we have that Y - P(X) divides Q(X, Y) in the polynomial ring
-    F[X][Y].
+    F[X][Y]. Note that in F[X][Y], the term X actually refers to
+    the outer variable, Y.
 -/
 lemma guruswami_sudan_for_proximity_gap_property {k m : ℕ} {ωs : Fin n ↪ F}
-  {f : Fin n → F}
-  {Q : F[X][X]}
+  {w : Fin n → F}
+  {Q : F[X][Y]}
+  (cond : Condition (k + 1) m (proximity_gap_degree_bound ((k + 1 : ℚ) / n) m n) ωs w Q)
   {p : ReedSolomon.code ωs n}
-  (h : Δ₀(f, (ReedSolomon.codewordToPoly p).eval ∘ f) ≤ proximity_gap_johnson (n := n) k m)
+  (h : δᵣ(w, p) ≤ proximity_gap_johnson ((k + 1 : ℚ) / n) m)
   :
-  ((X : F[X][X]) - Polynomial.C (ReedSolomon.codewordToPoly p)) ∣ Q := by sorry
+  ((X : F[X][Y]) - Polynomial.C (ReedSolomon.codewordToPoly p)) ∣ Q := by sorry
 
 
 section
 
 open Polynomial
 
-noncomputable def D_X (rho : ℚ) (n m : ℕ) : ℕ := Nat.floor <| (m + (1 : ℚ)/2) * Real.sqrt rho * n
-def D_Y (Q : F[X][X]) : ℕ := Bivariate.natDegreeY Q
-def D_YZ (Q : F[X][X]) : ℕ := Bivariate.totalDegree Q
+noncomputable def D_X (ρ : ℚ) (n m : ℕ) : ℕ := proximity_gap_degree_bound ρ m n
+def D_Y (Q : F[X][Y]) : ℕ := Bivariate.natDegreeY Q
+def D_YZ (Q : F[X][Y]) : ℕ := Bivariate.totalDegree Q
 
 end
 
-lemma proximity_gap_claim_5_4 {ωs u₀ u₁ : Fin n → F}
-  {n k : ℕ} {rho : ℚ}
+-- Definition of D_YZ needs a fix, in particular, currently definition is "D_XY".
+lemma proximity_gap_claim_5_4 {ωs : Fin n ↪ F} {u₀ u₁ : Fin n → F}
+  {n k : ℕ}
   :
-  ∃ Q : Polynomial (Polynomial (RatFunc F)) ,
-    Q ≠ 0
-    ∧ weightedDegree Q 1 k ≤ D_X (k + 1 / (n : ℚ)) n m
-    ∧ ∀ i,  Polynomial.Bivariate.rootMultiplicity Q
+  ∃ Q : (RatFunc F)[X][Y],
+    Q ≠ 0 ∧
+    weightedDegree Q 1 k ≤ D_X (k + 1 / (n : ℚ)) n m ∧
+    ∀ i,  Polynomial.Bivariate.rootMultiplicity Q
               (RatFunc.C <| ωs i)
               ((RatFunc.C <| u₀ i) + X * (RatFunc.C <| u₁ i))
-            ≥ m
-    ∧ D_Y Q < D_X (k + 1 / (n : ℚ)) / k
-    ∧ D_YZ Q ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt (k + 1 / n))
+            ≥ m ∧
+    D_Y Q < D_X (k + 1 / (n : ℚ)) n m / k ∧
+    ∀ i j, ∃ p : Polynomial F, (Polynomial.Bivariate.coeff Q i j) = p ∧
+    D_YZ Q ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt (k + 1 / n))
     := by sorry
 
 end
 
-def the_S [Field F] (δ : ℚ) (V : LinearCode (ι := Fin n) (F := F)) (u₀ u₁ : Fin n → F)
-  : Finset F :=
-    @Set.toFinset _ { z | ∀ v ∈ V.carrier, Δ₀(u₀ + (fun _ => z) * u₁, v) ≤ δ} sorry
+instance {α : Type} (s : Set α) [Finite s] : Fintype s := sorry
 
-opaque C₀ (Q : F[Z][X][Y]) : F[Z][X] := sorry
-opaque R₀ (Q : F[Z][X][Y]) : List F[Z][X][Y] := sorry
-opaque f₀ (Q : F[Z][X][Y]) : List ℕ := sorry
-opaque e₀ (Q : F[Z][X][Y]) : List ℕ := sorry
+def the_S [Finite F] (δ : ℚ) (V : LinearCode (ι := Fin n) (F := F)) (u₀ u₁ : Fin n → F)
+  : Finset F := Set.toFinset { z | ∀ v ∈ V.carrier, δᵣ(u₀ + z • u₁, v) ≤ δ}
 
 open Polynomial
 
-lemma eq_5_12 {Q : F[Z][X][Y]} :
-  let C := C₀ Q
-  let R := R₀ Q
-  let f := f₀ Q
-  let e := e₀ Q
-  R.length = f.length ∧
-  f.length = e.length ∧
-  ∀ eᵢ∈ e, 1 ≤ eᵢ∧
-  ∀ Rᵢ ∈ R, Rᵢ.Separable ∧
-  ∀ Rᵢ ∈ R, Irreducible Rᵢ ∧
-  Q = (Polynomial.C C) *
-    (List.prod
-      <| List.map
-        (fun ((R, f), e) => (R.comp ((Y : F[Z][X][Y]) ^ f))^e) (List.zip (List.zip R f) e))
-    := sorry
+lemma eq_5_12 (Q : F[Z][X][Y]) :
+  ∃ (C : F[Z][X]) (R : List F[Z][X][Y]) (f : List ℕ) (e : List ℕ),
+    R.length = f.length ∧
+    f.length = e.length ∧
+    ∀ eᵢ ∈ e, 1 ≤ eᵢ ∧
+    ∀ Rᵢ ∈ R, Rᵢ.Separable ∧
+    ∀ Rᵢ ∈ R, Irreducible Rᵢ ∧
+    Q = (Polynomial.C C) *
+      (List.prod
+        <| List.map
+          (fun ((R, f), e) => (R.comp ((Y : F[Z][X][Y]) ^ f))^e) (List.zip (List.zip R f) e))
+  := sorry
 
 lemma lemma_5_6
   {Q : F[Z][X][Y]}
-  :
-  ∃ x₀,
-  ∀ R ∈ R₀ Q,
-  Bivariate.evalX x₀ (Bivariate.discr_y R) ≠ 0 := by sorry
+  : ∃ x₀,
+      ∀ R ∈ Classical.choose (Classical.choose_spec (eq_5_12 Q)),
+      Bivariate.evalX x₀ (Bivariate.discr_y R) ≠ 0 := by sorry
+
+-- Pz
 
 open Trivariate in
-lemma lemma_5_7
+lemma lemma_5_7 [Finite F]
   {V : LinearCode (ι := Fin n) F} {δ : ℚ} {x₀ : F} {f u₀ u₁ : Fin n → F}
   {Q : (RatFunc F)[X][X]} {p : (RatFunc F)[X]}
   :
-  ∃ R H, R ∣ Q ∧ Irreducible H ∧ H ∣ (Bivariate.evalX (RatFunc.mk (Polynomial.C x₀) 1) R) ∧
-   ({ z ∈ the_S (F := F) δ V u₀ u₁ |
+  ∃ R H, R ∈ Classical.choose (Classical.choose_spec (eq_5_12 Q)) ∧
+    R ∣ Q ∧ Irreducible H ∧ H ∣ (Bivariate.evalX (RatFunc.mk (Polynomial.C x₀) 1) R) ∧
+   ({ z ∈ the_S δ V u₀ u₁ |
       (eval_on_Z₂ R z).comp (Polynomial.C (eval_on_Z₁ p z)) = 0
-      ∧ (eval_on_Z₁ H z).comp (eval_on_Z₁ p z) = 0 }).card ≥ (the_S (F := F) δ V u₀ u₁).card
+      ∧ (eval_on_Z₁ H z).comp (eval_on_Z₁ p z) = 0 }).card ≥ (the_S δ V u₀ u₁).card
         / (Bivariate.natDegreeY Q)
-      ∧ (the_S (F := F) δ V u₀ u₁).card
-        / (Bivariate.natDegreeY Q) > 2 * D_Y Q ^ 2 * (D_X (n := n) (rho := k/n) m) * D_YZ Q
+      ∧ (the_S δ V u₀ u₁).card
+        / (Bivariate.natDegreeY Q) > 2 * D_Y Q ^ 2 * (D_X ((k + 1 : ℚ) / n) n m) * D_YZ Q
     := by sorry
 
 end ProximityGapSection5
