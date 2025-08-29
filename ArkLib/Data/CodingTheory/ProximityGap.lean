@@ -234,7 +234,7 @@ section
 open Polynomial
 
 noncomputable def D_X (ρ : ℚ) (n m : ℕ) : ℕ := proximity_gap_degree_bound ρ m n
-def D_Y (Q : F[X][Y]) : ℕ := Bivariate.natDegreeY Q
+def D_Y (Q : F[Z][X][Y]) : ℕ := Bivariate.natDegreeY Q
 def D_YZ (Q : F[Z][X][Y]) : ℕ := 
   Option.getD (dflt := 0) <| Finset.max 
     (@Set.toFinset _ 
@@ -266,7 +266,7 @@ end
 instance {α : Type} (s : Set α) [Finite s] : Fintype s := sorry
 
 def the_S [Finite F] {ωs : Fin n ↪ F} (δ : ℚ) (V : ReedSolomon.code ωs n) (u₀ u₁ : Fin n → F)
-  : Finset F := Set.toFinset { z | ∃ v ∈ V.carrier, δᵣ(u₀ + z • u₁, v) ≤ δ}
+  : Finset F := Set.toFinset { z | ∃ v : Fin n → F, δᵣ(u₀ + z • u₁, v) ≤ δ}
 
 open Polynomial
 
@@ -285,18 +285,37 @@ lemma eq_5_12 (Q : F[Z][X][Y]) :
 
 lemma Pz_exists_for_the_S 
   [Finite F]
+  {k : ℕ}
   {z : F}
   {ωs : Fin n ↪ F}
   {δ : ℚ} {V : ReedSolomon.code ωs n} {u₀ u₁ : Fin n → F}
   (hS : z ∈ the_S δ V u₀ u₁)
   :
   ∃ Pz : F[X], Pz.natDegree ≤ k ∧ δᵣ(u₀ + z • u₁, Pz.eval ∘ ωs) ≤ δ := by
-  simp [the_S] at hS
-  rcases hS with ⟨Pz, hPz⟩
-  exists (code )
+  sorry
 
+noncomputable def Pz
+  [Finite F]
+  (z : F)
+  (ωs : Fin n ↪ F)
+  (δ : ℚ) (V : ReedSolomon.code ωs n) (u₀ u₁ : Fin n → F)
+  (hS : z ∈ the_S δ V u₀ u₁)
+  :
+  F[X]
+  := Classical.choose 
+      (Pz_exists_for_the_S (n := n) (k := k) hS)
 
-
+lemma lemma_5_5 
+  [Finite F]
+  {Q : F[Z][X][Y]}
+  {ωs : Fin n ↪ F}
+  {δ : ℚ} {V : ReedSolomon.code ωs n} {u₀ u₁ : Fin n → F}
+  :
+  ∃ S', ∃ (h_sub : S' ⊆ the_S δ V u₀ u₁), ∃ P : F[Z][X], 
+    S'.card > (the_S δ V u₀ u₁).card / (2 * D_Y (F := F) Q) ∧
+    ∀ z, ∀ (h : z ∈ S'), Pz (k := k) z ωs δ V u₀ u₁ (by grind) = P.map (Polynomial.evalRingHom z) ∧ 
+    P.natDegree ≤ k ∧ 
+    ∀ i ∈ P.support, (P.coeff i).natDegree ≤ 1 := by sorry
 
 lemma lemma_5_6
   {Q : F[Z][X][Y]}
