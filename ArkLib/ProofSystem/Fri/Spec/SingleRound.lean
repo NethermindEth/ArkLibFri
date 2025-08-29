@@ -2,7 +2,6 @@
 
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import ArkLib.OracleReduction.Security.Basic
-import ArkLib.OracleReduction.ProtocolSpec
 import ArkLib.ProofSystem.Fri.RoundConsistency
 import ArkLib.ProofSystem.Fri.Domain
 
@@ -19,7 +18,7 @@ instance {α β : Type*} : OracleInterface (α → β) :=
   {
     Query := α
     Response := β
-    oracle := id
+    answer := id
   }
 
 namespace Fri
@@ -80,7 +79,7 @@ def outputRelation :
   challenge to the prover, and ends with the prover sending a codeword (of the desired length) to
   the verifier. -/
 @[reducible]
-def pSpec : ProtocolSpec 2 := ![(.V_to_P, F), (.P_to_V, (evalDomain D i.1) → F)]
+def pSpec : ProtocolSpec 2 := ⟨!v[.V_to_P, .P_to_V], !v[F, (evalDomain D i.1) → F]⟩
 
 instance {i : Fin k} : ∀ j, OracleInterface ((pSpec D i).Message j)
   | ⟨0, h⟩ => nomatch h
@@ -111,11 +110,12 @@ noncomputable def foldProver :
     pure ⟨fun x => p.eval x.1.1, chals, p, o⟩
 
   receiveChallenge
-  | ⟨0, _⟩ => fun (⟨chals, p, o⟩) (α : F) =>
-    ⟨Fin.append chals (fun (_ : Fin 1) => α), foldα p α, o⟩
+  | ⟨0, _⟩ => fun ⟨chals, p, o⟩ => pure <|
+    fun (α : F) =>
+      ⟨Fin.append chals (fun (_ : Fin 1) => α), foldα p α, o⟩
   | ⟨1, h⟩ => nomatch h
 
-  output := fun ⟨chals, p, o⟩ =>
+  output := fun ⟨chals, p, o⟩ => pure <|
     ⟨
       ⟨
         chals,
@@ -164,11 +164,14 @@ namespace QueryRound
 variable (l : ℕ)
 
 @[reducible]
-def pSpec (F : Type) : ProtocolSpec 1 := ![(.P_to_V, Unit → F)]
+def pSpec (F : Type) : ProtocolSpec 1 := ⟨!v[.P_to_V], !v[Unit → F]⟩
 
 instance : ∀ j, OracleInterface ((pSpec F).Message j) := fun j =>
   by
-    simp only [Message, Matrix.cons_val_fin_one]
+    simp only [Message, Fin.vcons_of_one]
+    rcases j with ⟨⟨j, _⟩, _⟩
+    have : j = 0 := by omega
+    simp only [this, Fin.zero_eta, Fin.isValue]
     exact instOracleInterfaceForall
 
 noncomputable def queryProver :
@@ -194,7 +197,7 @@ noncomputable def queryProver :
   receiveChallenge
   | ⟨0, h⟩ => nomatch h
 
-  output := fun ⟨chals, p, o⟩ => ⟨⟨chals, o⟩, p⟩
+  output := fun ⟨chals, p, o⟩ => pure ⟨⟨chals, o⟩, p⟩
 
 def getChallenge :
     OracleComp (oSpec D) (evalDomain D 0) :=
@@ -204,25 +207,13 @@ def sampleCodeword (i : Fin k) (x : evalDomain D i.1) :
     OracleComp [OracleStatement D (Fin.last k)]ₒ F :=
   OracleComp.lift (OracleSpec.query i x)
 
-@[simp]
-lemma pSpec_domain {F : Type} :
-    [(pSpec F).Message]ₒ.domain ⟨0, Eq.refl (pSpec F 0).1⟩ = Unit := by rfl
-
-@[simp]
-lemma pSpec_range {F : Type} :
-    [(pSpec F).Message]ₒ.range ⟨0, Eq.refl (pSpec F 0).1⟩ = F := by rfl
-
-def getConst :
-    OracleComp
-      [(pSpec F).Message]ₒ
-      F := OracleComp.lift
-        (by
-          simpa using
-            OracleSpec.query
-              (spec := [(pSpec F).Message]ₒ)
-              ⟨0, by rfl⟩
-              (by simpa using ())
-        )
+def getConst : OracleComp [(pSpec F).Message]ₒ F :=
+  OracleComp.lift
+    (OracleSpec.query
+      (spec := [(pSpec F).Message]ₒ)
+      ⟨0, by rfl⟩
+      ()
+    )
 
 noncomputable def queryVerifier [DecidableEq F] :
   OracleVerifier (oSpec D)
