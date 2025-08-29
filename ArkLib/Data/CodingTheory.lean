@@ -1,5 +1,4 @@
 import ArkLib.Data.CodingTheory.Basic
-import ArkLib.Data.CodingTheory.BerlekampWelch
 import ArkLib.Data.CodingTheory.DivergenceOfSets
 import ArkLib.Data.CodingTheory.InterleavedCode
 import ArkLib.Data.CodingTheory.ListDecodability

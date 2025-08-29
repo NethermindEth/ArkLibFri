@@ -21,6 +21,7 @@ import ArkLib.Data.Classes.Serde
 import ArkLib.Data.Classes.Slice
 import ArkLib.Data.Classes.ToNat
 import ArkLib.Data.Classes.Zeroize
+import ArkLib.Data.CodingTheory
 import ArkLib.Data.CodingTheory.Basic
 import ArkLib.Data.CodingTheory.BerlekampWelch.BerlekampWelch
 import ArkLib.Data.CodingTheory.BerlekampWelch.Condition
@@ -137,7 +138,14 @@ import ArkLib.ProofSystem.ConstraintSystem.MemoryChecking
 import ArkLib.ProofSystem.ConstraintSystem.Plonk
 import ArkLib.ProofSystem.ConstraintSystem.R1CS
 import ArkLib.ProofSystem.DSL
+import ArkLib.ProofSystem.Fri.AuxLemmas
+import ArkLib.ProofSystem.Fri.Domain
+import ArkLib.ProofSystem.Fri.EvenAndOdd
+import ArkLib.ProofSystem.Fri.EvenAndOdd.Def
+import ArkLib.ProofSystem.Fri.EvenAndOdd.Lemmas
 import ArkLib.ProofSystem.Fri.RoundConsistency
+import ArkLib.ProofSystem.Fri.Spec.General
+import ArkLib.ProofSystem.Fri.Spec.SingleRound
 import ArkLib.ProofSystem.Plonk.Basic
 import ArkLib.ProofSystem.Spartan.Basic
 import ArkLib.ProofSystem.Stir
@@ -158,6 +166,7 @@ import ArkLib.ProofSystem.Whir.MutualCorrAgreement
 import ArkLib.ProofSystem.Whir.OutofDomainSmpl
 import ArkLib.ProofSystem.Whir.ProximityGen
 import ArkLib.ProofSystem.Whir.RBRSoundness
+import ArkLib.ToInit.Data.List.Control
 import ArkLib.ToMathlib.BigOperators.Fin
 import ArkLib.ToMathlib.Data.IndexedBinaryTree.Basic
 import ArkLib.ToMathlib.Data.IndexedBinaryTree.Equiv
