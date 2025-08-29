@@ -138,49 +138,41 @@ theorem correlatedAgreement_affine_spaces {k : ℕ} [NeZero k] {u : Fin k → ι
 
 end
 
-open Polynomial in
-noncomputable def RatFunc.ofPoly : F[X] →ₐ[F] RatFunc F :=
-  AlgHom.mk
-    (RingHom.mk
-      (MonoidHom.mk
-        (OneHom.mk
-          (fun f => RatFunc.mk f 1) (by simp))
-            (by simp)) (by simp) (by simp)) (by simp)
-
 namespace Trivariate
 section Trivariate
 
 variable {F : Type} [Field F] [DecidableEq F] [DecidableEq (RatFunc F)]
 
-open Polynomial
+open Polynomial Bivariate
 
-opaque eval_on_Z₀ (p : (RatFunc F)[X]) (z : F) : F :=
-  sorry
+
+noncomputable def eval_on_Z₀ (p : (RatFunc F)) (z : F) : F :=
+  RatFunc.eval (RingHom.id _) z p
 
 opaque eval_on_Z₁ (p : (RatFunc F)[X]) (z : F) : F[X] :=
   sorry
 
-opaque eval_on_Z₂ (p : (RatFunc F)[X][X]) (z : F) : F[X][X] :=
+opaque eval_on_Z₂ (p : (RatFunc F)[X][Y]) (z : F) : F[X][Y] :=
   sorry
 
 notation3:max R "[Z][X]" => Polynomial (Polynomial R)
 
 notation3:max R "[Z][X][Y]" => Polynomial (Polynomial (Polynomial (R)))
 
-notation3:max "Y" => Polynomial.X (R := Polynomial _)
-
-notation3:max "Z" => Polynomial.X (R := Polynomial (Polynomial _))
+notation3:max "Y" => Polynomial.X
+notation3:max "X" => Polynomial.C Polynomial.X
+notation3:max "Z" => Polynomial.C (Polynomial.C Polynomial.X)
 
 open Polynomial.Bivariate in
 noncomputable def toRatFuncPoly (p : F[Z][X][Y]) : (RatFunc F)[X][Y] :=
-  p.map (Polynomial.mapRingHom (RatFunc.ofPoly.toRingHom))
+  p.map (Polynomial.mapRingHom (algebraMap F[X] (RatFunc F)))
 
 end Trivariate
 end Trivariate
 
 section ProximityGapSection5
 variable {F : Type} [Field F] [DecidableEq F] [DecidableEq (RatFunc F)]
-variable {n k m : ℕ}
+variable {n : ℕ}
 
 section
 
@@ -247,26 +239,28 @@ end
 -- Definition of D_YZ needs a fix, in particular, currently definition is "D_XY".
 lemma proximity_gap_claim_5_4
   {ωs : Fin n ↪ F} {u₀ u₁ : Fin n → F}
-  {n k : ℕ}
+  {m n k : ℕ}
   :
   ∃ Q : (RatFunc F)[X][Y],
     Q ≠ 0 ∧
-    weightedDegree Q 1 k ≤ D_X (k + 1 / (n : ℚ)) n m ∧
+    weightedDegree Q 1 k ≤ D_X ((k + 1) / (n : ℚ)) n m ∧
     ∀ i,  Polynomial.Bivariate.rootMultiplicity Q
               (RatFunc.C <| ωs i)
               ((RatFunc.C <| u₀ i) + RatFunc.X * (RatFunc.C <| u₁ i))
             ≥ m ∧
     ∃ Q' : F[Z][X][Y], Q = (Trivariate.toRatFuncPoly Q') ∧
     D_Y Q' < D_X (k + 1 / (n : ℚ)) n m / k ∧
-    D_YZ Q' ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt (k + 1 / n))
+    D_YZ Q' ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt ((k + 1) / n))
     := by sorry
 
 end
 
+variable {m : ℕ} (k : ℕ)
+
 instance {α : Type} (s : Set α) [Finite s] : Fintype s := sorry
 
 def the_S [Finite F] (ωs : Fin n ↪ F) (δ : ℚ) (u₀ u₁ : Fin n → F)
-  : Finset F := Set.toFinset { z | ∃ v : ReedSolomon.code ωs n, δᵣ(u₀ + z • u₁, v) ≤ δ}
+  : Finset F := Set.toFinset { z | ∃ v : ReedSolomon.code ωs (k + 1), δᵣ(u₀ + z • u₁, v) ≤ δ}
 
 open Polynomial
 
@@ -289,17 +283,34 @@ lemma Pz_exists_for_the_S
   {z : F}
   {ωs : Fin n ↪ F}
   {δ : ℚ} {u₀ u₁ : Fin n → F}
-  (hS : z ∈ the_S ωs δ u₀ u₁)
+  (hS : z ∈ the_S (k := k) ωs δ u₀ u₁)
   :
   ∃ Pz : F[X], Pz.natDegree ≤ k ∧ δᵣ(u₀ + z • u₁, Pz.eval ∘ ωs) ≤ δ := by
-  sorry
+    unfold the_S at hS
+    simp only [Subtype.exists, exists_prop, Set.mem_toFinset, Set.mem_setOf_eq] at hS
+    rcases hS with ⟨w, hS, dist⟩
+    unfold ReedSolomon.code at hS
+    rw [Submodule.mem_map] at hS
+    rcases hS with ⟨p, hS⟩
+    exists p
+    apply And.intro
+    · have hS := hS.1
+      rw [Polynomial.mem_degreeLT] at hS
+      by_cases h : p = 0
+      · rw [h]; simp
+      · rw [Polynomial.degree_eq_natDegree h, Nat.cast_lt] at hS
+        linarith
+    · unfold ReedSolomon.evalOnPoints at hS
+      simp only [LinearMap.coe_mk, AddHom.coe_mk] at hS
+      rw [Function.comp_def, hS.2]
+      exact dist
 
 noncomputable def Pz
   [Finite F]
   (z : F)
   (ωs : Fin n ↪ F)
   (δ : ℚ) (u₀ u₁ : Fin n → F)
-  (hS : z ∈ the_S ωs δ u₀ u₁)
+  (hS : z ∈ the_S k ωs δ u₀ u₁)
   :
   F[X]
   := Classical.choose
@@ -311,8 +322,8 @@ lemma lemma_5_5
   {ωs : Fin n ↪ F}
   {δ : ℚ} {u₀ u₁ : Fin n → F}
   :
-  ∃ S', ∃ (h_sub : S' ⊆ the_S ωs δ u₀ u₁), ∃ P : F[Z][X],
-    S'.card > (the_S ωs δ u₀ u₁).card / (2 * D_Y (F := F) Q) ∧
+  ∃ S', ∃ (h_sub : S' ⊆ the_S k ωs δ u₀ u₁), ∃ P : F[Z][X],
+    S'.card > (the_S k ωs δ u₀ u₁).card / (2 * D_Y (F := F) Q) ∧
     ∀ z, ∀ (h : z ∈ S'), Pz (k := k) z ωs δ u₀ u₁ (by grind) = P.map (Polynomial.evalRingHom z) ∧
     P.natDegree ≤ k ∧
     ∀ i ∈ P.support, (P.coeff i).natDegree ≤ 1 := by sorry
@@ -323,20 +334,19 @@ lemma lemma_5_6
       ∀ R ∈ Classical.choose (Classical.choose_spec (eq_5_12 Q)),
       Bivariate.evalX x₀ (Bivariate.discr_y R) ≠ 0 := by sorry
 
--- Pz
-
 open Trivariate in
+open Bivariate in
 lemma lemma_5_7 [Finite F]
-  {V : LinearCode (ι := Fin n) F} {δ : ℚ} {x₀ : F} {f u₀ u₁ : Fin n → F}
-  {Q : (RatFunc F)[X][X]} {p : (RatFunc F)[X]}
+  {ωs : Fin n ↪ F} {δ : ℚ} {x₀ : F} {f u₀ u₁ : Fin n → F}
+  {Q : F[Z][X][Y]} {p : (RatFunc F)[X]}
   :
   ∃ R H, R ∈ Classical.choose (Classical.choose_spec (eq_5_12 Q)) ∧
-    R ∣ Q ∧ Irreducible H ∧ H ∣ (Bivariate.evalX (RatFunc.mk (Polynomial.C x₀) 1) R) ∧
-   ({ z ∈ the_S δ V u₀ u₁ |
+    R ∣ Q ∧ Irreducible H ∧ H ∣ (Bivariate.evalX (Polynomial.C x₀) R) ∧
+   ({ z ∈ the_S k ωs δ u₀ u₁ |
       (eval_on_Z₂ R z).comp (Polynomial.C (eval_on_Z₁ p z)) = 0
-      ∧ (eval_on_Z₁ H z).comp (eval_on_Z₁ p z) = 0 }).card ≥ (the_S δ V u₀ u₁).card
+      ∧ (eval_on_Z₁ H z).comp (eval_on_Z₁ p z) = 0 }).card ≥ (the_S k ωs δ u₀ u₁).card
         / (Bivariate.natDegreeY Q)
-      ∧ (the_S δ V u₀ u₁).card
+      ∧ (the_S k ωs δ u₀ u₁).card
         / (Bivariate.natDegreeY Q) > 2 * D_Y Q ^ 2 * (D_X ((k + 1 : ℚ) / n) n m) * D_YZ Q
     := by sorry
 
