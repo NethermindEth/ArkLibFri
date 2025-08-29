@@ -140,11 +140,11 @@ end
 
 open Polynomial in
 noncomputable def RatFunc.ofPoly : F[X] →ₐ[F] RatFunc F :=
-  AlgHom.mk 
-    (RingHom.mk 
-      (MonoidHom.mk 
-        (OneHom.mk 
-          (fun f => RatFunc.mk f 1) (by simp)) 
+  AlgHom.mk
+    (RingHom.mk
+      (MonoidHom.mk
+        (OneHom.mk
+          (fun f => RatFunc.mk f 1) (by simp))
             (by simp)) (by simp) (by simp)) (by simp)
 
 namespace Trivariate
@@ -172,8 +172,8 @@ notation3:max "Y" => Polynomial.X (R := Polynomial _)
 notation3:max "Z" => Polynomial.X (R := Polynomial (Polynomial _))
 
 open Polynomial.Bivariate in
-noncomputable def toRatFuncPoly (p : F[Z][X][Y]) : (RatFunc F)[X][Y] := 
-  p.map (Polynomial.mapRingHom (RatFunc.ofPoly.toRingHom)) 
+noncomputable def toRatFuncPoly (p : F[Z][X][Y]) : (RatFunc F)[X][Y] :=
+  p.map (Polynomial.mapRingHom (RatFunc.ofPoly.toRingHom))
 
 end Trivariate
 end Trivariate
@@ -235,17 +235,17 @@ open Polynomial
 
 noncomputable def D_X (ρ : ℚ) (n m : ℕ) : ℕ := proximity_gap_degree_bound ρ m n
 def D_Y (Q : F[Z][X][Y]) : ℕ := Bivariate.natDegreeY Q
-def D_YZ (Q : F[Z][X][Y]) : ℕ := 
-  Option.getD (dflt := 0) <| Finset.max 
-    (@Set.toFinset _ 
-      { i | 
-        ∃ j ∈ Q.support, ∃ k ∈ (Q.coeff j).support, 
+def D_YZ (Q : F[Z][X][Y]) : ℕ :=
+  Option.getD (dflt := 0) <| Finset.max
+    (@Set.toFinset _
+      { i |
+        ∃ j ∈ Q.support, ∃ k ∈ (Q.coeff j).support,
           i = j + (Bivariate.coeff Q j k).natDegree } sorry)
 
 end
 
 -- Definition of D_YZ needs a fix, in particular, currently definition is "D_XY".
-lemma proximity_gap_claim_5_4 
+lemma proximity_gap_claim_5_4
   {ωs : Fin n ↪ F} {u₀ u₁ : Fin n → F}
   {n k : ℕ}
   :
@@ -256,8 +256,8 @@ lemma proximity_gap_claim_5_4
               (RatFunc.C <| ωs i)
               ((RatFunc.C <| u₀ i) + RatFunc.X * (RatFunc.C <| u₁ i))
             ≥ m ∧
-    D_Y Q < D_X (k + 1 / (n : ℚ)) n m / k ∧
-    ∃ Q' : F[Z][X][Y], Q = (Trivariate.toRatFuncPoly Q') ∧ 
+    ∃ Q' : F[Z][X][Y], Q = (Trivariate.toRatFuncPoly Q') ∧
+    D_Y Q' < D_X (k + 1 / (n : ℚ)) n m / k ∧
     D_YZ Q' ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt (k + 1 / n))
     := by sorry
 
@@ -265,8 +265,8 @@ end
 
 instance {α : Type} (s : Set α) [Finite s] : Fintype s := sorry
 
-def the_S [Finite F] {ωs : Fin n ↪ F} (δ : ℚ) (V : ReedSolomon.code ωs n) (u₀ u₁ : Fin n → F)
-  : Finset F := Set.toFinset { z | ∃ v : Fin n → F, δᵣ(u₀ + z • u₁, v) ≤ δ}
+def the_S [Finite F] (ωs : Fin n ↪ F) (δ : ℚ) (u₀ u₁ : Fin n → F)
+  : Finset F := Set.toFinset { z | ∃ v : ReedSolomon.code ωs n, δᵣ(u₀ + z • u₁, v) ≤ δ}
 
 open Polynomial
 
@@ -283,13 +283,13 @@ lemma eq_5_12 (Q : F[Z][X][Y]) :
           (fun ((R, f), e) => (R.comp ((Y : F[Z][X][Y]) ^ f))^e) (List.zip (List.zip R f) e))
   := sorry
 
-lemma Pz_exists_for_the_S 
+lemma Pz_exists_for_the_S
   [Finite F]
   {k : ℕ}
   {z : F}
   {ωs : Fin n ↪ F}
-  {δ : ℚ} {V : ReedSolomon.code ωs n} {u₀ u₁ : Fin n → F}
-  (hS : z ∈ the_S δ V u₀ u₁)
+  {δ : ℚ} {u₀ u₁ : Fin n → F}
+  (hS : z ∈ the_S ωs δ u₀ u₁)
   :
   ∃ Pz : F[X], Pz.natDegree ≤ k ∧ δᵣ(u₀ + z • u₁, Pz.eval ∘ ωs) ≤ δ := by
   sorry
@@ -298,23 +298,23 @@ noncomputable def Pz
   [Finite F]
   (z : F)
   (ωs : Fin n ↪ F)
-  (δ : ℚ) (V : ReedSolomon.code ωs n) (u₀ u₁ : Fin n → F)
-  (hS : z ∈ the_S δ V u₀ u₁)
+  (δ : ℚ) (u₀ u₁ : Fin n → F)
+  (hS : z ∈ the_S ωs δ u₀ u₁)
   :
   F[X]
-  := Classical.choose 
+  := Classical.choose
       (Pz_exists_for_the_S (n := n) (k := k) hS)
 
-lemma lemma_5_5 
+lemma lemma_5_5
   [Finite F]
   {Q : F[Z][X][Y]}
   {ωs : Fin n ↪ F}
-  {δ : ℚ} {V : ReedSolomon.code ωs n} {u₀ u₁ : Fin n → F}
+  {δ : ℚ} {u₀ u₁ : Fin n → F}
   :
-  ∃ S', ∃ (h_sub : S' ⊆ the_S δ V u₀ u₁), ∃ P : F[Z][X], 
-    S'.card > (the_S δ V u₀ u₁).card / (2 * D_Y (F := F) Q) ∧
-    ∀ z, ∀ (h : z ∈ S'), Pz (k := k) z ωs δ V u₀ u₁ (by grind) = P.map (Polynomial.evalRingHom z) ∧ 
-    P.natDegree ≤ k ∧ 
+  ∃ S', ∃ (h_sub : S' ⊆ the_S ωs δ u₀ u₁), ∃ P : F[Z][X],
+    S'.card > (the_S ωs δ u₀ u₁).card / (2 * D_Y (F := F) Q) ∧
+    ∀ z, ∀ (h : z ∈ S'), Pz (k := k) z ωs δ u₀ u₁ (by grind) = P.map (Polynomial.evalRingHom z) ∧
+    P.natDegree ≤ k ∧
     ∀ i ∈ P.support, (P.coeff i).natDegree ≤ 1 := by sorry
 
 lemma lemma_5_6
