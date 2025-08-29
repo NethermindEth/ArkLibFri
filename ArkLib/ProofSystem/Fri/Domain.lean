@@ -3,16 +3,7 @@ import Mathlib.GroupTheory.GroupAction.Basic
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 import ArkLib.Data.FieldTheory.NonBinaryField.Basic
-
-class IsCyclicC (G : Type) [Pow G ℤ] where
-  gen : G
-  zpow_surjective : Function.Surjective (gen ^ · : ℤ → G)
-
-instance {G} [Pow G ℤ] [inst : IsCyclicC G] : IsCyclic G where
-  exists_zpow_surjective := ⟨inst.gen, inst.zpow_surjective⟩
-
-class Smooth2 (n : ℕ) (G : Type) [Pow G ℤ] [Monoid G] [inst : IsCyclicC G] where
-  smooth : orderOf inst.gen = 2 ^ n
+import ArkLib.Data.GroupTheory.Smooth
 
 variable {F : Type} [NonBinaryField F]
 variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicC D] [DSmooth : Smooth2 n D]
