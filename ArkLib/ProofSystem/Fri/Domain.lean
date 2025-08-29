@@ -6,7 +6,7 @@ import ArkLib.Data.FieldTheory.NonBinaryField.Basic
 import ArkLib.Data.GroupTheory.Smooth
 
 variable {F : Type} [NonBinaryField F]
-variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicC D] [DSmooth : Smooth2 n D]
+variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicWithGen D] [DSmooth : SmoothPowerOfTwo n D]
 
 namespace Fri
 
@@ -39,7 +39,7 @@ lemma D_def : D = evalDomain D 0 := by
     rw [←h]
     exact (DIsCyclicC.gen ^ k).2
 
-instance {i : ℕ} : IsCyclicC (evalDomain D i) := by
+instance {i : ℕ} : IsCyclicWithGen (evalDomain D i) := by
   unfold evalDomain
   constructor
   swap
@@ -88,7 +88,7 @@ lemma sqr_mem_D_succ_i_of_mem_D_i : ∀ {x : Fˣ} {i : ℕ},
   rfl
 
 lemma gen_def {i : ℕ} :
-    (IsCyclicC.gen : evalDomain D i) =
+    (IsCyclicWithGen.gen : evalDomain D i) =
       ⟨
         DIsCyclicC.gen ^ (2 ^ i),
         by
@@ -97,7 +97,7 @@ lemma gen_def {i : ℕ} :
       ⟩ := by
   rfl
 
-instance {i : ℕ} : Smooth2 (n - i) (evalDomain D i) where
+instance {i : ℕ} : SmoothPowerOfTwo (n - i) (evalDomain D i) where
   smooth := by
     simp
     rw [gen_def]
@@ -178,7 +178,7 @@ lemma dom_n_eq_triv : evalDomain D n = ⊥ := by
   unfold evalDomain
   rw [Subgroup.zpowers_eq_bot, ←DSmooth.smooth]
   norm_cast
-  exact pow_orderOf_eq_one IsCyclicC.gen
+  exact pow_orderOf_eq_one IsCyclicWithGen.gen
 
 instance {i : Fin (n + 1)} : OfNat (evalDomain D i) 1 where
   ofNat := ⟨1, one_in_doms D i⟩

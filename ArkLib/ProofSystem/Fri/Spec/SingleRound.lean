@@ -28,7 +28,7 @@ open Polynomial MvPolynomial OracleSpec OracleComp ProtocolSpec Finset CosetDoma
 namespace Spec
 
 variable {F : Type} [NonBinaryField F] [Finite F]
-variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicC D] [DSmooth : Smooth2 n D]
+variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicWithGen D] [DSmooth : SmoothPowerOfTwo n D]
 variable (x : Fˣ)
 variable {k : ℕ} (k_le_n : k ≤ n) (i : Fin k)
 
