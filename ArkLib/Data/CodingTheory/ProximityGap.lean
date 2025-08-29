@@ -137,6 +137,15 @@ theorem correlatedAgreement_affine_spaces {k : ℕ} [NeZero k] {u : Fin k → ι
 
 end
 
+open Polynomial in
+noncomputable def RatFunc.ofPoly : F[X] →ₐ[F] RatFunc F :=
+  AlgHom.mk 
+    (RingHom.mk 
+      (MonoidHom.mk 
+        (OneHom.mk 
+          (fun f => RatFunc.mk f 1) (by simp)) 
+            (by simp)) (by simp) (by simp)) (by simp)
+
 namespace Trivariate
 section Trivariate
 
@@ -160,6 +169,10 @@ notation3:max R "[Z][X][Y]" => Polynomial (Polynomial (Polynomial (R)))
 notation3:max "Y" => Polynomial.X (R := Polynomial _)
 
 notation3:max "Z" => Polynomial.X (R := Polynomial (Polynomial _))
+
+open Polynomial.Bivariate in
+noncomputable def toRatFuncPoly (p : F[Z][X][Y]) : (RatFunc F)[X][Y] := 
+  p.map (Polynomial.mapRingHom (RatFunc.ofPoly.toRingHom)) 
 
 end Trivariate
 end Trivariate
@@ -221,12 +234,18 @@ open Polynomial
 
 noncomputable def D_X (ρ : ℚ) (n m : ℕ) : ℕ := proximity_gap_degree_bound ρ m n
 def D_Y (Q : F[X][Y]) : ℕ := Bivariate.natDegreeY Q
-def D_YZ (Q : F[X][Y]) : ℕ := Bivariate.totalDegree Q
+def D_YZ (Q : F[Z][X][Y]) : ℕ := 
+  Option.getD (dflt := 0) <| Finset.max 
+    (@Set.toFinset _ 
+      { i | 
+        ∃ j ∈ Q.support, ∃ k ∈ (Q.coeff j).support, 
+          i = j + (Bivariate.coeff Q j k).natDegree } sorry)
 
 end
 
 -- Definition of D_YZ needs a fix, in particular, currently definition is "D_XY".
-lemma proximity_gap_claim_5_4 {ωs : Fin n ↪ F} {u₀ u₁ : Fin n → F}
+lemma proximity_gap_claim_5_4 
+  {ωs : Fin n ↪ F} {u₀ u₁ : Fin n → F}
   {n k : ℕ}
   :
   ∃ Q : (RatFunc F)[X][Y],
@@ -234,11 +253,11 @@ lemma proximity_gap_claim_5_4 {ωs : Fin n ↪ F} {u₀ u₁ : Fin n → F}
     weightedDegree Q 1 k ≤ D_X (k + 1 / (n : ℚ)) n m ∧
     ∀ i,  Polynomial.Bivariate.rootMultiplicity Q
               (RatFunc.C <| ωs i)
-              ((RatFunc.C <| u₀ i) + X * (RatFunc.C <| u₁ i))
+              ((RatFunc.C <| u₀ i) + RatFunc.X * (RatFunc.C <| u₁ i))
             ≥ m ∧
     D_Y Q < D_X (k + 1 / (n : ℚ)) n m / k ∧
-    ∀ i j, ∃ p : Polynomial F, (Polynomial.Bivariate.coeff Q i j) = p ∧
-    D_YZ Q ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt (k + 1 / n))
+    ∃ Q' : F[Z][X][Y], Q = (Trivariate.toRatFuncPoly Q') ∧ 
+    D_YZ Q' ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt (k + 1 / n))
     := by sorry
 
 end
