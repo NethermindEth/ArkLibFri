@@ -94,29 +94,26 @@ noncomputable def foldProver :
   -- Might want to bake that into the type.
   -- Also need to return all the prior oracle statements and prior challenges
   PrvState
-  | 0 => (Fin i.castSucc → F) × F[X] × (∀ j : Fin i, OracleStatement D x i.castSucc j)
-  | 1 => (Fin i.succ → F) × F[X] × (∀ j : Fin i, OracleStatement D x i.castSucc j)
-  | 2 => (Fin i.succ → F) × F[X] × (∀ j : Fin i, OracleStatement D x i.castSucc j)
+  | 0 =>
+    (Statement F i.castSucc × ((j : Fin ↑i.castSucc) → OracleStatement D x i.castSucc j)) ×
+      Witness F
+  | _ =>
+    (Statement F i.succ × ((j : Fin ↑i.castSucc) → OracleStatement D x i.castSucc j)) × Witness F
 
-  input := fun x =>
-    ⟨
-      x.1.1,
-      x.2,
-      by simpa only [Fin.coe_castSucc] using x.1.2
-    ⟩
+  input := id
 
   sendMessage
   | ⟨0, h⟩ => nomatch h
-  | ⟨1, _⟩ => fun ⟨chals, p, o⟩ => do
-    pure ⟨fun x => p.eval x.1.1, chals, p, o⟩
+  | ⟨1, _⟩ => fun ⟨⟨chals, o⟩, p⟩ =>
+    pure ⟨fun x => p.eval x.1.1, ⟨⟨chals, o⟩, p⟩⟩
 
   receiveChallenge
-  | ⟨0, _⟩ => fun ⟨chals, p, o⟩ => pure <|
+  | ⟨0, _⟩ => fun ⟨⟨chals, o⟩, p⟩ => pure <|
     fun (α : F) =>
-      ⟨Fin.append chals (fun (_ : Fin 1) => α), foldα p α, o⟩
+      ⟨⟨Fin.append chals (fun (_ : Fin 1) => α), o⟩, foldα p α⟩
   | ⟨1, h⟩ => nomatch h
 
-  output := fun ⟨chals, p, o⟩ => pure <|
+  output := fun ⟨⟨chals, o⟩, p⟩ => pure <|
     ⟨
       ⟨
         chals,
@@ -135,7 +132,7 @@ noncomputable def foldVerifier :
     (Statement F i.castSucc) (OracleStatement D x i.castSucc)
     (Statement F i.succ) (OracleStatement D x i.succ)
     (pSpec D x i) where
-  verify := fun prevChallenges roundChallenge => do
+  verify := fun prevChallenges roundChallenge =>
     pure (Fin.append prevChallenges (fun _ => roundChallenge ⟨0, by simp⟩))
   embed :=
     ⟨
@@ -188,23 +185,19 @@ noncomputable def queryProver :
     (Statement F (Fin.last k)) (OracleStatement D x (Fin.last k)) (Witness F)
     (pSpec F) where
   PrvState
-  | 0 => (Fin k → F) × F[X] × (∀ j : Fin k, OracleStatement D x (Fin.last k) j)
-  | 1 => (Fin k → F) × F[X] × (∀ j : Fin k, OracleStatement D x (Fin.last k) j)
+  | _ =>
+    (Statement F (Fin.last k) × ((i : Fin ↑(Fin.last k)) → OracleStatement D x (Fin.last k) i)) ×
+      Witness F
 
-  input := fun x =>
-    ⟨
-      x.1.1,
-      x.2,
-      by simpa only [Fin.coe_castSucc] using x.1.2
-    ⟩
+  input := id
 
   sendMessage
-  | ⟨0, h⟩ => fun ⟨chals, p, o⟩ => do
-      pure ⟨fun _ => p.coeff 0, chals, p, o⟩
+  | ⟨0, _⟩ => fun ⟨⟨chals, o⟩, p⟩ => do
+      pure ⟨fun _ => p.coeff 0, ⟨⟨chals, o⟩, p⟩⟩
   receiveChallenge
   | ⟨0, h⟩ => nomatch h
 
-  output := fun ⟨chals, p, o⟩ => pure ⟨⟨chals, o⟩, p⟩
+  output := pure
 
 def getChallenge :
     OracleComp (oSpec D x) (evalDomain D x 0) :=
@@ -214,7 +207,7 @@ def sampleCodeword (i : Fin k) (d : evalDomain D x i.1) :
     OracleComp [OracleStatement D x (Fin.last k)]ₒ F :=
   OracleComp.lift (OracleSpec.query i d)
 
-def getConst : OracleComp [(pSpec F).Message]ₒ F :=
+def getConst (F : Type) : OracleComp [(pSpec F).Message]ₒ F :=
   OracleComp.lift
     (OracleSpec.query
       (spec := [(pSpec F).Message]ₒ)
@@ -230,25 +223,23 @@ noncomputable def queryVerifier [DecidableEq F] :
     (pSpec F) where
   verify := fun prevChallenges roundChallenge => do
     for _ in [0:l] do
-      let s₀ ← getChallenge D x;
+      let s₀ ← getChallenge D x
       discard <|
         (List.finRange k).mapM
               (fun (i : Fin k) =>
                 do
-                  let x₀ := prevChallenges i;
-                  let s₀ : evalDomain D x i.1 := ⟨_, pow_2_pow_i_mem_Di_of_mem_D D x i s₀.2⟩;
-                  let i' : Fin n := ⟨i.1, by omega⟩
-                  let s₁ := (domain_neg_inst (i := i') D x).neg s₀;
-                  let α₀ ← sampleCodeword D x i s₀;
-                  let α₁ ← sampleCodeword D x i s₁;
-                  let h' := sqr_mem_D_succ_i_of_mem_D_i D x s₀.2;
-                  if h : i.1 < k - 1
-                  then
-                    let β  ← sampleCodeword D x (⟨i.1.succ, by omega⟩ : Fin k) ⟨_, h'⟩;
-                    guard (consistency_check x₀ s₀.1.1 s₁.1.1 α₀ α₁ β)
-                  else
-                    let β  ← @getConst F
-                    guard (consistency_check x₀ s₀.1.1 s₁.1.1 α₀ α₁ β)
+                  let x₀ := prevChallenges i
+                  let s₀ : evalDomain D x i.1 := ⟨_, pow_2_pow_i_mem_Di_of_mem_D D x i s₀.2⟩
+                  let s₁ := (domain_neg_inst (n := n) (i := ⟨i.1, by omega⟩) D x).neg s₀
+                  let α₀ ← sampleCodeword D x i s₀
+                  let α₁ ← sampleCodeword D x i s₁
+                  let β ←
+                    if h : i.1 < k - 1
+                    then
+                      sampleCodeword (k := k) D x ⟨i.1.succ, by omega⟩
+                        ⟨_, sqr_mem_D_succ_i_of_mem_D_i D x s₀.2⟩
+                    else getConst F
+                  guard (consistency_check x₀ s₀.1.1 s₁.1.1 α₀ α₁ β)
               )
     pure prevChallenges
   embed :=

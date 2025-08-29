@@ -34,10 +34,17 @@ noncomputable def reductionFold :
 def pSpec : ProtocolSpec ((Fin.vsum fun (_ : Fin k) ↦ 2) + 1) :=
   ProtocolSpec.append (pSpecFold D x k) (QueryRound.pSpec D)
 
+instance : ∀ i, OracleInterface ((pSpecFold D x k ++ₚ QueryRound.pSpec F).Message i) :=
+  instOracleInterfaceMessageAppend
+
 @[reducible]
-noncomputable def reduction [DecidableEq F] :=
+noncomputable def reduction [DecidableEq F] :
+  OracleReduction (oSpec D x)
+    (Statement F (0 : Fin (k + 1))) (OracleStatement D x (0 : Fin (k + 1))) (Witness F)
+    (Statement F (Fin.last k)) (OracleStatement D x (Fin.last k)) (Witness F)
+    (pSpecFold D x k ++ₚ QueryRound.pSpec F) :=
   OracleReduction.append (reductionFold D x k)
-  (QueryRound.queryOracleReduction (k := k) D x k_le_n l)
+    (QueryRound.queryOracleReduction (k := k) D x k_le_n l)
 
 end Spec
 

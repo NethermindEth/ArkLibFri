@@ -272,7 +272,7 @@ lemma dom_n_eq_triv : evalDomain D x n = {x ^ (2 ^ n)} := by
   rw [Domain.dom_n_eq_triv]
   simp
 
-instance domain_neg_inst {i : Fin n} : Neg (evalDomain D x i) where
+instance domain_neg_inst (i : Fin n) : Neg (evalDomain D x i) where
   neg := fun a => ⟨_, neg_mem_dom_of_mem_dom D x i a.2⟩
 
 end CosetDomain
