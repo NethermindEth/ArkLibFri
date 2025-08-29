@@ -166,7 +166,6 @@ import ArkLib.ProofSystem.Whir.MutualCorrAgreement
 import ArkLib.ProofSystem.Whir.OutofDomainSmpl
 import ArkLib.ProofSystem.Whir.ProximityGen
 import ArkLib.ProofSystem.Whir.RBRSoundness
-import ArkLib.ToInit.Data.List.Control
 import ArkLib.ToMathlib.BigOperators.Fin
 import ArkLib.ToMathlib.Data.IndexedBinaryTree.Basic
 import ArkLib.ToMathlib.Data.IndexedBinaryTree.Equiv
