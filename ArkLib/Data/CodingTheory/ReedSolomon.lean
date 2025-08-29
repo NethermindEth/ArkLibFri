@@ -47,7 +47,7 @@ def evalOnPoints [Semiring F] : F[X] →ₗ[F] (ι → F) where
 
 /-- The Reed-Solomon code for polynomials of degree less than `deg` and evaluation points `domain`.
 -/
-def code (deg : ℕ) [Semiring F]: Submodule F (ι → F) :=
+def code (deg : ℕ) [Semiring F] : Submodule F (ι → F) :=
   (Polynomial.degreeLT F deg).map (evalOnPoints domain)
 
 noncomputable def codewordToPoly

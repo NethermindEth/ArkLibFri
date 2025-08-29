@@ -1,6 +1,7 @@
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Algebra.Polynomial.Basic
+import Mathlib.Algebra.Module.Submodule.Defs
 import Mathlib.Data.Finset.BooleanAlgebra
 import Mathlib.Data.Real.Sqrt
 import Mathlib.Data.Set.Defs
@@ -264,8 +265,8 @@ end
 
 instance {α : Type} (s : Set α) [Finite s] : Fintype s := sorry
 
-def the_S [Finite F] (δ : ℚ) (V : LinearCode (ι := Fin n) (F := F)) (u₀ u₁ : Fin n → F)
-  : Finset F := Set.toFinset { z | ∀ v ∈ V.carrier, δᵣ(u₀ + z • u₁, v) ≤ δ}
+def the_S [Finite F] {ωs : Fin n ↪ F} (δ : ℚ) (V : ReedSolomon.code ωs n) (u₀ u₁ : Fin n → F)
+  : Finset F := Set.toFinset { z | ∃ v ∈ V.carrier, δᵣ(u₀ + z • u₁, v) ≤ δ}
 
 open Polynomial
 
@@ -281,6 +282,21 @@ lemma eq_5_12 (Q : F[Z][X][Y]) :
         <| List.map
           (fun ((R, f), e) => (R.comp ((Y : F[Z][X][Y]) ^ f))^e) (List.zip (List.zip R f) e))
   := sorry
+
+lemma Pz_exists_for_the_S 
+  [Finite F]
+  {z : F}
+  {ωs : Fin n ↪ F}
+  {δ : ℚ} {V : ReedSolomon.code ωs n} {u₀ u₁ : Fin n → F}
+  (hS : z ∈ the_S δ V u₀ u₁)
+  :
+  ∃ Pz : F[X], Pz.natDegree ≤ k ∧ δᵣ(u₀ + z • u₁, Pz.eval ∘ ωs) ≤ δ := by
+  simp [the_S] at hS
+  rcases hS with ⟨Pz, hPz⟩
+  exists (code )
+
+
+
 
 lemma lemma_5_6
   {Q : F[Z][X][Y]}
