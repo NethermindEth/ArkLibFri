@@ -23,7 +23,7 @@ instance : ∀ j, OracleInterface ((pSpecFold D x k).Message j) :=
 
 @[reducible]
 noncomputable def reductionFold :
-  OracleReduction (oSpec D x)
+  OracleReduction []ₒ
     (Statement F (0 : Fin (k + 1))) (OracleStatement D x (0 : Fin (k + 1))) (Witness F)
     (Statement F (.last k)) (OracleStatement D x (.last k)) (Witness F)
     (pSpecFold (k := k) D x) :=
@@ -31,18 +31,18 @@ noncomputable def reductionFold :
         (FoldPhase.foldOracleReduction D x)
 
 @[reducible]
-def pSpec : ProtocolSpec ((Fin.vsum fun (_ : Fin k) ↦ 2) + 1) :=
-  ProtocolSpec.append (pSpecFold D x k) (QueryRound.pSpec D)
+def pSpec : ProtocolSpec ((Fin.vsum fun (_ : Fin k) ↦ 2) + 2) :=
+  ProtocolSpec.append (pSpecFold D x k) (QueryRound.pSpec D x l)
 
-instance : ∀ i, OracleInterface ((pSpecFold D x k ++ₚ QueryRound.pSpec F).Message i) :=
+instance : ∀ i, OracleInterface ((pSpecFold D x k ++ₚ QueryRound.pSpec D x l).Message i) :=
   instOracleInterfaceMessageAppend
 
 @[reducible]
 noncomputable def reduction [DecidableEq F] :
-  OracleReduction (oSpec D x)
+  OracleReduction []ₒ
     (Statement F (0 : Fin (k + 1))) (OracleStatement D x (0 : Fin (k + 1))) (Witness F)
     (Statement F (Fin.last k)) (OracleStatement D x (Fin.last k)) (Witness F)
-    (pSpecFold D x k ++ₚ QueryRound.pSpec F) :=
+    (pSpecFold D x k ++ₚ QueryRound.pSpec D x l) :=
   OracleReduction.append (reductionFold D x k)
     (QueryRound.queryOracleReduction (k := k) D x k_le_n l)
 
