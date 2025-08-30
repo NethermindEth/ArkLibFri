@@ -13,14 +13,6 @@ We describe the FRI oracle reduction as a composition of many single rounds, and
 codewords. f` is the sum over `a : α`
   of the probability of `a` under `p` times the measure of the set under `f a`. -/
 
-/-- The (default) oracle interface for a function `α → β`. -/
-instance {α β : Type*} : OracleInterface (α → β) :=
-  {
-    Query := α
-    Response := β
-    answer := id
-  }
-
 namespace Fri
 
 open Polynomial MvPolynomial OracleSpec OracleComp ProtocolSpec Finset CosetDomain
@@ -59,7 +51,7 @@ namespace FoldPhase
 
 Since everything are functions right now, we just use the default oracle interface for functions. -/
 instance {i : Fin (k + 1)} : ∀ j, OracleInterface (OracleStatement D x i j) :=
-  fun _ => instOracleInterfaceForall
+  fun _ => inferInstance
 
 /-- This is missing the relationship between the oracle statement and the witness. Need to define a
   proximity parameter here. Completeness will be for proximity param `0`, while soundness will have
@@ -81,7 +73,10 @@ def pSpec : ProtocolSpec 2 := ⟨!v[.V_to_P, .P_to_V], !v[F, (evalDomain D x i.1
 
 instance {i : Fin k} : ∀ j, OracleInterface ((pSpec D x i).Message j)
   | ⟨0, h⟩ => nomatch h
-  | ⟨1, _⟩ => instOracleInterfaceForall
+  | ⟨1, _⟩ => by
+      unfold pSpec Message
+      simp only [Fin.vcons_fin_zero, Nat.reduceAdd, Fin.isValue, Fin.vcons_one]
+      infer_instance
 
 /-- The prover for the `i`-th round of the FRI protocol. It first receives the challenge -/
 noncomputable def foldProver :
