@@ -208,7 +208,8 @@ private lemma op_der_eq : Monoid.toMulAction Fˣ = Units.mulAction' := by
   unfold_projs
   rfl
 
-lemma pow_2_pow_i_mem_Di_of_mem_D :
+lemma pow_2_pow_i_mem_Di_of_mem_D {F : Type} [NonBinaryField F] {D : Subgroup Fˣ}
+  [DIsCyclicC : IsCyclicWithGen ↥D] {x : Fˣ} :
   ∀ {a : Fˣ} (i : ℕ),
     a ∈ evalDomain D x 0 → a ^ (2 ^ i) ∈ evalDomain D x i := by
   unfold evalDomain
@@ -272,7 +273,9 @@ lemma dom_n_eq_triv : evalDomain D x n = {x ^ (2 ^ n)} := by
   rw [Domain.dom_n_eq_triv]
   simp
 
-instance domain_neg_inst (i : Fin n) : Neg (evalDomain D x i) where
+instance domain_neg_inst {F : Type} [NonBinaryField F] {D : Subgroup Fˣ} {n : ℕ}
+    [DIsCyclicC : IsCyclicWithGen ↥D] [DSmooth : SmoothPowerOfTwo n ↥D]
+    {x : Fˣ} (i : Fin n) : Neg (evalDomain D x i) where
   neg := fun a => ⟨_, neg_mem_dom_of_mem_dom D x i a.2⟩
 
 end CosetDomain
