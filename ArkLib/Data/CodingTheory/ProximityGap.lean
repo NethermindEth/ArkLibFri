@@ -149,11 +149,6 @@ open Polynomial Bivariate
 noncomputable def eval_on_Z₀ (p : (RatFunc F)) (z : F) : F :=
   RatFunc.eval (RingHom.id _) z p
 
-opaque eval_on_Z₁ (p : (RatFunc F)[X]) (z : F) : F[X] :=
-  sorry
-
-opaque eval_on_Z₂ (p : (RatFunc F)[X][Y]) (z : F) : F[X][Y] :=
-  sorry
 
 notation3:max R "[Z][X]" => Polynomial (Polynomial R)
 
@@ -162,6 +157,9 @@ notation3:max R "[Z][X][Y]" => Polynomial (Polynomial (Polynomial (R)))
 notation3:max "Y" => Polynomial.X
 notation3:max "X" => Polynomial.C Polynomial.X
 notation3:max "Z" => Polynomial.C (Polynomial.C Polynomial.X)
+
+noncomputable opaque eval_on_Z (p : F[Z][X][Y]) (z : F) : F[X][Y] :=
+  p.map (Polynomial.mapRingHom (Polynomial.evalRingHom z))
 
 open Polynomial.Bivariate in
 noncomputable def toRatFuncPoly (p : F[Z][X][Y]) : (RatFunc F)[X][Y] :=
@@ -236,10 +234,10 @@ def D_YZ (Q : F[Z][X][Y]) : ℕ :=
 
 end
 
-structure ModifiedGuruswami 
+structure ModifiedGuruswami
   (m n k : ℕ)
   (ωs : Fin n ↪ F)
-  (Q : F[Z][X][Y]) 
+  (Q : F[Z][X][Y])
   (u₀ u₁ : Fin n → F)
   where
   Q_ne_0 : Q ≠ 0
@@ -250,10 +248,10 @@ structure ModifiedGuruswami
               (Polynomial.C <| ωs i)
               ((Polynomial.C <| u₀ i) + Polynomial.X * (Polynomial.C <| u₁ i))
             ≥ m
-  Q_deg_X : 
-    Polynomial.Bivariate.degreeX Q < D_X ((k + 1) / (n : ℚ)) n m 
+  Q_deg_X :
+    Polynomial.Bivariate.degreeX Q < D_X ((k + 1) / (n : ℚ)) n m
   Q_D_Y :
-    D_Y Q < D_X (k + 1 / (n : ℚ)) n m / k 
+    D_Y Q < D_X (k + 1 / (n : ℚ)) n m / k
   Q_D_YZ :
     D_YZ Q ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt ((k + 1) / n))
 
@@ -330,10 +328,10 @@ lemma lemma_5_5
     P.natDegree ≤ k ∧
     ∀ i ∈ P.support, (P.coeff i).natDegree ≤ 1 := by sorry
 
-lemma eq_5_12 
+lemma eq_5_12
   {m n k : ℕ}
   {ωs : Fin n ↪ F} {u₀ u₁ : Fin n → F}
-  {Q : F[Z][X][Y]} 
+  {Q : F[Z][X][Y]}
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁) :
   ∃ (C : F[Z][X]) (R : List F[Z][X][Y]) (f : List ℕ) (e : List ℕ),
     R.length = f.length ∧
@@ -359,16 +357,19 @@ lemma lemma_5_6
 open Trivariate in
 open Bivariate in
 lemma lemma_5_7 [Finite F]
-  {ωs : Fin n ↪ F} {δ : ℚ} {x₀ : F} {f u₀ u₁ : Fin n → F}
-  {Q : F[Z][X][Y]} {p : (RatFunc F)[X]}
+  {ωs : Fin n ↪ F} {δ : ℚ} {x₀ : F} {u₀ u₁ : Fin n → F}
+  {Q : F[Z][X][Y]}
+  (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   :
-  ∃ R H, R ∈ Classical.choose (Classical.choose_spec (eq_5_12 Q)) ∧
+  ∃ R H, R ∈ Classical.choose (Classical.choose_spec (eq_5_12 h_gs)) ∧
     R ∣ Q ∧ Irreducible H ∧ H ∣ (Bivariate.evalX (Polynomial.C x₀) R) ∧
-   ({ z ∈ the_S k ωs δ u₀ u₁ |
-      (eval_on_Z₂ R z).comp (Polynomial.C (eval_on_Z₁ p z)) = 0
-      ∧ (eval_on_Z₁ H z).comp (eval_on_Z₁ p z) = 0 }).card ≥ (the_S k ωs δ u₀ u₁).card
-        / (Bivariate.natDegreeY Q)
-      ∧ (the_S k ωs δ u₀ u₁).card
+   (@Set.toFinset _ { z : F |
+      ∃ h : z ∈ the_S (F := F) k ωs δ u₀ u₁,
+        let Pz := Pz (F := F) k z ωs δ u₀ u₁ h
+        (Trivariate.eval_on_Z R z).eval Pz = 0 ∧
+        (Bivariate.evalX z H).eval (Pz.eval x₀) = 0} sorry).card
+    ≥ (the_S k ωs δ u₀ u₁).card / (Bivariate.natDegreeY Q)
+    ∧ (the_S k ωs δ u₀ u₁).card
         / (Bivariate.natDegreeY Q) > 2 * D_Y Q ^ 2 * (D_X ((k + 1 : ℚ) / n) n m) * D_YZ Q
     := by sorry
 
