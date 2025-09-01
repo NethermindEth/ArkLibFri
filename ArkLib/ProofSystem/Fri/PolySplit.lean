@@ -51,7 +51,7 @@ def split (f : 𝔽[X]) (n : ℕ) [inst : NeZero n] : Fin n → 𝔽[X] :=
             simp [this]
       ⟩
 
-example {n : ℕ} (f : 𝔽[X]) [inst : NeZero n] :
+lemma split_def {n : ℕ} (f : 𝔽[X]) [inst : NeZero n] :
     f =
       ∑ i : Fin n,
         (Polynomial.X ^ i.1) *
@@ -87,11 +87,10 @@ example {n : ℕ} (f : 𝔽[X]) [inst : NeZero n] :
           rw [h']
           exact Nat.eq_div_of_mul_eq_right inst.out rfl
         simp [this]
-      ·
-        intros h'
+      · intros h'
         split_ifs with h''
         · exact notMem_support_iff.mp h'
-        . rfl
+        · rfl
     · have {α : Type} {a b : α} : ∀ m, (if e = n * m then a else b) = b := by aesop
       conv =>
         lhs
