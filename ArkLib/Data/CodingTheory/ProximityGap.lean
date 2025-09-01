@@ -236,22 +236,33 @@ def D_YZ (Q : F[Z][X][Y]) : ℕ :=
 
 end
 
+structure ModifiedGuruswami 
+  (m n k : ℕ)
+  (ωs : Fin n ↪ F)
+  (Q : F[Z][X][Y]) 
+  (u₀ u₁ : Fin n → F)
+  where
+  Q_ne_0 : Q ≠ 0
+  /-- Degree of the polynomial. -/
+  Q_deg : weightedDegree Q 1 k ≤ D_X ((k + 1) / (n : ℚ)) n m
+  /-- Multiplicity of the roots is at least r. -/
+  Q_multiplicity : ∀ i,  Polynomial.Bivariate.rootMultiplicity Q
+              (Polynomial.C <| ωs i)
+              ((Polynomial.C <| u₀ i) + Polynomial.X * (Polynomial.C <| u₁ i))
+            ≥ m
+  Q_deg_X : 
+    Polynomial.Bivariate.degreeX Q < D_X ((k + 1) / (n : ℚ)) n m 
+  Q_D_Y :
+    D_Y Q < D_X (k + 1 / (n : ℚ)) n m / k 
+  Q_D_YZ :
+    D_YZ Q ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt ((k + 1) / n))
+
 -- Definition of D_YZ needs a fix, in particular, currently definition is "D_XY".
 lemma proximity_gap_claim_5_4
-  {ωs : Fin n ↪ F} {u₀ u₁ : Fin n → F}
   {m n k : ℕ}
+  {ωs : Fin n ↪ F} {u₀ u₁ : Fin n → F}
   :
-  ∃ Q : (RatFunc F)[X][Y],
-    Q ≠ 0 ∧
-    weightedDegree Q 1 k ≤ D_X ((k + 1) / (n : ℚ)) n m ∧
-    ∀ i,  Polynomial.Bivariate.rootMultiplicity Q
-              (RatFunc.C <| ωs i)
-              ((RatFunc.C <| u₀ i) + RatFunc.X * (RatFunc.C <| u₁ i))
-            ≥ m ∧
-    Polynomial.Bivariate.degreeX Q < D_X ((k + 1) / (n : ℚ)) n m ∧ 
-    ∃ Q' : F[Z][X][Y], Q = (Trivariate.toRatFuncPoly Q') ∧
-    D_Y Q' < D_X (k + 1 / (n : ℚ)) n m / k ∧
-    D_YZ Q' ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt ((k + 1) / n))
+  ∃ Q : F[Z][X][Y], ModifiedGuruswami m n k ωs Q u₀ u₁
     := by sorry
 
 end
@@ -265,18 +276,6 @@ def the_S [Finite F] (ωs : Fin n ↪ F) (δ : ℚ) (u₀ u₁ : Fin n → F)
 
 open Polynomial
 
-lemma eq_5_12 (Q : F[Z][X][Y]) :
-  ∃ (C : F[Z][X]) (R : List F[Z][X][Y]) (f : List ℕ) (e : List ℕ),
-    R.length = f.length ∧
-    f.length = e.length ∧
-    ∀ eᵢ ∈ e, 1 ≤ eᵢ ∧
-    ∀ Rᵢ ∈ R, Rᵢ.Separable ∧
-    ∀ Rᵢ ∈ R, Irreducible Rᵢ ∧
-    Q = (Polynomial.C C) *
-      (List.prod
-        <| List.map
-          (fun ((R, f), e) => (R.comp ((Y : F[Z][X][Y]) ^ f))^e) (List.zip (List.zip R f) e))
-  := sorry
 
 lemma Pz_exists_for_the_S
   [Finite F]
@@ -319,8 +318,10 @@ noncomputable def Pz
 
 lemma lemma_5_5
   [Finite F]
-  {Q : F[Z][X][Y]}
   {ωs : Fin n ↪ F}
+  {u₀ u₁ : Fin n → F}
+  {Q : F[Z][X][Y]}
+  (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   {δ : ℚ} {u₀ u₁ : Fin n → F}
   :
   ∃ S', ∃ (h_sub : S' ⊆ the_S k ωs δ u₀ u₁), ∃ P : F[Z][X],
@@ -329,10 +330,30 @@ lemma lemma_5_5
     P.natDegree ≤ k ∧
     ∀ i ∈ P.support, (P.coeff i).natDegree ≤ 1 := by sorry
 
+lemma eq_5_12 
+  {m n k : ℕ}
+  {ωs : Fin n ↪ F} {u₀ u₁ : Fin n → F}
+  {Q : F[Z][X][Y]} 
+  (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁) :
+  ∃ (C : F[Z][X]) (R : List F[Z][X][Y]) (f : List ℕ) (e : List ℕ),
+    R.length = f.length ∧
+    f.length = e.length ∧
+    ∀ eᵢ ∈ e, 1 ≤ eᵢ ∧
+    ∀ Rᵢ ∈ R, Rᵢ.Separable ∧
+    ∀ Rᵢ ∈ R, Irreducible Rᵢ ∧
+    Q = (Polynomial.C C) *
+      (List.prod
+        <| List.map
+          (fun ((R, f), e) => (R.comp ((Y : F[Z][X][Y]) ^ f))^e) (List.zip (List.zip R f) e))
+  := sorry
+
 lemma lemma_5_6
+  {ωs : Fin n ↪ F}
+  {u₀ u₁ : Fin n → F}
   {Q : F[Z][X][Y]}
+  (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   : ∃ x₀,
-      ∀ R ∈ Classical.choose (Classical.choose_spec (eq_5_12 Q)),
+      ∀ R ∈ Classical.choose (Classical.choose_spec (eq_5_12 h_gs)),
       Bivariate.evalX x₀ (Bivariate.discr_y R) ≠ 0 := by sorry
 
 open Trivariate in
