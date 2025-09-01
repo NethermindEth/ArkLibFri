@@ -248,6 +248,7 @@ lemma proximity_gap_claim_5_4
               (RatFunc.C <| ωs i)
               ((RatFunc.C <| u₀ i) + RatFunc.X * (RatFunc.C <| u₁ i))
             ≥ m ∧
+    Polynomial.Bivariate.degreeX Q < D_X ((k + 1) / (n : ℚ)) n m ∧ 
     ∃ Q' : F[Z][X][Y], Q = (Trivariate.toRatFuncPoly Q') ∧
     D_Y Q' < D_X (k + 1 / (n : ℚ)) n m / k ∧
     D_YZ Q' ≤ n * (m + 1/(2 : ℚ))^3 / (6 * Real.sqrt ((k + 1) / n))
