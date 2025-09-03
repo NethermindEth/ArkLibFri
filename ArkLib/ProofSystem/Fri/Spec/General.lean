@@ -11,7 +11,7 @@ namespace Spec
 variable {F : Type} [NonBinaryField F] [Finite F]
 variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicWithGen D] [DSmooth : SmoothPowerOfTwo n D]
 variable (x : Fˣ)
-variable (k : ℕ) (k_le_n : k ≤ n) (i : Fin k)
+variable (k d : ℕ) (k_le_n : k ≤ n) (i : Fin k)
 variable (l : ℕ)
 
 @[reducible]
@@ -44,7 +44,7 @@ noncomputable def reduction [DecidableEq F] :
     (Statement F (Fin.last k)) (OracleStatement D x (Fin.last k)) (Witness F)
     (pSpecFold D x k ++ₚ QueryRound.pSpec D x l) :=
   OracleReduction.append (reductionFold D x k)
-    (QueryRound.queryOracleReduction (k := k) D x k_le_n l)
+    (QueryRound.queryOracleReduction (k := k) D x d k_le_n l)
 
 end Spec
 

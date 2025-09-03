@@ -22,7 +22,7 @@ namespace Spec
 variable {F : Type} [NonBinaryField F] [Finite F]
 variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicWithGen D] [DSmooth : SmoothPowerOfTwo n D]
 variable (x : Fˣ)
-variable {k : ℕ} (k_le_n : k ≤ n) (i : Fin k)
+variable {k : ℕ} (d : ℕ) (k_le_n : k ≤ n) (i : Fin k)
 
 
 /-- For the `i`-th round of the protocol, the input statement is equal to the challenges sent from
@@ -58,12 +58,12 @@ instance {i : Fin (k + 1)} : ∀ j, OracleInterface (OracleStatement D x i j) :=
   non-zero proximity param. -/
 def inputRelation :
     Set ((Statement F i.castSucc × (∀ j, OracleStatement D x i.castSucc j)) × Witness F) :=
-  {⟨⟨_, _⟩, p⟩ | Polynomial.natDegree p < 2 ^ (k - i.val)}
+  {⟨⟨_, _⟩, p⟩ | Polynomial.natDegree p < 2 ^ (k - i.val) * d}
 
 /-- Same with the above comment about input relation. -/
 def outputRelation :
     Set ((Statement F i.succ × (∀ j, OracleStatement D x i.succ j)) × Witness F) :=
-  {⟨⟨_, _⟩, p⟩ | Polynomial.natDegree p < 2 ^ (k - (i.val + 1))}
+  {⟨⟨_, _⟩, p⟩ | Polynomial.natDegree p < 2 ^ (k - (i.val + 1)) * d}
 
 /-- Each round of the FRI protocol begins with the verifier sending a random field element as the
   challenge to the prover, and ends with the prover sending a codeword (of the desired length) to
@@ -77,6 +77,8 @@ instance {i : Fin k} : ∀ j, OracleInterface ((pSpec D x i).Message j)
       unfold pSpec Message
       simp only [Fin.vcons_fin_zero, Nat.reduceAdd, Fin.isValue, Fin.vcons_one]
       infer_instance
+
+
 
 /-- The prover for the `i`-th round of the FRI protocol. It first receives the challenge -/
 noncomputable def foldProver :
@@ -161,13 +163,13 @@ variable (l : ℕ)
 
 @[reducible]
 def pSpec : ProtocolSpec 2 :=
-  ⟨!v[.P_to_V, .V_to_P], !v[Unit → F, Fin l → evalDomain D x 0]⟩
+  ⟨!v[.P_to_V, .V_to_P], !v[Unit → F[X], Fin l → evalDomain D x 0]⟩
 
 instance : ∀ j, OracleInterface ((pSpec D x l).Message j) := fun j =>
   match j with
   | ⟨0, h⟩ => by
     simp
-    infer_instance
+    exact OracleInterface.instFunction
   | ⟨1, h⟩ => nomatch h
 
 instance : ∀ j, OracleInterface ((pSpec D x l).Challenge j) := fun j =>
@@ -192,7 +194,7 @@ noncomputable def queryProver :
 
   sendMessage
   | ⟨0, _⟩ => fun ⟨⟨chals, o⟩, p⟩ => do
-      pure ⟨fun _ => p.coeff 0, ⟨⟨chals, o⟩, p⟩⟩
+      pure ⟨fun _ => p, ⟨⟨chals, o⟩, p⟩⟩
   | ⟨1, h⟩ => nomatch h
   receiveChallenge
   | ⟨0, h⟩ => nomatch h
@@ -205,7 +207,7 @@ def sampleCodeword {F : Type} [NonBinaryField F] {D : Subgroup Fˣ} [DIsCyclicC 
     OracleComp [OracleStatement D x (Fin.last k)]ₒ F :=
   OracleComp.lift (OracleSpec.query i d)
 
-def getConst : OracleComp [(pSpec D x l).Message]ₒ F :=
+def getConst : OracleComp [(pSpec D x l).Message]ₒ F[X] :=
   OracleComp.lift
     (by simpa using
           OracleSpec.query
@@ -222,6 +224,8 @@ noncomputable def queryVerifier [DecidableEq F] :
   verify := fun prevChallenges roundChallenge => do
     for m in (List.finRange l) do
       let s₀ := roundChallenge ⟨1, by aesop⟩ m
+      let p ← getConst D x l
+      guard (p.natDegree < d)
       discard <|
         (List.finRange k).mapM
               (fun (i : Fin k) =>
@@ -237,7 +241,7 @@ noncomputable def queryVerifier [DecidableEq F] :
                     then
                       sampleCodeword (k := k) (i := ⟨i.1.succ, by omega⟩)
                         ⟨_, sqr_mem_D_succ_i_of_mem_D_i D x s₀.2⟩
-                    else getConst D x l
+                    else pure (p.eval s₀.1.1)
                   guard (consistency_check x₀ s₀.1.1 s₁.1.1 α₀ α₁ β)
               )
     pure prevChallenges
@@ -262,7 +266,7 @@ noncomputable def queryOracleReduction [DecidableEq F] :
     (Witness F)
     (pSpec D x l) where
   prover := queryProver D x l
-  verifier := queryVerifier D x k_le_n l
+  verifier := queryVerifier D x d k_le_n l
 
 end QueryRound
 
