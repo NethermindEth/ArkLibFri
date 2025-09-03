@@ -216,21 +216,41 @@ lemma guruswami_sudan_for_proximity_gap_property {k m : ℕ} {ωs : Fin n ↪ F}
   {p : ReedSolomon.code ωs n}
   (h : δᵣ(w, p) ≤ proximity_gap_johnson ((k + 1 : ℚ) / n) m)
   :
-  ((X : F[X][Y]) - Polynomial.C (ReedSolomon.codewordToPoly p)) ∣ Q := by sorry
+  (X - Polynomial.C (ReedSolomon.codewordToPoly p)) ∣ Q := by sorry
 
 
 section
 
 open Polynomial
 
+def Fintype.ofFinset' {α : Type*} {p : Set α} (s : Finset α) (H : ∀ (x : α), x ∈ p → x ∈ s)
+  [DecidablePred fun x ↦ x ∈ p] : Fintype ↑p := by
+  apply Fintype.ofFinset (Finset.filter (· ∈ p) s)
+  intros x
+  simp only [mem_filter, and_iff_right_iff_imp]
+  exact H x
+
+-- { i |
+--         ∃ j ∈ Q.support, ∃ k ∈ (Q.coeff j).support,
+--           i = j + (Bivariate.coeff Q j k).natDegree }
+
 noncomputable def D_X (ρ : ℚ) (n m : ℕ) : ℕ := proximity_gap_degree_bound ρ m n
 def D_Y (Q : F[Z][X][Y]) : ℕ := Bivariate.natDegreeY Q
 def D_YZ (Q : F[Z][X][Y]) : ℕ :=
   Option.getD (dflt := 0) <| Finset.max
-    (@Set.toFinset _
-      { i |
-        ∃ j ∈ Q.support, ∃ k ∈ (Q.coeff j).support,
-          i = j + (Bivariate.coeff Q j k).natDegree } sorry)
+    (Finset.image
+            (
+              fun j =>
+                Option.getD (
+                  Finset.max (
+                    Finset.image
+                      (fun k => j + (Bivariate.coeff Q j k).natDegree)
+                      (Q.coeff j).support
+                  )
+                ) 0
+            )
+            Q.support
+    )
 
 end
 
@@ -267,7 +287,10 @@ end
 
 variable {m : ℕ} (k : ℕ)
 
-instance {α : Type} (s : Set α) [Finite s] : Fintype s := sorry
+instance {α : Type} (s : Set α) [inst : Finite s] : Fintype s where
+  elems := sorry
+  complete := by
+    sorry
 
 def the_S [Finite F] (ωs : Fin n ↪ F) (δ : ℚ) (u₀ u₁ : Fin n → F)
   : Finset F := Set.toFinset { z | ∃ v : ReedSolomon.code ωs (k + 1), δᵣ(u₀ + z • u₁, v) ≤ δ}
