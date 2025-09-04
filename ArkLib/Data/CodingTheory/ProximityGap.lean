@@ -223,13 +223,6 @@ section
 
 open Polynomial
 
-def Fintype.ofFinset' {α : Type*} {p : Set α} (s : Finset α) (H : ∀ (x : α), x ∈ p → x ∈ s)
-  [DecidablePred fun x ↦ x ∈ p] : Fintype ↑p := by
-  apply Fintype.ofFinset (Finset.filter (· ∈ p) s)
-  intros x
-  simp only [mem_filter, and_iff_right_iff_imp]
-  exact H x
-
 -- { i |
 --         ∃ j ∈ Q.support, ∃ k ∈ (Q.coeff j).support,
 --           i = j + (Bivariate.coeff Q j k).natDegree }
