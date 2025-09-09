@@ -290,7 +290,7 @@ def the_S [Finite F] (ωs : Fin n ↪ F) (δ : ℚ) (u₀ u₁ : Fin n → F)
 
 open Polynomial
 
-
+omit [DecidableEq (RatFunc F)] in
 lemma Pz_exists_for_the_S
   [Finite F]
   {k : ℕ}
