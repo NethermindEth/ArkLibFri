@@ -35,7 +35,7 @@ def Statement (F : Type) (i : Fin (k + 1)) : Type := Fin i.val → F
   beginning purported codeword, and `i` more for each of the rounds `0` to `i - 1`. After the `i`-th
   round, we append the `i`-th message sent by the prover to the oracle statement. -/
 @[reducible]
-def OracleStatement (i : Fin (k + 1)) : Fin i.1 → Type :=
+def OracleStatement (i : Fin (k + 1)) : Fin i.val → Type :=
   fun j => evalDomain D x j.1 → F
 
 /-- The FRI protocol has as witness the polynomial that is supposed to correspond to the codeword in
