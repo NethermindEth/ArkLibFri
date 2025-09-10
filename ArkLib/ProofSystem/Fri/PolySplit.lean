@@ -210,7 +210,7 @@ lemma poly_eq_of {p q : 𝔽[X]} {n : ℕ}
       (hp : p.degree < .some n) (hq : q.degree < .some n) (s : Finset 𝔽) :
     s.card ≥ n → (∀ x ∈ s, p.eval x = q.eval x) → p = q := by
   intros h h'
-  apply?
+  
   sorry
 
 lemma consistency_check_comp {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq 𝔽] {f : Polynomial 𝔽}
@@ -297,23 +297,27 @@ lemma consistency_check_comp {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq �
       ext i
       rw [mul_comm]
     rw [←bla]
-    -- have : (List.map (fun i ↦ (ω i * s₀, eval (ω i * s₀) (∑ i, X ^ i.1 * eval₂ C (X ^ n) (split f n i))))
-    --   (List.finRange n)).length = n := by
-    --     simp
-
-    -- have (x : Fin
-    --         (List.map (fun i ↦ (ω i * s₀, eval (ω i * s₀) (∑ i, X ^ i.1 * eval₂ C (X ^ n) (split f n i)))) (List.finRange n)).length) :
-    --   (⟨x.1, by have := x.2; simp at this; exact this⟩ : Fin n) = (by simpa using x) := by
-    --   ext
-    --   simp!
-    --   sorry
-
+    have pog :
+      (List.map (fun i ↦ (ω i * s₀, eval (ω i * s₀) (∑ i : Fin n, X ^ i.1 * eval₂ C (X ^ n) (split f n i))))
+      (List.finRange n)).length = n := by simp
+    rw [Finset.sum_fin_eq_sum_range]; conv_rhs => rw [Finset.sum_fin_eq_sum_range]
     congr
     simp
+    ext i
+    congr
+    ext j
+    congr 2
+    congr 1
     simp
+    swap
+    congr 1
     simp
-
-    sorry
+    congr 1
+    swap
+    exact (Fin.heq_fun_iff pog).mpr (congrFun rfl)
+    swap
+    exact (Fin.heq_ext_iff pog).mpr rfl
+    rw [pog]
   rw [this, Polynomial.eval_finset_sum]
   conv =>
     lhs
