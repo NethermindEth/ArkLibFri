@@ -1,6 +1,7 @@
 import Init.Data.Nat.Dvd
 import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Algebra.Polynomial.Coeff
+import Mathlib.LinearAlgebra.Lagrange
 
 open Polynomial
 
@@ -51,7 +52,7 @@ def split (f : 𝔽[X]) (n : ℕ) [inst : NeZero n] : Fin n → 𝔽[X] :=
             simp [this]
       ⟩
 
-lemma split_def {n : ℕ} (f : 𝔽[X]) [inst : NeZero n] :
+lemma split_def (n : ℕ) (f : 𝔽[X]) [inst : NeZero n] :
     f =
       ∑ i : Fin n,
         (Polynomial.X ^ i.1) *
@@ -199,3 +200,124 @@ lemma split_def {n : ℕ} (f : 𝔽[X]) [inst : NeZero n] :
 
 noncomputable def foldα (n : ℕ) (f : 𝔽[X]) (α : 𝔽) [inst : NeZero n] : 𝔽[X] :=
   ∑ i : Fin n, Polynomial.C α ^ i.1 * split f n i
+
+noncomputable def consistency_check [Field 𝔽] [DecidableEq 𝔽]
+    (γ : 𝔽) (pts : List (𝔽 × 𝔽)) (β : 𝔽) : Bool :=
+  let p := Lagrange.interpolate Finset.univ (fun i => (pts.get i).1) (fun i => (pts.get i).2)
+  p.eval γ == β
+
+lemma poly_eq_of {p q : 𝔽[X]} {n : ℕ}
+      (hp : p.degree < .some n) (hq : q.degree < .some n) (s : Finset 𝔽) :
+    s.card ≥ n → (∀ x ∈ s, p.eval x = q.eval x) → p = q := by
+  intros h h'
+  apply?
+  sorry
+
+lemma consistency_check_comp {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq 𝔽] {f : Polynomial 𝔽}
+  {n : ℕ} [inst : NeZero n]
+  {γ : 𝔽}
+  {s₀ : 𝔽}
+  {ω : Fin n ↪ 𝔽}
+  (h : ∀ i, (ω i) ^ n = 1)
+  (h₁ : s₀ ≠ 0)
+  :
+    consistency_check
+      γ
+      (List.map (fun i => (ω i * s₀, f.eval (ω i * s₀))) (List.finRange n))
+      ((foldα n f γ).eval (s₀^n)) = true := by
+  unfold consistency_check
+  simp only [List.get_eq_getElem, List.getElem_map, List.getElem_finRange, Fin.cast_mk,
+    beq_iff_eq]
+  unfold foldα
+  conv =>
+    left
+    rw [split_def n f]
+  rw [Polynomial.eval_finset_sum]
+  simp only [eval_mul, eval_C, eval_pow]
+  have eval_eval₂_pow_eq_eval_pow {s : 𝔽} (i) :
+      eval s (eval₂ C (X ^ n) (split f n i)) = (split f n i).eval (s ^ n) := by
+    unfold Polynomial.eval
+    rw [eval₂_eq_sum, eval₂_eq_sum, eval₂_eq_sum]
+    simp only [RingHom.id_apply]
+    sorry
+  conv =>
+    left
+    congr
+    · skip
+    rhs
+    ext i
+    rw [Polynomial.eval_finset_sum]
+    congr
+    · skip
+    ext j
+    rw [eval_mul, eval_pow, eval_X, eval_eval₂_pow_eq_eval_pow]
+    rhs
+    rw [mul_pow, h, one_mul]
+  generalize heq : @Lagrange.interpolate 𝔽 inst1 (Fin _) _ _ _ _ = p'
+  have :
+    p' = ∑ j, Polynomial.X ^ j.1 * Polynomial.C (eval (s₀ ^ n) (split f n j)) := by
+    have p'_deg : p'.degree < .some n := by
+      rw [←heq]
+      sorry
+    have h₂ : (∑ (j : Fin n), X ^ j.1 * C (eval (s₀ ^ n) (split f n j))).degree < .some n := by
+      sorry
+    let fmul : 𝔽 ↪ 𝔽 := ⟨fun x => x * s₀, by intros _; aesop⟩
+    apply poly_eq_of p'_deg h₂ (Finset.map (Function.Embedding.trans ω fmul) Finset.univ) (by simp)
+    intros x h'
+    simp only [Finset.mem_map, Finset.mem_univ, true_and] at h'
+    rcases h' with ⟨a, h'⟩
+    simp only [Function.Embedding.trans_apply, Function.Embedding.coeFn_mk, fmul] at h'
+    rw [←h', ←heq]
+    simp only [Lagrange.interpolate_apply, map_sum, map_mul, map_pow, X_pow_mul_C]
+    rw [Polynomial.eval_finset_sum, Polynomial.eval_finset_sum]
+    simp only [eval_mul, eval_C, eval_pow, eval_X]
+    conv =>
+      lhs
+      congr
+      · skip
+      ext x
+      rw [Polynomial.eval_finset_sum]
+      lhs
+      congr
+      · skip
+      ext i
+      rw [eval_mul, eval_C, eval_pow, eval_mul, eval_C, eval_C]
+    have bla :=
+      @Finset.sum_eq_single (Fin n) 𝔽 _ Finset.univ
+        (fun x => (∑ i, (ω x * s₀) ^ i.1 * eval (s₀ ^ n) (split f n i)) *
+      eval (ω a * s₀) (Lagrange.basis Finset.univ (fun (i : Fin n) ↦ ω i * s₀) x)) a
+    have blu := @Lagrange.eval_basis_self 𝔽 _ (Fin n) _ Finset.univ (fun i ↦ ω i * s₀) a sorry (Finset.mem_univ a)
+    simp only at blu
+    rw [blu, mul_one] at bla
+    have bla := bla sorry sorry
+    conv at bla =>
+      rhs
+      congr
+      · skip
+      ext i
+      rw [mul_comm]
+    rw [←bla]
+    -- have : (List.map (fun i ↦ (ω i * s₀, eval (ω i * s₀) (∑ i, X ^ i.1 * eval₂ C (X ^ n) (split f n i))))
+    --   (List.finRange n)).length = n := by
+    --     simp
+
+    -- have (x : Fin
+    --         (List.map (fun i ↦ (ω i * s₀, eval (ω i * s₀) (∑ i, X ^ i.1 * eval₂ C (X ^ n) (split f n i)))) (List.finRange n)).length) :
+    --   (⟨x.1, by have := x.2; simp at this; exact this⟩ : Fin n) = (by simpa using x) := by
+    --   ext
+    --   simp!
+    --   sorry
+
+    congr
+    simp
+    simp
+    simp
+
+    sorry
+  rw [this, Polynomial.eval_finset_sum]
+  conv =>
+    lhs
+    congr
+    · skip
+    ext i
+    rw [eval_mul, eval_pow, eval_X, eval_C]
