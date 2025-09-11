@@ -69,6 +69,7 @@ import ArkLib.Data.Fin.Tuple.Lemmas
 import ArkLib.Data.Fin.Tuple.Notation
 import ArkLib.Data.Fin.Tuple.TakeDrop
 import ArkLib.Data.GroupTheory.PrimeOrder
+import ArkLib.Data.GroupTheory.Smooth
 import ArkLib.Data.Hash.DomainSep
 import ArkLib.Data.Hash.DuplexSponge
 import ArkLib.Data.Hash.Poseidon2
@@ -146,6 +147,7 @@ import ArkLib.ProofSystem.Fri.Domain
 import ArkLib.ProofSystem.Fri.EvenAndOdd
 import ArkLib.ProofSystem.Fri.EvenAndOdd.Def
 import ArkLib.ProofSystem.Fri.EvenAndOdd.Lemmas
+import ArkLib.ProofSystem.Fri.PolySplit
 import ArkLib.ProofSystem.Fri.RoundConsistency
 import ArkLib.ProofSystem.Fri.Spec.General
 import ArkLib.ProofSystem.Fri.Spec.SingleRound
