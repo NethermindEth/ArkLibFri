@@ -5,6 +5,8 @@ import Mathlib.LinearAlgebra.Lagrange
 
 open Polynomial
 
+namespace RoundConsistency
+
 variable {𝔽 : Type} [CommSemiring 𝔽]
 
 def split (f : 𝔽[X]) (n : ℕ) [inst : NeZero n] : Fin n → 𝔽[X] :=
@@ -201,7 +203,7 @@ lemma split_def (n : ℕ) (f : 𝔽[X]) [inst : NeZero n] :
 noncomputable def foldα (n : ℕ) (f : 𝔽[X]) (α : 𝔽) [inst : NeZero n] : 𝔽[X] :=
   ∑ i : Fin n, Polynomial.C α ^ i.1 * split f n i
 
-noncomputable def consistency_check [Field 𝔽] [DecidableEq 𝔽]
+noncomputable def round_consistency_check [Field 𝔽] [DecidableEq 𝔽]
     (γ : 𝔽) (pts : List (𝔽 × 𝔽)) (β : 𝔽) : Bool :=
   let p := Lagrange.interpolate Finset.univ (fun i => (pts.get i).1) (fun i => (pts.get i).2)
   p.eval γ == β
@@ -242,7 +244,8 @@ lemma poly_eq_of [Field 𝔽] {p q : 𝔽[X]} {n : ℕ}
           · rw [Polynomial.degree_eq_natDegree p_eq, this, WithBot.coe_lt_coe] at hp
             simp [hp, hq]
 
-lemma consistency_check_comp {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq 𝔽] {f : Polynomial 𝔽}
+lemma generalised_round_consistency_completeness
+  {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq 𝔽] {f : Polynomial 𝔽}
   {n : ℕ} [inst : NeZero n]
   {γ : 𝔽}
   {s₀ : 𝔽}
@@ -250,11 +253,11 @@ lemma consistency_check_comp {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq �
   (h : ∀ i, (ω i) ^ n = 1)
   (h₁ : s₀ ≠ 0)
   :
-    consistency_check
+    round_consistency_check
       γ
       (List.map (fun i => (ω i * s₀, f.eval (ω i * s₀))) (List.finRange n))
       ((foldα n f γ).eval (s₀^n)) = true := by
-  unfold consistency_check
+  unfold round_consistency_check
   simp only [List.get_eq_getElem, List.getElem_map, List.getElem_finRange, Fin.cast_mk,
     beq_iff_eq]
   unfold foldα
@@ -416,3 +419,5 @@ lemma consistency_check_comp {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq �
     · skip
     ext i
     rw [eval_mul, eval_pow, eval_X, eval_C]
+
+end RoundConsistency
