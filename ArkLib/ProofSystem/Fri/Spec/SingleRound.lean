@@ -202,14 +202,14 @@ noncomputable def queryProver :
 
   output := pure
 
-def sampleCodeword {F : Type} [NonBinaryField F] {D : Subgroup Fˣ} [DIsCyclicC : IsCyclicWithGen ↥D]
+def queryCodeword {F : Type} [NonBinaryField F] {D : Subgroup Fˣ} [DIsCyclicC : IsCyclicWithGen ↥D]
   {x : Fˣ} {k : ℕ} {i : Fin k} (d : evalDomain D x i.1) :
     OracleComp [OracleStatement D x (Fin.last k)]ₒ F :=
   OracleComp.lift (OracleSpec.query i d)
 
 def getConst : OracleComp [(pSpec D x l).Message]ₒ F[X] :=
   OracleComp.lift
-    (by simpa using
+    (by exact
           OracleSpec.query
             (spec := [(pSpec D x l).Message]ₒ)
             ⟨0, by rfl⟩
@@ -234,12 +234,12 @@ noncomputable def queryVerifier [DecidableEq F] :
                   let s₀ : evalDomain D x i.1 := ⟨_, pow_2_pow_i_mem_Di_of_mem_D i s₀.2⟩
                   let s₁ : evalDomain D x i.1 :=
                     (domain_neg_inst (n := n) (i := ⟨i.1, by omega⟩)).neg s₀
-                  let α₀ ← sampleCodeword s₀
-                  let α₁ ← sampleCodeword s₁
+                  let α₀ ← queryCodeword s₀
+                  let α₁ ← queryCodeword s₁
                   let β ←
                     if h : i.1 < k - 1
                     then
-                      sampleCodeword (k := k) (i := ⟨i.1.succ, by omega⟩)
+                      queryCodeword (k := k) (i := ⟨i.1.succ, by omega⟩)
                         ⟨_, sqr_mem_D_succ_i_of_mem_D_i D x s₀.2⟩
                     else pure (p.eval s₀.1.1)
                   guard (consistency_check x₀ s₀.1.1 s₁.1.1 α₀ α₁ β)
