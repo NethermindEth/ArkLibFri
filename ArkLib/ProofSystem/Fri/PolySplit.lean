@@ -206,12 +206,41 @@ noncomputable def consistency_check [Field 𝔽] [DecidableEq 𝔽]
   let p := Lagrange.interpolate Finset.univ (fun i => (pts.get i).1) (fun i => (pts.get i).2)
   p.eval γ == β
 
-lemma poly_eq_of {p q : 𝔽[X]} {n : ℕ}
+omit [CommSemiring 𝔽] in
+lemma poly_eq_of [Field 𝔽] {p q : 𝔽[X]} {n : ℕ}
       (hp : p.degree < .some n) (hq : q.degree < .some n) (s : Finset 𝔽) :
     s.card ≥ n → (∀ x ∈ s, p.eval x = q.eval x) → p = q := by
   intros h h'
-  
-  sorry
+  by_cases h'' : p = 0 ∧ q = 0
+  · rw [h''.1, h''.2]
+  · have h'' : p ≠ 0 ∨ q ≠ 0 := by tauto
+    have : p - q = 0 → p = q := by rw [sub_eq_zero]; exact id
+    apply this
+    apply Polynomial.eq_zero_of_natDegree_lt_card_of_eval_eq_zero' _ s
+    · intros x h''
+      specialize h' x h''
+      simp only [eval_sub]
+      rw [h']
+      simp
+    · have {x} : @Nat.cast (WithBot ℕ) WithBot.addMonoidWithOne.toNatCast x = .some x := by rfl
+      refine lt_of_lt_of_le ?_ h
+      rcases h'' with h'' | h''
+      · rw [Polynomial.degree_eq_natDegree h'', this, WithBot.coe_lt_coe] at hp
+        apply lt_of_le_of_lt
+        · exact Polynomial.natDegree_sub_le _ _
+        · by_cases q_eq : q = 0
+          · rw [q_eq]
+            simp [hp]
+          · rw [Polynomial.degree_eq_natDegree q_eq, this, WithBot.coe_lt_coe] at hq
+            simp [hp, hq]
+      · rw [Polynomial.degree_eq_natDegree h'', this, WithBot.coe_lt_coe] at hq
+        apply lt_of_le_of_lt
+        · exact Polynomial.natDegree_sub_le _ _
+        · by_cases p_eq : p = 0
+          · rw [p_eq]
+            simp [hq]
+          · rw [Polynomial.degree_eq_natDegree p_eq, this, WithBot.coe_lt_coe] at hp
+            simp [hp, hq]
 
 lemma consistency_check_comp {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq 𝔽] {f : Polynomial 𝔽}
   {n : ℕ} [inst : NeZero n]
@@ -236,10 +265,13 @@ lemma consistency_check_comp {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq �
   simp only [eval_mul, eval_C, eval_pow]
   have eval_eval₂_pow_eq_eval_pow {s : 𝔽} (i) :
       eval s (eval₂ C (X ^ n) (split f n i)) = (split f n i).eval (s ^ n) := by
+    rw [eval₂_eq_sum]
     unfold Polynomial.eval
-    rw [eval₂_eq_sum, eval₂_eq_sum, eval₂_eq_sum]
-    simp only [RingHom.id_apply]
-    sorry
+    rw [Polynomial.eval₂_sum, eval₂_eq_sum]
+    congr
+    ext e a
+    rw [←eval]
+    simp
   conv =>
     left
     congr
@@ -258,9 +290,59 @@ lemma consistency_check_comp {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq �
     p' = ∑ j, Polynomial.X ^ j.1 * Polynomial.C (eval (s₀ ^ n) (split f n j)) := by
     have p'_deg : p'.degree < .some n := by
       rw [←heq]
-      sorry
+      have : n = (Finset.univ : Finset (Fin n)).card := by simp
+      simp_rw [this]
+      conv =>
+        lhs
+        congr
+        rhs
+        ext i
+        rw [Finset.sum_fin_eq_sum_range]
+      have interp_deg :=
+        @Lagrange.degree_interpolate_lt 𝔽 _ (Fin n) _ Finset.univ
+          (fun i ↦ ω i * s₀)
+          (fun i ↦ ∑ i_1 ∈ Finset.range n,
+                      if h : i_1 < n
+                      then
+                        (ω i * s₀) ^ i_1 *
+                        eval (s₀ ^ (Finset.univ : Finset (Fin n)).card) (split f n ⟨i_1, h⟩)
+                      else 0
+          )
+          (by
+            intros x₁ _ x₂ _
+            simp only [mul_eq_mul_right_iff, EmbeddingLike.apply_eq_iff_eq]
+            intros h
+            rcases h with h | h
+            · exact h
+            · exfalso; apply h₁; exact h
+          )
+      have :
+        (List.map
+          (fun i ↦ (ω i * s₀, eval (ω i * s₀) (∑ i, X ^ i.1 * eval₂ C (X ^ n) (split f n i))))
+          (List.finRange n)
+        ).length = n := by simp
+      convert interp_deg
+      congr
+      exact (Fin.heq_fun_iff this).mpr (congrFun rfl)
+      exact (Fin.heq_fun_iff this).mpr (congrFun rfl)
+      rw [this]
+      exact (Fin.heq_fun_iff this).mpr (congrFun rfl)
+      exact (Fin.heq_fun_iff this).mpr (congrFun rfl)
+      rw [this]
+      exact (Fin.heq_fun_iff this).mpr (congrFun rfl)
+      exact (Fin.heq_fun_iff this).mpr (congrFun rfl)
     have h₂ : (∑ (j : Fin n), X ^ j.1 * C (eval (s₀ ^ n) (split f n j))).degree < .some n := by
-      sorry
+      apply lt_of_le_of_lt
+      exact Polynomial.degree_sum_le Finset.univ
+            (fun j => X ^ j.1 * C (eval (s₀ ^ n) (split f n j)))
+      simp only [X_pow_mul_C, degree_mul, degree_pow, degree_X, nsmul_eq_mul, mul_one,
+        WithBot.bot_lt_coe, Finset.sup_lt_iff, Finset.mem_univ, forall_const]
+      intros b
+      by_cases h' : (eval (s₀ ^ n) (split f n b)) = 0
+      · simp [h']
+      · simp only [ne_eq, h', not_false_eq_true, degree_C, zero_add]
+        erw [WithBot.coe_lt_coe]
+        simp
     let fmul : 𝔽 ↪ 𝔽 := ⟨fun x => x * s₀, by intros _; aesop⟩
     apply poly_eq_of p'_deg h₂ (Finset.map (Function.Embedding.trans ω fmul) Finset.univ) (by simp)
     intros x h'
@@ -282,24 +364,33 @@ lemma consistency_check_comp {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq �
       · skip
       ext i
       rw [eval_mul, eval_C, eval_pow, eval_mul, eval_C, eval_C]
-    have bla :=
-      @Finset.sum_eq_single (Fin n) 𝔽 _ Finset.univ
-        (fun x => (∑ i, (ω x * s₀) ^ i.1 * eval (s₀ ^ n) (split f n i)) *
+    have sum_eq :=
+      Finset.sum_eq_single (s := Finset.univ)
+        (f := fun x => (∑ i, (ω x * s₀) ^ i.1 * eval (s₀ ^ n) (split f n i)) *
       eval (ω a * s₀) (Lagrange.basis Finset.univ (fun (i : Fin n) ↦ ω i * s₀) x)) a
-    have blu := @Lagrange.eval_basis_self 𝔽 _ (Fin n) _ Finset.univ (fun i ↦ ω i * s₀) a sorry (Finset.mem_univ a)
-    simp only at blu
-    rw [blu, mul_one] at bla
-    have bla := bla sorry sorry
-    conv at bla =>
+    rw
+      [
+        Lagrange.eval_basis_self (v := fun i ↦ ω i * s₀) (by aesop) (Finset.mem_univ a),
+        mul_one
+      ] at sum_eq
+    have sum_eq := sum_eq
+      (by
+        intros i h h'
+        apply mul_eq_zero_of_right
+        exact Lagrange.eval_basis_of_ne (v := fun i ↦ ω i * s₀) h' (Finset.mem_univ _)
+      ) (by simp)
+    conv at sum_eq =>
       rhs
       congr
       · skip
       ext i
       rw [mul_comm]
-    rw [←bla]
-    have pog :
-      (List.map (fun i ↦ (ω i * s₀, eval (ω i * s₀) (∑ i : Fin n, X ^ i.1 * eval₂ C (X ^ n) (split f n i))))
-      (List.finRange n)).length = n := by simp
+    rw [←sum_eq]
+    have eq :
+      (List.map
+        (fun i ↦ (ω i * s₀, eval (ω i * s₀) (∑ i : Fin n, X ^ i.1 * eval₂ C (X ^ n) (split f n i))))
+        (List.finRange n)
+      ).length = n := by simp
     rw [Finset.sum_fin_eq_sum_range]; conv_rhs => rw [Finset.sum_fin_eq_sum_range]
     congr
     simp
@@ -314,10 +405,10 @@ lemma consistency_check_comp {𝔽 : Type} [inst1 : Field 𝔽] [DecidableEq �
     simp
     congr 1
     swap
-    exact (Fin.heq_fun_iff pog).mpr (congrFun rfl)
+    exact (Fin.heq_fun_iff eq).mpr (congrFun rfl)
     swap
-    exact (Fin.heq_ext_iff pog).mpr rfl
-    rw [pog]
+    exact (Fin.heq_ext_iff eq).mpr rfl
+    rw [eq]
   rw [this, Polynomial.eval_finset_sum]
   conv =>
     lhs
