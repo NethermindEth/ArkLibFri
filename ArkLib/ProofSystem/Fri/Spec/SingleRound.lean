@@ -2,8 +2,9 @@
 
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import ArkLib.OracleReduction.Security.Basic
-import ArkLib.ProofSystem.Fri.RoundConsistency
 import ArkLib.ProofSystem.Fri.Domain
+import ArkLib.ProofSystem.Fri.RoundConsistency
+
 
 /-!
 # The FRI protocol
@@ -22,7 +23,7 @@ namespace Spec
 variable {F : Type} [NonBinaryField F] [Finite F]
 variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicWithGen D] [DSmooth : SmoothPowerOfTwo n D]
 variable (x : Fˣ)
-variable {k : ℕ} (d : ℕ) (k_le_n : k ≤ n) (i : Fin k)
+variable {k : ℕ} (s d : ℕ) [s_nz : NeZero s] (k_le_n : k * s ≤ n) (i : Fin k)
 
 
 /-- For the `i`-th round of the protocol, the input statement is equal to the challenges sent from
@@ -36,7 +37,7 @@ def Statement (F : Type) (i : Fin (k + 1)) : Type := Fin i.val → F
   round, we append the `i`-th message sent by the prover to the oracle statement. -/
 @[reducible]
 def OracleStatement (i : Fin (k + 1)) : Fin i.val → Type :=
-  fun j => evalDomain D x j.1 → F
+  fun j => evalDomain D x (s * j.1) → F
 
 /-- The FRI protocol has as witness the polynomial that is supposed to correspond to the codeword in
   the oracle statement. -/
@@ -50,28 +51,28 @@ namespace FoldPhase
 /-- The oracle interface for the `j`-th oracle statement of the `i`-th round of the FRI protocol.
 
 Since everything are functions right now, we just use the default oracle interface for functions. -/
-instance {i : Fin (k + 1)} : ∀ j, OracleInterface (OracleStatement D x i j) :=
+instance {i : Fin (k + 1)} : ∀ j, OracleInterface (OracleStatement D x s i j) :=
   fun _ => inferInstance
 
 /-- This is missing the relationship between the oracle statement and the witness. Need to define a
   proximity parameter here. Completeness will be for proximity param `0`, while soundness will have
   non-zero proximity param. -/
 def inputRelation :
-    Set ((Statement F i.castSucc × (∀ j, OracleStatement D x i.castSucc j)) × Witness F) :=
-  {⟨⟨_, _⟩, p⟩ | Polynomial.natDegree p < 2 ^ (k - i.val) * d}
+    Set ((Statement F i.castSucc × (∀ j, OracleStatement D x s i.castSucc j)) × Witness F) :=
+  {⟨⟨_, _⟩, p⟩ | Polynomial.natDegree p < (2 ^ (s * (k - i.val))) * d}
 
 /-- Same with the above comment about input relation. -/
 def outputRelation :
-    Set ((Statement F i.succ × (∀ j, OracleStatement D x i.succ j)) × Witness F) :=
-  {⟨⟨_, _⟩, p⟩ | Polynomial.natDegree p < 2 ^ (k - (i.val + 1)) * d}
+    Set ((Statement F i.succ × (∀ j, OracleStatement D x s i.succ j)) × Witness F) :=
+  {⟨⟨_, _⟩, p⟩ | Polynomial.natDegree p < (2 ^ (s * (k - (i.val + 1)))) * d}
 
 /-- Each round of the FRI protocol begins with the verifier sending a random field element as the
   challenge to the prover, and ends with the prover sending a codeword (of the desired length) to
   the verifier. -/
 @[reducible]
-def pSpec : ProtocolSpec 2 := ⟨!v[.V_to_P, .P_to_V], !v[F, (evalDomain D x i.1) → F]⟩
+def pSpec : ProtocolSpec 2 := ⟨!v[.V_to_P, .P_to_V], !v[F, (evalDomain D x (s * i.1)) → F]⟩
 
-instance {i : Fin k} : ∀ j, OracleInterface ((pSpec D x i).Message j)
+instance {i : Fin k} : ∀ j, OracleInterface ((pSpec D x s i).Message j)
   | ⟨0, h⟩ => nomatch h
   | ⟨1, _⟩ => by
       unfold pSpec Message
@@ -82,17 +83,17 @@ instance {i : Fin k} : ∀ j, OracleInterface ((pSpec D x i).Message j)
 
 /-- The prover for the `i`-th round of the FRI protocol. It first receives the challenge -/
 noncomputable def foldProver :
-  OracleProver []ₒ (Statement F i.castSucc) (OracleStatement D x i.castSucc) (Witness F)
-    (Statement F i.succ) (OracleStatement D x i.succ) (Witness F) (pSpec D x i) where
+  OracleProver []ₒ (Statement F i.castSucc) (OracleStatement D x s i.castSucc) (Witness F)
+    (Statement F i.succ) (OracleStatement D x s i.succ) (Witness F) (pSpec D x s i) where
   -- This may be difficult to reason about, given that the degree does get divided by 2 each round.
   -- Might want to bake that into the type.
   -- Also need to return all the prior oracle statements and prior challenges
   PrvState
   | 0 =>
-    (Statement F i.castSucc × ((j : Fin ↑i.castSucc) → OracleStatement D x i.castSucc j)) ×
+    (Statement F i.castSucc × ((j : Fin ↑i.castSucc) → OracleStatement D x s i.castSucc j)) ×
       Witness F
   | _ =>
-    (Statement F i.succ × ((j : Fin ↑i.castSucc) → OracleStatement D x i.castSucc j)) × Witness F
+    (Statement F i.succ × ((j : Fin ↑i.castSucc) → OracleStatement D x s i.castSucc j)) × Witness F
 
   input := id
 
@@ -104,7 +105,7 @@ noncomputable def foldProver :
   receiveChallenge
   | ⟨0, _⟩ => fun ⟨⟨chals, o⟩, p⟩ => pure <|
     fun (α : F) =>
-      ⟨⟨Fin.append chals (fun (_ : Fin 1) => α), o⟩, foldα p α⟩
+      ⟨⟨Fin.append chals (fun (_ : Fin 1) => α), o⟩, RoundConsistency.foldα (2 ^ s) p α⟩
   | ⟨1, h⟩ => nomatch h
 
   output := fun ⟨⟨chals, o⟩, p⟩ => pure <|
@@ -123,9 +124,9 @@ noncomputable def foldProver :
 /-- The oracle verifier for the `i`-th round of the FRI protocol. -/
 noncomputable def foldVerifier :
   OracleVerifier []ₒ
-    (Statement F i.castSucc) (OracleStatement D x i.castSucc)
-    (Statement F i.succ) (OracleStatement D x i.succ)
-    (pSpec D x i) where
+    (Statement F i.castSucc) (OracleStatement D x s i.castSucc)
+    (Statement F i.succ) (OracleStatement D x s i.succ)
+    (pSpec D x s i) where
   verify := fun prevChallenges roundChallenge =>
     pure (Fin.append prevChallenges (fun _ => roundChallenge ⟨0, by simp⟩))
   embed :=
@@ -149,11 +150,11 @@ noncomputable def foldVerifier :
 /-- The oracle reduction that is the `i`-th round of the FRI protocol. -/
 noncomputable def foldOracleReduction :
   OracleReduction []ₒ
-    (Statement F i.castSucc) (OracleStatement D x i.castSucc) (Witness F)
-    (Statement F i.succ) (OracleStatement D x i.succ) (Witness F)
-    (pSpec D x i) where
-  prover := foldProver D x i
-  verifier := foldVerifier D x i
+    (Statement F i.castSucc) (OracleStatement D x s i.castSucc) (Witness F)
+    (Statement F i.succ) (OracleStatement D x s i.succ) (Witness F)
+    (pSpec D x s i) where
+  prover := foldProver D x s i
+  verifier := foldVerifier D x s i
 
 end FoldPhase
 
@@ -182,12 +183,12 @@ instance : ∀ j, OracleInterface ((pSpec D x l).Challenge j) := fun j =>
 noncomputable def queryProver :
   OracleProver
     []ₒ
-    (Statement F (Fin.last k)) (OracleStatement D x (Fin.last k)) (Witness F)
-    (Statement F (Fin.last k)) (OracleStatement D x (Fin.last k)) (Witness F)
+    (Statement F (Fin.last k)) (OracleStatement D x s (Fin.last k)) (Witness F)
+    (Statement F (Fin.last k)) (OracleStatement D x s (Fin.last k)) (Witness F)
     (pSpec D x l) where
   PrvState
   | _ =>
-    (Statement F (Fin.last k) × ((i : Fin ↑(Fin.last k)) → OracleStatement D x (Fin.last k) i)) ×
+    (Statement F (Fin.last k) × ((i : Fin ↑(Fin.last k)) → OracleStatement D x s (Fin.last k) i)) ×
       Witness F
 
   input := id
@@ -203,8 +204,8 @@ noncomputable def queryProver :
   output := pure
 
 def queryCodeword {F : Type} [NonBinaryField F] {D : Subgroup Fˣ} [DIsCyclicC : IsCyclicWithGen ↥D]
-  {x : Fˣ} {k : ℕ} {i : Fin k} (d : evalDomain D x i.1) :
-    OracleComp [OracleStatement D x (Fin.last k)]ₒ F :=
+  {x : Fˣ} {k : ℕ} {i : Fin k} (d : evalDomain D x (s * i.1)) :
+    OracleComp [OracleStatement D x s (Fin.last k)]ₒ F :=
   OracleComp.lift (OracleSpec.query i d)
 
 def getConst : OracleComp [(pSpec D x l).Message]ₒ F[X] :=
@@ -218,11 +219,14 @@ def getConst : OracleComp [(pSpec D x l).Message]ₒ F[X] :=
 
 noncomputable def queryVerifier [DecidableEq F] :
   OracleVerifier []ₒ
-    (Statement F (Fin.last k)) (OracleStatement D x (Fin.last k))
-    (Statement F (Fin.last k)) (OracleStatement D x (Fin.last k))
+    (Statement F (Fin.last k)) (OracleStatement D x s (Fin.last k))
+    (Statement F (Fin.last k)) (OracleStatement D x s (Fin.last k))
     (pSpec D x l) where
   verify := fun prevChallenges roundChallenge => do
     for m in (List.finRange l) do
+      have : 0 < s := by
+        have := s_nz.out
+        omega
       let s₀ := roundChallenge ⟨1, by aesop⟩ m
       let p ← getConst D x l
       guard (p.natDegree < d)
@@ -230,19 +234,24 @@ noncomputable def queryVerifier [DecidableEq F] :
         (List.finRange k).mapM
               (fun (i : Fin k) =>
                 do
+                  have : s * i.1 ≤ n - s := by
+                    apply Nat.le_sub_of_add_le
+                    nlinarith [i.2]
                   let x₀ := prevChallenges i
-                  let s₀ : evalDomain D x i.1 := ⟨_, pow_2_pow_i_mem_Di_of_mem_D i s₀.2⟩
-                  let s₁ : evalDomain D x i.1 :=
-                    (domain_neg_inst (n := n) (i := ⟨i.1, by omega⟩)).neg s₀
-                  let α₀ ← queryCodeword s₀
-                  let α₁ ← queryCodeword s₁
+                  let s₀ : evalDomain D x (s * i.1) :=
+                    ⟨_, pow_2_pow_i_mem_Di_of_mem_D (s * i.1) s₀.2⟩
+                  let queries : List (evalDomain D x (s * i.1)) :=
+                    List.map (fun r => ⟨_, CosetDomain.mul_root_of_unity D this s₀.2 r.2⟩)
+                      (Domain.rootsOfUnity D n s)
+                  let (pts : List (F × F)) ←
+                    List.mapM (fun q => queryCodeword s q >>= fun v => pure (q.1.1, v)) queries
                   let β ←
                     if h : i.1 < k - 1
                     then
-                      queryCodeword (k := k) (i := ⟨i.1.succ, by omega⟩)
-                        ⟨_, sqr_mem_D_succ_i_of_mem_D_i D x s₀.2⟩
-                    else pure (p.eval s₀.1.1)
-                  guard (consistency_check x₀ s₀.1.1 s₁.1.1 α₀ α₁ β)
+                      queryCodeword s (k := k) (i := ⟨i.1.succ, by omega⟩)
+                        ⟨_, CosetDomain.pow_lift D x s s₀.2⟩
+                    else pure (p.eval (s₀.1.1 ^ (2 ^ s)))
+                  guard (RoundConsistency.round_consistency_check x₀ pts β)
               )
     pure prevChallenges
   embed :=
@@ -259,14 +268,14 @@ noncomputable def queryVerifier [DecidableEq F] :
 noncomputable def queryOracleReduction [DecidableEq F] :
   OracleReduction []ₒ
     (Statement F (Fin.last k))
-    (OracleStatement D x (Fin.last k))
+    (OracleStatement D x s (Fin.last k))
     (Witness F)
     (Statement F (Fin.last k))
-    (OracleStatement D x (Fin.last k))
+    (OracleStatement D x s (Fin.last k))
     (Witness F)
     (pSpec D x l) where
-  prover := queryProver D x l
-  verifier := queryVerifier D x d k_le_n l
+  prover := queryProver D x s l
+  verifier := queryVerifier D x s d k_le_n l
 
 end QueryRound
 

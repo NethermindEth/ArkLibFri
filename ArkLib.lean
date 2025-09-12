@@ -142,12 +142,7 @@ import ArkLib.ProofSystem.ConstraintSystem.MemoryChecking
 import ArkLib.ProofSystem.ConstraintSystem.Plonk
 import ArkLib.ProofSystem.ConstraintSystem.R1CS
 import ArkLib.ProofSystem.DSL
-import ArkLib.ProofSystem.Fri.AuxLemmas
 import ArkLib.ProofSystem.Fri.Domain
-import ArkLib.ProofSystem.Fri.EvenAndOdd
-import ArkLib.ProofSystem.Fri.EvenAndOdd.Def
-import ArkLib.ProofSystem.Fri.EvenAndOdd.Lemmas
-import ArkLib.ProofSystem.Fri.PolySplit
 import ArkLib.ProofSystem.Fri.RoundConsistency
 import ArkLib.ProofSystem.Fri.Spec.General
 import ArkLib.ProofSystem.Fri.Spec.SingleRound

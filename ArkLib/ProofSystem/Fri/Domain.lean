@@ -186,6 +186,19 @@ instance {i : Fin (n + 1)} : OfNat (evalDomain D i) 1 where
 instance domain_neg_inst {i : Fin n} : Neg (evalDomain D i.1) where
   neg := fun x => ⟨_, minus_one_in_doms D i.2⟩ * x
 
+def rootsOfUnity (n s : ℕ) : List (Domain.evalDomain D (n - s)) :=
+  List.map
+    (fun i =>
+      ⟨
+        (DIsCyclicC.gen.1 ^ (2 ^ (n - s))) ^ i,
+        by
+          unfold evalDomain
+          apply Subgroup.mem_zpowers_iff.mpr
+          exists i
+      ⟩
+    )
+    (List.range (2 ^ s))
+
 end Domain
 
 namespace CosetDomain
@@ -247,6 +260,19 @@ lemma sqr_mem_D_succ_i_of_mem_D_i : ∀ {a : Fˣ} {i : ℕ},
   convert (mem_leftCoset_iff _).mpr h
   exact op_der_eq.symm
 
+lemma pow_lift : ∀ {a : Fˣ} {i : ℕ} (s : ℕ),
+    a ∈ evalDomain D x i → a ^ (2 ^ s) ∈ evalDomain D x (i + s) := by
+  intros a i s
+  induction s with
+  | zero => simp
+  | succ s ih =>
+    intros h
+    specialize ih h
+    have : a ^ (2 ^ (s + 1)) = (a ^ (2 ^ s)) ^ 2 := by
+      rw [←pow_mul]; ring_nf
+    rw [←add_assoc, this]
+    exact sqr_mem_D_succ_i_of_mem_D_i _ _ ih
+
 lemma neg_mem_dom_of_mem_dom : ∀ {a : Fˣ} (i : Fin n),
     a ∈ evalDomain D x i → - a ∈ evalDomain D x i := by
   unfold evalDomain
@@ -266,6 +292,31 @@ lemma neg_mem_dom_of_mem_dom : ∀ {a : Fˣ} (i : Fin n),
           (Domain.minus_one_in_doms D i_prop)
       ).mpr mem
   convert (mem_leftCoset_iff _).mpr this
+  exact op_der_eq.symm
+
+lemma mul_root_of_unity {x :  Fˣ} :
+  ∀ {a b : Fˣ} {i j : ℕ},
+    i ≤ j → a ∈ evalDomain D x i → b ∈ Domain.evalDomain D j →
+      a * b ∈ evalDomain D x i := by
+  intros a b i j i_le_j a_in b_in
+  unfold evalDomain Domain.evalDomain at *
+  have : (x ^ 2 ^ i)⁻¹ * a ∈ (Subgroup.zpowers (DIsCyclicC.gen.1 ^ 2 ^ i)) := by
+    apply (mem_leftCoset_iff _).mp
+    convert a_in
+    exact op_der_eq
+  have : (x ^ 2 ^ i)⁻¹ * (a * b) ∈ (Subgroup.zpowers (DIsCyclicC.gen.1 ^ 2 ^ i)) := by
+    rw [Subgroup.mem_zpowers_iff] at b_in this
+    rcases this with ⟨ka, a_in⟩
+    rcases b_in with ⟨kb, b_in⟩
+    apply Subgroup.mem_zpowers_iff.mpr
+    exists (ka + (2 ^ (j - i)) * kb)
+    rw [
+      ←@mul_assoc Fˣ _ _ a b, ←a_in, ←b_in, zpow_add,
+      Eq.symm (pow_mul_pow_sub 2 i_le_j), pow_mul, zpow_mul
+    ]
+    norm_cast
+  have := (mem_leftCoset_iff (x ^ 2 ^ i)).mpr this
+  convert this
   exact op_der_eq.symm
 
 lemma dom_n_eq_triv : evalDomain D x n = {x ^ (2 ^ n)} := by
