@@ -11,7 +11,7 @@ namespace Spec
 variable {F : Type} [NonBinaryField F] [Finite F]
 variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicWithGen D] [DSmooth : SmoothPowerOfTwo n D]
 variable (x : Fˣ)
-variable (k s d : ℕ) (k_le_n : k * s ≤ n) [NeZero s] (i : Fin k)
+variable (k s d : ℕ) (k_le_n : 2 ^ (k * s) * d ≤ 2 ^ n) [NeZero s] [NeZero d] (i : Fin k)
 variable (l : ℕ)
 
 @[reducible]

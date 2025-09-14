@@ -562,7 +562,8 @@ open Fintype
 def projection (S : Finset n) (w : n → R) : S → R :=
   fun i => w i.val
 
-omit [Finite R] in theorem projection_injective
+omit [Finite R] in
+theorem projection_injective
     (C : Set (n → R))
     (nontriv : ‖C‖₀ ≥ 1)
     (S : Finset n)

@@ -1,6 +1,7 @@
 
 
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
+import ArkLib.Data.CodingTheory.ReedSolomon
 import ArkLib.OracleReduction.Security.Basic
 import ArkLib.ProofSystem.Fri.Domain
 import ArkLib.ProofSystem.Fri.RoundConsistency
@@ -23,7 +24,18 @@ namespace Spec
 variable {F : Type} [NonBinaryField F] [Finite F]
 variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicWithGen D] [DSmooth : SmoothPowerOfTwo n D]
 variable (x : Fˣ)
-variable {k : ℕ} (s d : ℕ) [s_nz : NeZero s] (k_le_n : k * s ≤ n) (i : Fin k)
+variable {k : ℕ} (s d : ℕ) [s_nz : NeZero s] [d_nz : NeZero d]
+variable (k_le_n : 2 ^ (k * s) * d ≤ 2 ^ n) (i : Fin k)
+
+omit s_nz in
+lemma k_le_n' (k_le_n : 2 ^ (k * s) * d ≤ 2 ^ n) : k * s ≤ n := by
+  have : 0 < d := by
+    have := d_nz.out
+    omega
+  have : 2 ^ (k * s) ≤ 2 ^ n := by
+    exact le_of_mul_le_of_one_le_left k_le_n this
+  rw [Nat.pow_le_pow_iff_right (by decide)] at this
+  exact this
 
 
 /-- For the `i`-th round of the protocol, the input statement is equal to the challenges sent from
@@ -53,6 +65,10 @@ namespace FoldPhase
 Since everything are functions right now, we just use the default oracle interface for functions. -/
 instance {i : Fin (k + 1)} : ∀ j, OracleInterface (OracleStatement D x s i j) :=
   fun _ => inferInstance
+
+
+
+
 
 /-- This is missing the relationship between the oracle statement and the witness. Need to define a
   proximity parameter here. Completeness will be for proximity param `0`, while soundness will have
@@ -223,19 +239,20 @@ noncomputable def queryVerifier [DecidableEq F] :
     (Statement F (Fin.last k)) (OracleStatement D x s (Fin.last k))
     (pSpec D x l) where
   verify := fun prevChallenges roundChallenge => do
+    let p ← getConst D x l
+    guard (p.natDegree < d)
     for m in (List.finRange l) do
       have : 0 < s := by
         have := s_nz.out
         omega
       let s₀ := roundChallenge ⟨1, by aesop⟩ m
-      let p ← getConst D x l
-      guard (p.natDegree < d)
       discard <|
         (List.finRange k).mapM
               (fun (i : Fin k) =>
                 do
                   have : s * i.1 ≤ n - s := by
                     apply Nat.le_sub_of_add_le
+                    have := k_le_n' _ _ k_le_n
                     nlinarith [i.2]
                   let x₀ := prevChallenges i
                   let s₀ : evalDomain D x (s * i.1) :=
