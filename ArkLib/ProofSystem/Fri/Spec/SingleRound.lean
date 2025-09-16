@@ -71,20 +71,20 @@ def Witness (F : Type) [Semiring F] := F[X]
 instance {i : Fin (k + 1)} : ∀ j, OracleInterface (OracleStatement D x s i j) :=
   fun _ => inferInstance
 
-instance : ∀ j, OracleInterface (FinalOracleStatement D x s k j) := by
-  unfold FinalOracleStatement
-  exact
+instance : ∀ j, OracleInterface (FinalOracleStatement D x s k j) :=
   fun j =>
     if h : j = k + 1
     then {
            Query := Unit
            Response := F[X]
-           answer := cast (by simp [h]) (id (α := Unit → F[X]))
+           answer := cast (by simp [h, FinalOracleStatement])
+                          (id (α := Unit → F[X]))
          }
     else {
            Query := ↑(evalDomain D x (s * ↑j))
            Response := F
-           answer := cast (by simp [h]) (id (α := ↑(evalDomain D x (s * ↑j)) → F))
+           answer := cast (by simp [h, FinalOracleStatement])
+                          (id (α := ↑(evalDomain D x (s * ↑j)) → F))
          }
          
 /-- The oracle interface for the `j`-th oracle statement of
