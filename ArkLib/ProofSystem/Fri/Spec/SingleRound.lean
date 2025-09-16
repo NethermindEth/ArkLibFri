@@ -71,24 +71,22 @@ def Witness (F : Type) [Semiring F] := F[X]
 instance {i : Fin (k + 1)} : ∀ j, OracleInterface (OracleStatement D x s i j) :=
   fun _ => inferInstance
 
-instance : ∀ j, OracleInterface (FinalOracleStatement D x s k j) :=
+instance : ∀ j, OracleInterface (FinalOracleStatement D x s k j) := by
+  unfold FinalOracleStatement
+  exact
   fun j =>
-    match j with
-    | ⟨j, hj⟩ =>
-      if h : j = k + 1
-      then h ▸ by
-                unfold FinalOracleStatement
-                simp
-                exact OracleInterface.instFunction
-      else by
-            unfold FinalOracleStatement
-            simp only [h, ↓reduceIte]
-            exact OracleInterface.instFunction
-
-      -- split_ifs
-      -- · exact OracleInterface.instFunction
-      -- · exact OracleInterface.instFunction
-
+    if h : j = k + 1
+    then {
+           Query := Unit
+           Response := F[X]
+           answer := cast (by simp [h]) (id (α := Unit → F[X]))
+         }
+    else {
+           Query := ↑(evalDomain D x (s * ↑j))
+           Response := F
+           answer := cast (by simp [h]) (id (α := ↑(evalDomain D x (s * ↑j)) → F))
+         }
+         
 /-- The oracle interface for the `j`-th oracle statement of
     the `i`-th round of the FRI protocol. --/
 def statementConsistent
@@ -387,19 +385,7 @@ lemma domain_lem {F : Type} [NonBinaryField F] (D : Subgroup Fˣ)
   unfold OracleSpec.domain FinalOracleStatement OracleInterface.toOracleSpec
   unfold OracleInterface.Query
   unfold instOracleInterfaceFinalOracleStatement
-  have : i.val ≠ k + 1 := by omega
-  simp only [this, ↓reduceDIte, id_eq]
-  unfold OracleInterface.instFunction
-  generalize_proofs h
-  split at h
-  · aesop
-  · aesop
-
-
-
-
-
-  sorry
+  simp [show i.val ≠ k + 1 by omega]
 
 def queryCodeword {i : Fin (k + 1)} (w : evalDomain D x (s * i.1)) :
     OracleComp [FinalOracleStatement D x s k]ₒ F := OracleComp.lift <| by
