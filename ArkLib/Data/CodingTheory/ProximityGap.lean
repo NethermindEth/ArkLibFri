@@ -182,15 +182,21 @@ open RatFunc
     in lemma 5.3 of the Proximity Gap paper.
     D_X(m) = (m + 1/2)√ρn.
 -/
+noncomputable def D_X (ρ : ℚ) (n m : ℕ) : ℝ := (m + 1/2) * (Real.sqrt ρ) * n
+
+open Classical in
 noncomputable def proximity_gap_degree_bound (ρ : ℚ) (m n : ℕ) : ℕ :=
-  Nat.floor <| (m + 1/2) * (Real.sqrt ρ) * n
+  let b := D_X ρ m n
+  if h : ∃ n : ℕ, b = n
+  then (Classical.choose h) - 1
+  else Nat.floor b
 
 /-- The ball radius from lemma 5.3 of the Proximity Gap paper,
     which follows from the Johnson bound.
     δ₀(ρ, m) = 1 - √ρ - √ρ/2m.
 -/
-noncomputable def proximity_gap_johnson (ρ : ℚ) (m : ℕ) : ℕ :=
-  Nat.floor <| (1 : ℝ) - Real.sqrt ρ - Real.sqrt ρ / (2 * m)
+noncomputable def proximity_gap_johnson (ρ : ℚ) (m : ℕ) : ℝ :=
+  (1 : ℝ) - Real.sqrt ρ - Real.sqrt ρ / (2 * m)
 
 
 /-- The first part of lemma 5.3 from the Proximity gap paper.
@@ -198,7 +204,7 @@ noncomputable def proximity_gap_johnson (ρ : ℚ) (m : ℕ) : ℕ :=
     a solution to Guruswami-Sudan system exists.
 -/
 lemma guruswami_sudan_for_proximity_gap_existence {k m : ℕ} {ωs : Fin n ↪ F} {f : Fin n → F} :
-  ∃ Q, Condition (k + 1) m (proximity_gap_degree_bound ((k + 1 : ℚ) / n) m n) ωs f Q := by
+  ∃ Q, Condition (k + 1) m ((proximity_gap_degree_bound ((k + 1 : ℚ) / n) m n)) ωs f Q := by
   sorry
 
 open Polynomial in
@@ -226,8 +232,6 @@ open Polynomial
 -- { i |
 --         ∃ j ∈ Q.support, ∃ k ∈ (Q.coeff j).support,
 --           i = j + (Bivariate.coeff Q j k).natDegree }
-
-noncomputable def D_X (ρ : ℚ) (n m : ℕ) : ℕ := proximity_gap_degree_bound ρ m n
 def D_Y (Q : F[Z][X][Y]) : ℕ := Bivariate.natDegreeY Q
 def D_YZ (Q : F[Z][X][Y]) : ℕ :=
   Option.getD (dflt := 0) <| Finset.max
@@ -255,7 +259,7 @@ structure ModifiedGuruswami
   where
   Q_ne_0 : Q ≠ 0
   /-- Degree of the polynomial. -/
-  Q_deg : weightedDegree Q 1 k ≤ D_X ((k + 1) / (n : ℚ)) n m
+  Q_deg : natWeightedDegree Q 1 k < D_X ((k + 1) / (n : ℚ)) n m
   /-- Multiplicity of the roots is at least r. -/
   Q_multiplicity : ∀ i,  Polynomial.Bivariate.rootMultiplicity Q
               (Polynomial.C <| ωs i)
@@ -321,9 +325,10 @@ lemma Pz_exists_for_the_S
 
 noncomputable def Pz
   [Finite F]
-  (z : F)
-  (ωs : Fin n ↪ F)
-  (δ : ℚ) (u₀ u₁ : Fin n → F)
+  {k : ℕ}
+  {z : F}
+  {ωs : Fin n ↪ F}
+  {δ : ℚ} {u₀ u₁ : Fin n → F}
   (hS : z ∈ the_S k ωs δ u₀ u₁)
   :
   F[X]
@@ -339,10 +344,10 @@ lemma lemma_5_5
   {δ : ℚ} {u₀ u₁ : Fin n → F}
   :
   ∃ S', ∃ (h_sub : S' ⊆ the_S k ωs δ u₀ u₁), ∃ P : F[Z][X],
-    S'.card > (the_S k ωs δ u₀ u₁).card / (2 * D_Y (F := F) Q) ∧
-    ∀ z, ∀ (h : z ∈ S'), Pz (k := k) z ωs δ u₀ u₁ (by grind) = P.map (Polynomial.evalRingHom z) ∧
+    S'.card > (the_S k ωs δ u₀ u₁).card / (2 * D_Y Q) ∧
+    ∀ z : S', Pz (h_sub z.2) = P.map (Polynomial.evalRingHom z.1) ∧
     P.natDegree ≤ k ∧
-    ∀ i ∈ P.support, (P.coeff i).natDegree ≤ 1 := by sorry
+    Bivariate.degreeX P ≤ 1 := by sorry
 
 lemma eq_5_12
   {m n k : ℕ}
@@ -378,12 +383,11 @@ lemma lemma_5_7 [Finite F]
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   :
   ∃ R H, R ∈ Classical.choose (Classical.choose_spec (eq_5_12 h_gs)) ∧
-    R ∣ Q ∧ Irreducible H ∧ H ∣ (Bivariate.evalX (Polynomial.C x₀) R) ∧
-   (@Set.toFinset _ { z : F |
-      ∃ h : z ∈ the_S (F := F) k ωs δ u₀ u₁,
-        let Pz := Pz (F := F) k z ωs δ u₀ u₁ h
-        (Trivariate.eval_on_Z R z).eval Pz = 0 ∧
-        (Bivariate.evalX z H).eval (Pz.eval x₀) = 0} sorry).card
+    Irreducible H ∧ H ∣ (Bivariate.evalX (Polynomial.C x₀) R) ∧
+   (@Set.toFinset _ { z : the_S (F := F) k ωs δ u₀ u₁ |
+        let Pz := Pz z.2
+        (Trivariate.eval_on_Z R z.1).eval Pz = 0 ∧
+        (Bivariate.evalX z.1 H).eval (Pz.eval x₀) = 0} sorry).card
     ≥ (the_S k ωs δ u₀ u₁).card / (Bivariate.natDegreeY Q)
     ∧ (the_S k ωs δ u₀ u₁).card
         / (Bivariate.natDegreeY Q) > 2 * D_Y Q ^ 2 * (D_X ((k + 1 : ℚ) / n) n m) * D_YZ Q
