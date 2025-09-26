@@ -27,48 +27,63 @@ The set of coefficients of a bivariate polynomial.
 -/
 def coeffs [DecidableEq F] : Finset F[X] := f.support.image (fun n => f.coeff n)
 
-/-- (i, j)-coefficient of a polynomial. -/
-def coeff.{u} {F : Type u} [Semiring F] (f : F[X][Y]) (i j : ℕ) : F := (f.coeff j).coeff i 
+/-- (i, j)-coefficient of a polynomial, i.e. the coefficient
+    of `X^i Y^j`.
+-/
+def coeff (i j : ℕ) : F := (f.coeff j).coeff i
 
-/-- The coeffiecient of `Y^n` is a polynomial in `X`. -/
+/-- The coeffiecient of `Y^n`, as a polynomial in `X`. -/
 def coeff_Y_n (n : ℕ) : F[X] := f.coeff n
 
 /--
-The `Y`-degree of a bivariate polynomial.
+The `Y`-degree of a bivariate polynomial, as a natural number.
 -/
-def degreeY : ℕ := Polynomial.natDegree f
+def natDegreeY : ℕ := Polynomial.natDegree f
 
-/--
-`(u,v)`-weighted degree of a polynomial. 
-The maximal `u * i + v * j` such that the polynomial `p`
-contains a monomial `x^i * y * j`.
+/-- `(u,v)`-weighted degree of a polynomial.
+  The maximal `u * i + v * j` such that the polynomial `p`
+  contains a monomial `x^i * y^j`.
 -/
-def weightedDegree.{u} {F : Type u} [Semiring F] (p : F[X][Y]) (u v : ℕ) : Option ℕ := 
-  List.max? <|
-    List.map (fun n => u * (p.coeff n).natDegree + v * n) (List.range p.natDegree.succ)
+def weightedDegree (p : F[X][Y]) (u v : ℕ) : WithBot ℕ :=
+  Finset.max (Finset.image (fun n => u * (p.coeff n).natDegree + v * n) p.support)
 
-def rootMultiplicity₀.{u} {F : Type u} [Semiring F] [DecidableEq F] (f : F[X][Y]) : Option ℕ :=
-  let deg := weightedDegree f 1 1
-  match deg with
-  | none => none 
-  | some deg => List.max? 
-    (List.map 
-      (fun x => if coeff f x.1 x.2 ≠ 0 then x.1 + x.2 else 0) 
-      (List.product (List.range deg.succ) (List.range deg.succ)))
+/-- The weighted degree forced to a natural number. -/
+def natWeightedDegree (p : F[X][Y]) (u v : ℕ) : ℕ :=
+  Option.getD (weightedDegree p u v) 0
 
-noncomputable def rootMultiplicity.{u}
-  {F : Type u} 
-  [CommSemiring F] 
+/-- The finite set of bivariate indices of non-zero coefficients of
+    a bivariate polynomial.
+-/
+def support [DecidableEq F] (p : F[X][Y]) : Finset (ℕ × ℕ) :=
+  let deg := natWeightedDegree p 1 1
+  Finset.image
+    (fun x => (x.1.val, x.2.val))
+    ({x : Fin deg.succ × Fin deg.succ | coeff p x.1 x.2 ≠ 0})
+
+
+/-- Root multiplicity of (0,0).
+    It is the minimal sum `i + j` over all `(i, j)` such that
+    the (i,j)-coefficient of `f` is not zero.
+-/
+def rootMultiplicity₀ [DecidableEq F] : Option ℕ :=
+  Finset.min (Finset.image (fun x => x.1 + x.2) (support f))
+
+/-- Multiplicity of `(x, y)`. Defined as the multiplicity of `(0, 0)`
+    w.r.t. the polynomial `f(X + x, Y + y)`.
+-/
+def rootMultiplicity
+  {F : Type}
+  [CommSemiring F]
   [DecidableEq F] (f : F[X][Y]) (x y : F) : Option ℕ :=
   let X := (Polynomial.X : Polynomial F)
   rootMultiplicity₀ (F := F) ((f.comp (Y + (C (C y)))).map (Polynomial.compRingHom (X + C x)))
 
-lemma rootMultiplicity_some_implies_root {F : Type} [CommSemiring F] 
+lemma rootMultiplicity_some_implies_root {F : Type} [CommSemiring F]
   [DecidableEq F]
   {x y : F} (f : F[X][Y])
   (h : some 0 < (rootMultiplicity (f := f) x y))
   :
-  (f.eval 0).eval 0 = 0
+  (f.eval (Polynomial.C y)).eval x = 0
   := by
   sorry
 
@@ -83,12 +98,12 @@ def rotateRight (l : List F) : List F :=
   | x::xs => x :: xs.reverse
 
 /-- Build the Sylvester matrix of two polynomials -/
-def sylvesterMatrix {F : Type} [Semiring F] 
+def sylvesterMatrix {F : Type} [Semiring F]
     [Inhabited F]
-    (p q : Polynomial F) 
+    (p q : Polynomial F)
     : Matrix (Fin ((p.natDegree + q.natDegree) - 1)) (Fin ((p.natDegree + q.natDegree) - 1)) F :=
   let coeffs1 := p.coeffs.toList.reverse
-  let coeffs2 := q.coeffs.toList.reverse 
+  let coeffs2 := q.coeffs.toList.reverse
   let l1 := coeffs1.length
   let l2 := coeffs2.length
   let N := l1 + l2 - 2
@@ -112,14 +127,14 @@ def resultant {F : Type} [CommRing F] [Inhabited F] (f g : F[X]) : F :=
   (sylvesterMatrix f g).det
 
 def discriminant {F : Type} [Field F] [Inhabited F] (f : F[X]) : F :=
-  1/f.leadingCoeff * resultant f (Polynomial.derivative f) 
+  1/f.leadingCoeff * resultant f (Polynomial.derivative f)
 
 opaque discr_y {F : Type} [CommSemiring F] (f : F[X][Y]) : F[X] :=
   sorry
 
-lemma separable_iff_discr_eq_zero {F : Type} [Field F] [Inhabited F] (f : F[X]) : 
+lemma separable_iff_discr_eq_zero {F : Type} [Field F] [Inhabited F] (f : F[X]) :
   f.Separable ↔ discriminant f = 0 := by sorry
- 
+
 -- Katy: The next def, lemma and def can be deleted. Just keeping for now in case we need
 -- the lemma for somethying
 def degreesYFinset : Finset ℕ :=
@@ -169,8 +184,8 @@ Over an integral domain, the `Y`-degree of the product of two non-zero bivariate
 equal to the sum of their degrees.
 -/
 lemma degreeY_mul [IsDomain F] (hf : f ≠ 0) (hg : g ≠ 0)
-  : degreeY (f * g) = degreeY f + degreeY g := by
-  unfold degreeY
+  : natDegreeY (f * g) = natDegreeY f + natDegreeY g := by
+  unfold natDegreeY
   rw [←ne_zero_iff_leadingCoeffY_ne_zero] at hf
   rw [←ne_zero_iff_leadingCoeffY_ne_zero] at hg
   have h_lc : leadingCoeffY f * leadingCoeffY g ≠ 0 := mul_ne_zero hf hg
@@ -267,7 +282,7 @@ The `Y` degree of the bivarate quotient is bounded above by the difference of th
 the divisor and divident.
 -/
 lemma quotient_degY [IsDomain F] (q : F[X][Y]) (h_quot_XY : g = q * f) (hf : f ≠ 0)
-  (hg : g ≠ 0) : degreeY q  ≤ degreeY g - degreeY f := by
+  (hg : g ≠ 0) : natDegreeY q  ≤ natDegreeY g - natDegreeY f := by
   rw [h_quot_XY, degreeY_mul q f]
   · aesop
   · rw [nezero_iff_coeffs_nezero q]
