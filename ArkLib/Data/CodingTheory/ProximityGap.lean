@@ -502,13 +502,13 @@ noncomputable def agree (μ : ι → Set.Icc (0 : ℝ) 1) (u v : ι → F) : ℝ
   1 / (Fintype.card ι) * ∑ i ∈ { i | u i = v i }, (μ i).1
 
 noncomputable def agree_set (μ : ι → Set.Icc (0 : ℝ) 1) (u : ι → F) (V : Finset (ι → F)) : ℝ :=
-  sSup (Finset.map ⟨fun v ↦ (Δ₀(u, v) : ℝ), by sorry⟩ V)
+  sSup (Finset.map ⟨fun v ↦ agree μ u v, by sorry⟩ V)
 
 noncomputable def mu_set.{u} {ι : Type u} (μ : ι → Set.Icc (0 : ℝ) 1) (V : Finset.{u} ι) : ℝ :=
   1/V.card * ∑ i ∈ V, (μ i).1
 
 noncomputable def weightedCorrelatedAgreement.{u} {ι : Type u} [Fintype ι] (μ : ι → Set.Icc (0 : ℝ) 1)
-    (C : Set (ι → F)) (δ : ℝ≥0) {k : ℕ} (W : Fin k → ι → F) : ℝ :=
+    (C : Set (ι → F)) {k : ℕ} (W : Fin k → ι → F) : ℝ :=
   sSup { x | ∃ D ⊆ (Finset.univ.{u} (α := ι)), x = mu_set.{u} μ D ∧ 
     ∃ v : Fin k → ι → F, ∀ i, v i ∈ C ∧ ∀ j ∈ D,  v i j = W i j } 
 
