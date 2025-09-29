@@ -401,13 +401,11 @@ variable {F : Type} [Field F] [DecidableEq F] [DecidableEq (RatFunc F)]
 variable {n k m : ℕ}
 
 def curve [Field F] (u : List (Fin n → F)) (z : F) : Fin n → F :=
-    List.zip u (List.map (fun i => z ^ i) (List.range u.length)) 
-    |> List.map (fun (u, z) i => (u i) * z)
-    |> List.sum 
-
+    ∑ i < u.length, (z ^ i) • (u.getD i 0)  
+    
 def the_S_multi
   [Finite F] (δ : ℚ) (u : List (Fin n → F)) (V : Finset (Fin n → F)) : Finset F :=
-  @Set.toFinset _ { z | ∀ v ∈ V, Δ₀(curve u z, v) ≤ δ} sorry
+  @Set.toFinset _ { z | ∀ v ∈ V, δᵣ(curve u z, v) ≤ δ} sorry
 
 theorem theorem_6_1
   [Field F]
@@ -422,7 +420,7 @@ theorem theorem_6_1
   the_S_multi δ u V = F ∧
   ∃ (v : List (Fin n → F)) (z : F),
     v.length = u.length ∧
-    Δ₀(curve u z, curve v z) ≤ δ ∧
+    δᵣ(curve u z, curve v z) ≤ δ ∧
     ({ x : Fin n | 
       List.map (fun el => el x) u 
       ≠ List.map (fun el => el x) v } : Finset _).card ≤ δ * n := sorry
@@ -445,8 +443,8 @@ theorem theorem_6_2
   :
   ∃ (v : List (Fin n → F)),
   ∀ i ≤ v.length, v.getD (fallback := fun _ => 0) i ∈ V ∧ v.length = u.length ∧
-  (1 - δ) * n ≤ ({x : Fin n | ∀ i ≤ u.length, u.getD i (fun _ => 0)
-    = v.getD i (fun _ => 0) } : Finset _).card := sorry
+  (1 - δ) * n ≤ ({x : Fin n | ∀ i ≤ u.length, u.getD i 0
+    = v.getD i 0 } : Finset _).card := sorry
 
 section
 open NNReal Finset Function
