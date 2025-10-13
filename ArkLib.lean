@@ -155,6 +155,7 @@ import ArkLib.ProofSystem.ConstraintSystem.R1CS
 import ArkLib.ProofSystem.DSL
 import ArkLib.ProofSystem.Fri.Domain
 import ArkLib.ProofSystem.Fri.RoundConsistency
+import ArkLib.ProofSystem.Fri.Soundness
 import ArkLib.ProofSystem.Fri.Spec.General
 import ArkLib.ProofSystem.Fri.Spec.SingleRound
 import ArkLib.ProofSystem.Plonk.Basic
