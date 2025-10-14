@@ -402,9 +402,8 @@ lemma eq_5_12
     ∀ Rᵢ ∈ R, Rᵢ.Separable ∧
     ∀ Rᵢ ∈ R, Irreducible Rᵢ ∧
     Q = (Polynomial.C C) *
-      (List.prod
-        <| List.map
-          (fun ((R, f), e) => (R.comp ((Y : F[Z][X][Y]) ^ f))^e) (List.zip (List.zip R f) e))
+        ∏ (Rᵢ ∈ R.toFinset) (fᵢ ∈ f.toFinset) (eᵢ ∈ e.toFinset),
+          (Rᵢ.comp ((Y : F[Z][X][Y]) ^ fᵢ))^eᵢ
   := sorry
 
 /-- Claim 5.6 of the proximity gap paper. -/

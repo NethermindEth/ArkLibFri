@@ -251,109 +251,70 @@ lemma sup_eq_of_le_of_reach {α β : Type} [SemilatticeSup β] [OrderBot β] {s 
   rw [isMaxOn_iff]
   exact all_le
 
+attribute [local grind] Finsupp.support_nonempty_iff
+attribute [local grind ←] Polynomial.toFinsupp_eq_zero
+attribute [local grind _=_] Finsupp.mem_support_iff Polynomial.toFinsupp_apply Finset.sup'_eq_sup
+@[local grind _=_]
+lemma support_eq_support_toFinsupp {f : F[X][Y]} : f.support = f.toFinsupp.support := rfl
+
+-- lemma what {f : F[X][Y]}
+--   (h : {n ∈ f.support | (f.coeff n).natDegree = (f.support.sup (fun n ↦ (f.coeff n).natDegree))}.Nonempty):
+--   ∀ n : ℕ, n > ({n ∈ f.support | (f.coeff n).natDegree = (f.support.sup fun n ↦ (f.coeff n).natDegree)}.sup' h) →
+--            (f.coeff n).natDegree < (f.coeff ({n ∈ f.support | (f.coeff n).natDegree = (f.support.sup fun n ↦ (f.coeff n).natDegree)}.sup' h)).natDegree ∨ f.coeff n = 0
+
 /-- The `X`-degree of the product of two non-zero bivariate polynomials is
 equal to the sum of their degrees. -/
 @[simp, grind _=_]
 lemma degreeX_mul [IsDomain F] (f g : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0) :
   degreeX (f * g) = degreeX f + degreeX g := by
   unfold degreeX
-  have (f : F[X][Y]) : f.support = f.toFinsupp.support := by rfl
-  rw [this, this, this]
-  generalize h_fdegx : (f.toFinsupp.support.sup fun n ↦ (f.coeff n).natDegree) = fdegx
-  generalize h_gdegx : (g.toFinsupp.support.sup fun n ↦ (g.coeff n).natDegree) = gdegx
-  have f_support_nonempty : f.toFinsupp.support.Nonempty := by
-    apply Finsupp.support_nonempty_iff.mpr
-    intro h
-    apply hf
-    rw [Polynomial.toFinsupp_eq_zero] at h
-    exact h
-  have g_support_nonempty : g.toFinsupp.support.Nonempty := by
-    apply Finsupp.support_nonempty_iff.mpr
-    intro h
-    apply hg
-    rw [Polynomial.toFinsupp_eq_zero] at h
-    exact h
-  have f_mdeg_nonempty : {n ∈ f.toFinsupp.support | (f.coeff n).natDegree = fdegx}.Nonempty := by
-    unfold Finset.Nonempty
-    rcases Finset.exists_mem_eq_sup _ f_support_nonempty (fun n ↦ (f.coeff n).natDegree)
-      with ⟨mfx, h'₁, h₁⟩
-    exists mfx
-    rw [←h_fdegx, h₁]
-    simp only
-      [Finset.mem_filter, Finsupp.mem_support_iff, ne_eq, and_true, Polynomial.toFinsupp_apply]
-    intros con
-    rw [←Polynomial.toFinsupp_apply] at con
-    aesop
-  have g_mdeg_nonempty : {n ∈ g.toFinsupp.support | (g.coeff n).natDegree = gdegx}.Nonempty := by
-    unfold Finset.Nonempty
-    rcases Finset.exists_mem_eq_sup _ g_support_nonempty (fun n ↦ (g.coeff n).natDegree)
-      with ⟨mgx, h'₂, h₂⟩
-    exists mgx
-    rw [←h_gdegx, h₂]
-    simp only
-      [Finset.mem_filter, Finsupp.mem_support_iff, ne_eq, and_true, Polynomial.toFinsupp_apply]
-    intros con
-    rw [←Polynomial.toFinsupp_apply] at con
-    aesop
-  let mmfx :=
-    (f.toFinsupp.support.filter (fun n ↦ (f.coeff n).natDegree = fdegx)).sup' f_mdeg_nonempty id
-  let mmgx :=
-    (g.toFinsupp.support.filter (fun n ↦ (g.coeff n).natDegree = gdegx)).sup' g_mdeg_nonempty id
+  generalize h_fdegx : (f.support.sup (α := ℕ) _) = fdegx
+  generalize h_gdegx : (g.support.sup (α := ℕ) _) = gdegx
+  letI s₁ := {n ∈ f.support | (f.coeff n).natDegree = fdegx}
+  letI s₂ := {n ∈ g.support | (g.coeff n).natDegree = gdegx}
+  have f_mdeg_nonempty : s₁.Nonempty := by
+    obtain ⟨mfx, _, _⟩ :=
+      Finset.exists_mem_eq_sup _ (show f.support.Nonempty by grind) fun n ↦ (f.coeff n).natDegree
+    use mfx
+    grind
+  have g_mdeg_nonempty : s₂.Nonempty := by
+    obtain ⟨mfx, _, _⟩ :=
+      Finset.exists_mem_eq_sup _ (show g.support.Nonempty by grind) fun n ↦ (g.coeff n).natDegree
+    use mfx
+    grind
+  let mmfx := s₁.sup' f_mdeg_nonempty id
+  let mmgx := s₂.sup' g_mdeg_nonempty id
   have mmfx_def : (f.coeff mmfx).natDegree = fdegx := by
-    have : mmfx =
-        (f.toFinsupp.support.filter (fun n ↦ (f.coeff n).natDegree = fdegx)).sup'
-          f_mdeg_nonempty
-          id :=
-      by dsimp
-    have h :=
-      @Finset.sup_mem_of_nonempty ℕ ℕ _ _
-        {n ∈ f.toFinsupp.support | (f.coeff n).natDegree = fdegx} id f_mdeg_nonempty
-    rw [Finset.sup'_eq_sup] at this
-    rw [←this] at h
-    simp only [id_eq, Set.image_id', Finset.coe_filter, Finsupp.mem_support_iff, ne_eq,
-      Set.mem_setOf_eq] at h
-    exact h.2
+    have h := Finset.sup_mem_of_nonempty (f := id) f_mdeg_nonempty
+    grind
   have mmgx_def : (g.coeff mmgx).natDegree = gdegx := by
-    have : mmgx =
-        (g.toFinsupp.support.filter (fun n ↦ (g.coeff n).natDegree = gdegx)).sup' g_mdeg_nonempty id
-       := by dsimp
-    have h :=
-      @Finset.sup_mem_of_nonempty ℕ ℕ _ _
-        {n ∈ g.toFinsupp.support | (g.coeff n).natDegree = gdegx} id g_mdeg_nonempty
-    rw [Finset.sup'_eq_sup] at this
-    rw [←this] at h
-    simp only [id_eq, Set.image_id', Finset.coe_filter, Finsupp.mem_support_iff, ne_eq,
-      Set.mem_setOf_eq] at h
-    exact h.2
+    have h := Finset.sup_mem_of_nonempty (f := id) g_mdeg_nonempty
+    grind
   have mmfx_neq_0 : f.coeff mmfx ≠ 0 := by
     rw [←Polynomial.toFinsupp_apply, ←Finsupp.mem_support_iff, f.toFinsupp.mem_support_toFun]
     dsimp [mmfx]
-    generalize h :
-      {n ∈ f.toFinsupp.support | (f.coeff n).natDegree = fdegx}.sup' f_mdeg_nonempty id = i
+    generalize h : s₁.sup' f_mdeg_nonempty id = i
     rw [Finset.sup'_eq_sup] at h
-    rcases
-      Finset.exists_mem_eq_sup
-        {n ∈ f.toFinsupp.support | (f.coeff n).natDegree = fdegx} f_mdeg_nonempty id
-      with ⟨n, h'⟩
+    rcases Finset.exists_mem_eq_sup s₁ f_mdeg_nonempty id with ⟨n, h'⟩
     rw [h'.2] at h
     simp only [id_eq] at h
     rw [h] at h'
-    simp only [Finset.mem_filter, Finsupp.mem_support_iff, ne_eq, id_eq] at h'
+    simp [s₁, Finset.mem_filter, id_eq] at h'
     exact h'.1.1
   have mmgx_neq_0 : g.coeff mmgx ≠ 0 := by
     rw [←Polynomial.toFinsupp_apply, ←Finsupp.mem_support_iff, g.toFinsupp.mem_support_toFun]
     dsimp [mmgx]
     generalize h :
-      {n ∈ g.toFinsupp.support | (g.coeff n).natDegree = gdegx}.sup' g_mdeg_nonempty id = i
+      s₂.sup' g_mdeg_nonempty id = i
     rw [Finset.sup'_eq_sup] at h
     rcases
       Finset.exists_mem_eq_sup
-        {n ∈ g.toFinsupp.support | (g.coeff n).natDegree = gdegx} g_mdeg_nonempty id
+        {n ∈ g.support | (g.coeff n).natDegree = gdegx} g_mdeg_nonempty id
       with ⟨n, h'⟩
     rw [h'.2] at h
-    simp only [id_eq, mmfx] at h
+    simp only [id_eq] at h
     rw [h] at h'
-    simp only [Finset.mem_filter, Finsupp.mem_support_iff, ne_eq, id_eq, mmgx] at h'
+    simp only [Finset.mem_filter, mem_support_iff, ne_eq, id_eq] at h'
     exact h'.1.1
   have h₁ : ∀ n, (f.coeff n).natDegree ≤ (f.coeff mmfx).natDegree := by
     intros n
@@ -486,7 +447,7 @@ lemma degreeX_mul [IsDomain F] (f g : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0) :
       · right
         aesop
   apply sup_eq_of_le_of_reach (mmfx + mmgx)
-  · rw [Finsupp.mem_support_iff, Polynomial.toFinsupp_apply, Polynomial.coeff_mul]
+  · rw [Polynomial.mem_support_iff, Polynomial.coeff_mul]
     by_contra h
     rw [h, natDegree_zero] at this
     have fdegx_eq_0 : fdegx = 0 := by
