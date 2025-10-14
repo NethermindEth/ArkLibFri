@@ -45,23 +45,29 @@ noncomputable def Mg_inv {i : ℕ} (g : Domain.evalDomain D (i + 1))
   := Classical.choose (Mg_invertible D (n := n) (g := g) (DSmooth := DSmooth)) 
 
 noncomputable def f_succ {i : ℕ}
-  (g : Domain.evalDomain D i)
-  (f : ReedSolomon.code
-    (F := F)
-    (ι := Fin (2 ^ (n - i)))
-    ⟨fun x => (CosetDomain.domain D g n i x).val, sorry⟩ (2 ^ (n - i)))
+  (f : Fin (2 ^ (n - i)) → F)
   (z : F)
-  (x : Domain.evalDomain D (i + 1))
+  (x : Fin (2 ^ (n - (i + 1))))
   :
   F
   := 
-  ((pows z (2^(n - i))) * (Matrix.transpose <| Mg D (n := n) x f.val)).diag 0
+  ((pows z (2^(n - i))) * (Matrix.transpose 
+    <| Mg D (n := n) (Domain.domain D n (i + 1) x) f)).diag 0
 
 lemma claim_8_1
-  {f : ReedSolomon.code (Domain.domain ) k}
+  {i : ℕ}
+  (f : ReedSolomon.code
+     (F := F)
+     (ι := Fin (2 ^ (n - i)))
+     ⟨fun x => (Domain.domain D n i x).val, sorry⟩ (2 ^ (n - i)))
   (hk : ∃ k', k + 1 = 2 ^ k')
+  (z : F)
   : 
-  True := by sorry
+  f_succ D f.val z ∈ (ReedSolomon.code
+    (F := F)
+    (ι := Fin (2 ^ (n - (i + 1))))
+    ⟨fun x => (Domain.domain D n (i + 1) x).val, sorry⟩ (2 ^ (n - (i + 1)))).carrier
+  := by sorry
 
 end Fri
 end Fri
