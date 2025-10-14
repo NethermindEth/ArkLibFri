@@ -320,13 +320,12 @@ lemma proximity_gap_claim_5_4
 end
 
 variable {m : ℕ} (k : ℕ) {δ : ℚ} {x₀ : F} {u₀ u₁ : Fin n → F} {Q : F[Z][X][Y]} {ωs : Fin n ↪ F}
+         [Finite F]
 
--- REVIEW: Has to be noncomputable.
 noncomputable instance {α : Type} (s : Set α) [inst : Finite s] : Fintype s := Fintype.ofFinite _
 
--- REVIEW: Has to be noncomputable.
 /-- The set `S` (equation 5.2 of the proximity gap paper). -/
-noncomputable def the_S [Finite F] (ωs : Fin n ↪ F) (δ : ℚ) (u₀ u₁ : Fin n → F)
+noncomputable def the_S (ωs : Fin n ↪ F) (δ : ℚ) (u₀ u₁ : Fin n → F)
   : Finset F := Set.toFinset { z | ∃ v : ReedSolomon.code ωs (k + 1), δᵣ(u₀ + z • u₁, v) ≤ δ}
 
 open Polynomial
@@ -336,7 +335,6 @@ omit [DecidableEq (RatFunc F)] in
     from the set `S`.
 -/
 lemma exists_Pz_of_the_S
-  [Finite F]
   {k : ℕ}
   {z : F}
   (hS : z ∈ the_S (k := k) ωs δ u₀ u₁)
@@ -358,7 +356,6 @@ lemma exists_Pz_of_the_S
     from the set `S`.
 -/
 noncomputable def Pz
-  [Finite F]
   {k : ℕ}
   {z : F}
   (hS : z ∈ the_S k ωs δ u₀ u₁)
@@ -372,7 +369,6 @@ noncomputable def Pz
     `Pz` on that set. 
 -/
 lemma lemma_5_5
-  [Finite F]
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   :
   ∃ S', ∃ (h_sub : S' ⊆ the_S k ωs δ u₀ u₁), ∃ P : F[Z][X],
@@ -384,7 +380,6 @@ lemma lemma_5_5
 /-- The subset `S'` extracted from the proprosition 5.5.
 -/
 noncomputable def the_S'
-  [Finite F]
   (ωs : Fin n ↪ F)
   (δ : ℚ)
   (u₀ u₁ : Fin n → F)
@@ -393,12 +388,9 @@ noncomputable def the_S'
 
 /-- `S'` is indeed a subset of `S` -/
 lemma the_S'_subset_the_S
-  [Finite F]
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   : the_S' k ωs δ u₀ u₁ h_gs ⊆ the_S k ωs δ u₀ u₁ := by sorry
 
--- REVIEW: This doesn't have [Finite F]; is this intended?
--- REVIEW: Is there a reason why this is stated with a List, rather than finset product?
 /-- The equation 5.12 from the proximity gap paper. -/
 lemma eq_5_12
   {k : ℕ}
@@ -415,7 +407,6 @@ lemma eq_5_12
           (fun ((R, f), e) => (R.comp ((Y : F[Z][X][Y]) ^ f))^e) (List.zip (List.zip R f) e))
   := sorry
 
--- REVIEW: This doesn't have [Finite F]; is this intended?
 /-- Claim 5.6 of the proximity gap paper. -/
 lemma lemma_5_6
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
@@ -427,7 +418,6 @@ open Trivariate in
 open Bivariate in
 /-- Claim 5.7 of the proximity gap paper. -/
 lemma lemma_5_7
-  [Finite F]
   (δ : ℚ) (x₀ : F)
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   :
@@ -444,7 +434,7 @@ lemma lemma_5_7
 /-- Claim 5.7 establishes existens of a polynomial `R`.
     This is the extraction of this polynomial.
 -/
-noncomputable def R [Finite F]
+noncomputable def R
   (δ : ℚ) (x₀ : F)
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   : F[Z][X][Y] := (lemma_5_7 k δ x₀ h_gs).choose
@@ -452,7 +442,7 @@ noncomputable def R [Finite F]
 /-- Claim 5.7 establishes existens of a polynomial `H`.
     This is the extraction of this polynomial.
 -/
-noncomputable def H [Finite F]
+noncomputable def H
   (δ : ℚ) (x₀ : F)
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   : F[Z][X] := (lemma_5_7 k δ x₀ h_gs).choose_spec.choose
@@ -461,7 +451,7 @@ noncomputable def H [Finite F]
     `H` extracted from claim 5.7 is that it is 
     irreducible.
 -/
-lemma irreducible_H [Finite F]
+lemma irreducible_H
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   :
   Irreducible (H k δ x₀ h_gs) := by
@@ -478,7 +468,6 @@ open AppendixA.ClaimA2 in
     of coefficients.
 -/
 lemma Claim_5_8
-  [Finite F]
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   : ∀ t ≥ k,
   α' 
@@ -497,7 +486,6 @@ open AppendixA.ClaimA2 in
     This version is in terms of polynomials.
 -/
 lemma Claim_5_8'
-  [Finite F]
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   :
     γ' (R k δ x₀ h_gs) x₀ (irreducible_H k h_gs) =
@@ -517,7 +505,6 @@ open AppendixA.ClaimA2 in
     the variable `Z`.
 -/
 lemma Claim_5_9
-  [Finite F]
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   :
   ∃ (v₀ v₁ : F[X]),
@@ -531,7 +518,7 @@ lemma Claim_5_9
 /-- The linear represenation of the solution `γ` 
     extracted from the claim 5.9.
 -/
-noncomputable def P [Finite F]
+noncomputable def P
   (δ : ℚ) (x₀ : F)
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   :
@@ -547,7 +534,6 @@ open AppendixA.ClaimA2 in
 /-- The extracted `P` from claim 5.9 equals `γ`.
 -/
 lemma gamma_eq_P
-  [Finite F]
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   :
   γ' (R k δ x₀ h_gs) x₀ (irreducible_H k (x₀ := x₀) (δ := δ) h_gs) =
@@ -558,7 +544,6 @@ lemma gamma_eq_P
     The set of all `z∈S'` such that `w(x,z)` matches `P_z(x)`.
 -/
 noncomputable def the_S'x
-  [Finite F]
   (δ : ℚ)
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   (x : Fin n)
@@ -571,7 +556,6 @@ noncomputable def the_S'x
     the cardinality |S'_x| is big enough.
 -/
 lemma claim_5_10
-  [Finite F]
   {ωs : Fin n ↪ F}
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   {x : Fin n}
@@ -592,7 +576,6 @@ lemma claim_5_10
     in the claim 5.10.
 -/
 lemma claim_5_11
-  [Finite F]
   {ωs : Fin n ↪ F}
   (h_gs : ModifiedGuruswami m n k ωs Q u₀ u₁)
   {x : Fin n}
