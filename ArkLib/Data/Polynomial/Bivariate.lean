@@ -253,14 +253,9 @@ lemma sup_eq_of_le_of_reach {α β : Type} [SemilatticeSup β] [OrderBot β] {s 
 
 attribute [local grind] Finsupp.support_nonempty_iff
 attribute [local grind ←] Polynomial.toFinsupp_eq_zero
-attribute [local grind _=_] Finsupp.mem_support_iff Polynomial.toFinsupp_apply Finset.sup'_eq_sup
+attribute [local grind _=_] Finsupp.mem_support_iff Polynomial.toFinsupp_apply
 @[local grind _=_]
 lemma support_eq_support_toFinsupp {f : F[X][Y]} : f.support = f.toFinsupp.support := rfl
-
--- lemma what {f : F[X][Y]}
---   (h : {n ∈ f.support | (f.coeff n).natDegree = (f.support.sup (fun n ↦ (f.coeff n).natDegree))}.Nonempty):
---   ∀ n : ℕ, n > ({n ∈ f.support | (f.coeff n).natDegree = (f.support.sup fun n ↦ (f.coeff n).natDegree)}.sup' h) →
---            (f.coeff n).natDegree < (f.coeff ({n ∈ f.support | (f.coeff n).natDegree = (f.support.sup fun n ↦ (f.coeff n).natDegree)}.sup' h)).natDegree ∨ f.coeff n = 0
 
 /-- The `X`-degree of the product of two non-zero bivariate polynomials is
 equal to the sum of their degrees. -/
@@ -282,42 +277,26 @@ lemma degreeX_mul [IsDomain F] (f g : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0) :
       Finset.exists_mem_eq_sup _ (show g.support.Nonempty by grind) fun n ↦ (g.coeff n).natDegree
     use mfx
     grind
-  let mmfx := s₁.sup' f_mdeg_nonempty id
-  let mmgx := s₂.sup' g_mdeg_nonempty id
+  set mmfx := s₁.max' f_mdeg_nonempty with hmmfx
+  set mmgx := s₂.max' g_mdeg_nonempty with hmmgx
+  have h₁ : mmfx ∈ s₁ := Finset.max'_mem _ f_mdeg_nonempty
+  have h₂ : mmgx ∈ s₂ := Finset.max'_mem _ g_mdeg_nonempty
   have mmfx_def : (f.coeff mmfx).natDegree = fdegx := by
-    have h := Finset.sup_mem_of_nonempty (f := id) f_mdeg_nonempty
+    have h := Finset.max'_mem _ f_mdeg_nonempty
     grind
   have mmgx_def : (g.coeff mmgx).natDegree = gdegx := by
-    have h := Finset.sup_mem_of_nonempty (f := id) g_mdeg_nonempty
+    have h := Finset.max'_mem _ g_mdeg_nonempty
     grind
-  have mmfx_neq_0 : f.coeff mmfx ≠ 0 := by
-    rw [←Polynomial.toFinsupp_apply, ←Finsupp.mem_support_iff, f.toFinsupp.mem_support_toFun]
-    dsimp [mmfx]
-    generalize h : s₁.sup' f_mdeg_nonempty id = i
-    rw [Finset.sup'_eq_sup] at h
-    rcases Finset.exists_mem_eq_sup s₁ f_mdeg_nonempty id with ⟨n, h'⟩
-    rw [h'.2] at h
-    simp only [id_eq] at h
-    rw [h] at h'
-    simp [s₁, Finset.mem_filter, id_eq] at h'
-    exact h'.1.1
-  have mmgx_neq_0 : g.coeff mmgx ≠ 0 := by
-    rw [←Polynomial.toFinsupp_apply, ←Finsupp.mem_support_iff, g.toFinsupp.mem_support_toFun]
-    dsimp [mmgx]
-    generalize h :
-      s₂.sup' g_mdeg_nonempty id = i
-    rw [Finset.sup'_eq_sup] at h
-    rcases
-      Finset.exists_mem_eq_sup
-        {n ∈ g.support | (g.coeff n).natDegree = gdegx} g_mdeg_nonempty id
-      with ⟨n, h'⟩
-    rw [h'.2] at h
-    simp only [id_eq] at h
-    rw [h] at h'
-    simp only [Finset.mem_filter, mem_support_iff, ne_eq, id_eq] at h'
-    exact h'.1.1
-  have h₁ : ∀ n, (f.coeff n).natDegree ≤ (f.coeff mmfx).natDegree := by
-    intros n
+  have mmfx_neq_0 : f.coeff mmfx ≠ 0 := by grind
+  have mmgx_neq_0 : g.coeff mmgx ≠ 0 := by grind
+  have h₁ {n} : (f.coeff n).natDegree ≤ fdegx := by 
+    -- by_cases n ∈ f.support
+
+    -- rw [←h_fdegx]
+    -- -- rw [Finset.le_sup_iff]
+    -- have : n ∈ f.support := sorry
+    -- grind
+    rw [←mmfx_def]
     by_cases h : n ∈ f.toFinsupp.support
     · have  : (f.toFinsupp.support.sup fun n ↦ (f.coeff n).natDegree) = (f.coeff mmfx).natDegree :=
         by aesop
@@ -437,8 +416,7 @@ lemma degreeX_mul [IsDomain F] (f g : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0) :
         aesop
     · specialize h₂' y.2 h''
       rw [mmgx_def] at h₂'
-      specialize h₁ y.1
-      rw [mmfx_def] at h₁
+      specialize @h₁ y.1
       rcases h₂'
       · left
         apply lt_of_le_of_lt
@@ -503,8 +481,7 @@ lemma degreeX_mul [IsDomain F] (f g : F[X][Y]) (hf : f ≠ 0) (hg : g ≠ 0) :
       intros a b h'
       transitivity
       · exact Polynomial.natDegree_mul_le
-      · specialize h₁ a
-        rw [mmfx_def] at h₁
+      · specialize @h₁ a
         specialize h₂ b
         rw [mmgx_def] at h₂
         linarith
