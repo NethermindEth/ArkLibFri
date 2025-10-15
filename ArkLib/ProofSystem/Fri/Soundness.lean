@@ -13,6 +13,8 @@ import ArkLib.ProofSystem.Fri.Domain
 namespace Fri
 section Fri
 
+open NNReal Finset Function ProbabilityTheory
+
 universe u
 variable {k n : ℕ}
 variable {F : Type} [NonBinaryField F] [Finite F]
@@ -68,6 +70,34 @@ lemma claim_8_1
     (ι := Fin (2 ^ (n - (i + 1))))
     ⟨fun x => (Domain.domain D n (i + 1) x).val, sorry⟩ (2 ^ (n - (i + 1)))).carrier
   := by sorry
+
+def Fₛ {t : ℕ} (f : Fin t.succ → (D → F)) : AffineSubspace F (D → F) := 
+  ⟨{g | ∃ x : Fin t.succ → (D → F), x 0 = 1 ∧ g = ∑ i, x i • f i }, sorry⟩ 
+
+def correlated_agreement_density (Fₛ : AffineSubspace F (D → F))
+  (V : Submodule F (D → F)) : ℝ := sorry
+
+def εQ : ℝ := sorry
+def εC : ℝ := sorry
+
+lemma lemma_8_2
+  {t : ℕ}
+  {n : ℕ}
+  {f : Fin t.succ → (D → F)}
+  (h_agreement : 
+    correlated_agreement_density _ 
+      (Fₛ _ f) 
+      (ReedSolomon.code (F := F)
+      (ι := Fin (2 ^ n))
+      ⟨fun x => (Domain.domain D n (i + 1) x).val, sorry⟩ (2 ^ (n - k))))
+  {m : ℕ}
+  :
+  ( Pr_{let x ← $ᵖ S}[Code.relHammingDistToCode x.1 P ≤ δ] ≤ ε )
+  :=
+  by sorry
+
+
+  
 
 end Fri
 end Fri
