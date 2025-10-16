@@ -71,25 +71,33 @@ lemma claim_8_1
     ⟨fun x => (Domain.domain D n (i + 1) x).val, sorry⟩ (2 ^ (n - (i + 1)))).carrier
   := by sorry
 
-def Fₛ {t : ℕ} (f : Fin t.succ → (D → F)) : AffineSubspace F (D → F) := 
-  ⟨{g | ∃ x : Fin t.succ → (D → F), x 0 = 1 ∧ g = ∑ i, x i • f i }, sorry⟩ 
+def Fₛ {t : ℕ} (f : Fin t.succ → (Fin (2 ^ n) → F)) : AffineSubspace F (Fin (2 ^ n) → F) := 
+  ⟨{g | ∃ x : Fin t.succ → F, x 0 = 1 ∧ g = ∑ i, x i • f i  }, sorry⟩ 
 
-def correlated_agreement_density (Fₛ : AffineSubspace F (D → F))
-  (V : Submodule F (D → F)) : ℝ := sorry
+def correlated_agreement_density (Fₛ : AffineSubspace F (Fin (2 ^ n) → F))
+  (V : Submodule F ((Fin (2 ^ n)) → F)) : ℝ := sorry
 
 def εQ : ℝ := sorry
-def εC : ℝ := sorry
+noncomputable def εC [Fintype F]
+  {r : ℕ}
+  (ℓ : Fin r → ℕ) (ρ : ℝ) (m : ℕ) : ℝ := 
+  let Dcard := #(@Set.toFinset _ D.carrier sorry)
+  (m + (1 : ℚ)/2)^7 * Dcard^2 
+    / (2 * (Real.sqrt ρ) ^ 3) * (Fintype.card F)
+  + (∑ i, ℓ i) * (2 * m + 1) * (Dcard + 1) / (Fintype.card F * Real.sqrt ρ)
 
 lemma lemma_8_2
   {t : ℕ}
   {n : ℕ}
-  {f : Fin t.succ → (D → F)}
+  {α : ℝ}
+  {f : Fin t.succ → (Fin (2 ^ n) → F)}
   (h_agreement : 
-    correlated_agreement_density _ 
-      (Fₛ _ f) 
+    correlated_agreement_density  
+      (Fₛ f) 
       (ReedSolomon.code (F := F)
-      (ι := Fin (2 ^ n))
-      ⟨fun x => (Domain.domain D n (i + 1) x).val, sorry⟩ (2 ^ (n - k))))
+        (ι := Fin (2 ^ n))
+        ⟨fun x => (Domain.domain D n 0 x).val, sorry⟩ (2 ^ (n - k)))
+    ≤ α )
   {m : ℕ}
   :
   ( Pr_{let x ← $ᵖ S}[Code.relHammingDistToCode x.1 P ≤ δ] ≤ ε )
