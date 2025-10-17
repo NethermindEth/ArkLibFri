@@ -9,10 +9,15 @@ import ArkLib.Data.CodingTheory.Prelims
 import ArkLib.Data.CodingTheory.ReedSolomon
 import ArkLib.Data.Probability.Notation
 import ArkLib.ProofSystem.Fri.Domain
+import ArkLib.ProofSystem.Fri.Spec.General
+import ArkLib.ProofSystem.Fri.Spec.SingleRound
+import ArkLib.OracleReduction.Security.Basic
+import ToMathlib.Control.OptionT
 
 namespace Fri
 section Fri
 
+open OracleComp OracleSpec ProtocolSpec
 open NNReal Finset Function ProbabilityTheory
 
 universe u
@@ -99,8 +104,10 @@ lemma lemma_8_2
         ⟨fun x => (Domain.domain D n 0 x).val, sorry⟩ (2 ^ (n - k)))
     ≤ α )
   {m : ℕ}
+  {x : Fˣ}
   :
-  ( Pr_{let x ← $ᵖ S}[Code.relHammingDistToCode x.1 P ≤ δ] ≤ ε )
+  OptionT.isSome ((Fri.Spec.QueryRound.queryVerifier D x (s := 0) (l := 1)
+    (by sorry)).verify sorry sorry)
   :=
   by sorry
 
