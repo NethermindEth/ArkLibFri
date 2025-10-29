@@ -61,7 +61,7 @@ def liftingLens :
   stmt := Witness.InvLens.ofOutputOnly <| fun ⟨⟨cs, stmt⟩, ostmt⟩ =>
     ⟨
       stmt,
-      fun j v =>
+      fun _ v =>
           have : v.1 ∈ Fri.CosetDomain.evalDomain D x 0 := by convert v.2; simp
           (ostmt 0) ⟨v.1, this⟩ + ∑ j, cs j * ostmt j.succ ⟨v.1, this⟩
     ⟩
