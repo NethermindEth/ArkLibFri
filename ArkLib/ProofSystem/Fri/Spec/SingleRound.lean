@@ -524,7 +524,7 @@ namespace QueryRound
 
 /-  Parameter for the number of round consistency checks to be
     run by the query round. -/
-variable (l : ℕ)
+variable (l : ℕ) [NeZero l]
 
 /- Input/Output relations for the query round of the FRI protocol -/
 def inputRelation (cond : (k + 1) * s ≤ n) [DecidableEq F] (δ : ℝ≥0) :

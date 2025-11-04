@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: František Silváši, Julian Sutherland, Ilia Vlasov
 -/
 
+import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Defs
+
 import ArkLib.Data.CodingTheory.Basic
 import ArkLib.Data.CodingTheory.Prelims
 import ArkLib.Data.CodingTheory.ReedSolomon
@@ -76,58 +78,93 @@ lemma claim_8_1
     ⟨fun x => (Domain.domain D n (i + 1) x).val, sorry⟩ (2 ^ (n - (i + 1)))).carrier
   := by sorry
 
+/-- Affine space: {g | ∃ x : Fin t.succ → F, x 0 = 1 ∧ g = ∑ i, x i • f i  }
+-/
 def Fₛ {t : ℕ} (f : Fin t.succ → (Fin (2 ^ n) → F)) : AffineSubspace F (Fin (2 ^ n) → F) :=
-  ⟨{g | ∃ x : Fin t.succ → F, x 0 = 1 ∧ g = ∑ i, x i • f i  }, sorry⟩
+  f 0 +ᵥ affineSpan F (Finset.univ.image (f ∘ Fin.succ))
 
 def correlated_agreement_density (Fₛ : AffineSubspace F (Fin (2 ^ n) → F))
   (V : Submodule F ((Fin (2 ^ n)) → F)) : ℝ := sorry
 
-def εQ : ℝ := sorry
 noncomputable def εC [Fintype F]
   {r : ℕ}
   (ℓ : Fin r → ℕ) (ρ : ℝ) (m : ℕ) : ℝ :=
-  let Dcard := #(@Set.toFinset _ D.carrier sorry)
-  (m + (1 : ℚ)/2)^7 * Dcard^2
+  (m + (1 : ℚ)/2)^7 * (2^n)^2
     / (2 * (Real.sqrt ρ) ^ 3) * (Fintype.card F)
-  + (∑ i, ℓ i) * (2 * m + 1) * (Dcard + 1) / (Fintype.card F * Real.sqrt ρ)
+  + (∑ i, ℓ i) * (2 * m + 1) * (2 ^ n + 1) / (Fintype.card F * Real.sqrt ρ)
+
+#check QueryImpl
+#check ProbComp
+#check OracleSpec
+#check OracleQuery
+#check PEmpty.elim
+
+open Polynomial
+
+def oracle (g : Fˣ) (l : ℕ) (f : Fin n.succ → (Fin (2 ^ n) → F)) (final : F[X]) :
+  QueryImpl
+    ([]ₒ ++ₒ ([Spec.FinalOracleStatement D g 1 n]ₒ ++ₒ [(Spec.QueryRound.pSpec D g l).Message]ₒ))
+    (OracleComp [(Spec.QueryRound.pSpec D g l).Message]ₒ) where
+      impl :=
+        λ q ↦
+          match q with
+          | query (.inl i) _ => PEmpty.elim i
+          | query (.inr (.inl i)) _ =>
+            if h : i.1 < n + 1
+            then sorry
+              -- let bla :=  Fri.CosetDomain.domain D g n;
+              -- pure (f ∘ Fri.CosetDomain.domain D x <| ⟨i.1, h⟩)
+            else pure <| by
+              simpa
+                [
+                  OracleSpec.range, OracleSpec.append, OracleInterface.toOracleSpec, Spec.FinalOracleStatement,
+                  OracleInterface.Response, Spec.instOracleInterfaceFinalOracleStatement,
+                  show i.1 = n + 1 by grind [cases Fin]
+                ] using final
+          | query (.inr (.inr i)) _ => _
+
+instance {g : Fˣ} {l : ℕ} : [(Spec.QueryRound.pSpec D g l).Message]ₒ.FiniteRange where
+  range_inhabited' := sorry
+  range_fintype' := sorry
 
 lemma lemma_8_2
-  {t : ℕ}
+  {l : ℕ}
   {n : ℕ}
   {α : ℝ}
-  {f : Fin t.succ → (Fin (2 ^ n) → F)}
-  {k : ℕ}
+  {f : Fin n.succ → (Fin (2 ^ n) → F)}
+  {final : F[X]}
   (h_agreement :
     correlated_agreement_density
       (Fₛ f)
       (ReedSolomon.code (F := F)
         (ι := Fin (2 ^ n))
-        ⟨fun x => (Domain.domain D n 0 x).val, sorry⟩ (2 ^ (n - k)))
-    ≤ α )
+        ⟨fun x => (Domain.domain D n 0 x).val, sorry⟩ (2 ^ n))
+    ≤ α)
   {m : ℕ}
-  {x : Fˣ}
+  {g : Fˣ}
   :
-  let εQ (chals : Spec.FinalStatement F k) (samp : Fin 1 → CosetDomain.evalDomain D x 0) :=
+  let εQ (z : Spec.FinalStatement F n) (x : Fin l → CosetDomain.evalDomain D g 0) :=
     [
       fun _ => True |
       (
         (do
-          simulateQ sorry
+          simulateQ (oracle D g l f final)
             (
               (
-                Fri.Spec.QueryRound.queryVerifier D x (n := n) (k := k) (s := 1) (l := 1) sorry
+                Fri.Spec.QueryRound.queryVerifier D g
+                  (n := n + 1) (k := n) (s := 1) (l := l) (by simp)
               ).verify
-              chals
+              z
               (by
                 unfold Challenges Spec.QueryRound.pSpec
                 simp only [Fin.vcons_fin_zero, Nat.reduceAdd, ChallengeIdx, Challenge]
                 rintro ⟨⟨i, h'⟩, h⟩
                 have : i = 0 := by omega
                 simp only [this]
-                exact samp
+                exact x
               )
             )
-        ) : ProbComp _)
+        ) : OracleComp [(Spec.QueryRound.pSpec D g l).Message]ₒ _)
     ];
   True
   -- OptionT.isSome ((Fri.Spec.QueryRound.queryVerifier D x (s := 0) (l := 1)
