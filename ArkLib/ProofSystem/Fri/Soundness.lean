@@ -22,11 +22,11 @@ section Fri
 open OracleComp OracleSpec ProtocolSpec
 open NNReal Finset Function ProbabilityTheory
 
-universe u
-variable {k n : ℕ}
-variable {F : Type} [NonBinaryField F] [Finite F]
-variable [DecidableEq F]
+variable {F : Type} [NonBinaryField F] [Finite F] [DecidableEq F]
 variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicWithGen D] [DSmooth : SmoothPowerOfTwo n D]
+variable (g : Fˣ)
+variable {k : ℕ} (s : Fin (k + 1) → ℕ+) (d : ℕ+)
+variable (domain_size_cond : (2 ^ (∑ i, (s i).1)) * d ≤ 2 ^ n) (i : Fin k)
 
 def pows (z : F) (ℓ : ℕ) : Matrix Unit (Fin ℓ) F :=
   Matrix.of <| fun _ j => z ^ j.val
@@ -93,17 +93,15 @@ noncomputable def εC [Fintype F]
     / (2 * (Real.sqrt ρ) ^ 3) * (Fintype.card F)
   + (∑ i, ℓ i) * (2 * m + 1) * (2 ^ n + 1) / (Fintype.card F * Real.sqrt ρ)
 
-#check QueryImpl
-#check ProbComp
-#check OracleSpec
-#check OracleQuery
-#check PEmpty.elim
+#synth NonBinaryField F
+#synth IsCyclicWithGen ↥D
+#check Spec.FinalOracleStatement
 
 open Polynomial
 
-def oracle (g : Fˣ) (l : ℕ) (f : Fin n.succ → (Fin (2 ^ n) → F)) (final : F[X]) :
+def oracle (l : ℕ) (f : Fin n.succ → (Fin (2 ^ n) → F)) (final : F[X]) :
   QueryImpl
-    ([]ₒ ++ₒ ([Spec.FinalOracleStatement D g 1 n]ₒ ++ₒ [(Spec.QueryRound.pSpec D g l).Message]ₒ))
+    ([]ₒ ++ₒ ([Spec.FinalOracleStatement D g s]ₒ ++ₒ [(Spec.QueryRound.pSpec D g l).Message]ₒ))
     (OracleComp [(Spec.QueryRound.pSpec D g l).Message]ₒ) where
       impl :=
         λ q ↦
@@ -148,7 +146,7 @@ lemma lemma_8_2
       fun _ => True |
       (
         (do
-          simulateQ (oracle D g l f final)
+          simulateQ (oracle D g s l f final)
             (
               (
                 Fri.Spec.QueryRound.queryVerifier D g
@@ -164,7 +162,7 @@ lemma lemma_8_2
                 exact x
               )
             )
-        ) : OracleComp [(Spec.QueryRound.pSpec D g l).Message]ₒ _)
+        ) : OracleComp [(Spec.QueryRound.pSpec D g l).Message]ₒ (Spec.FinalStatement F n))
     ];
   True
   -- OptionT.isSome ((Fri.Spec.QueryRound.queryVerifier D x (s := 0) (l := 1)
