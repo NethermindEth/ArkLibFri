@@ -22,23 +22,25 @@ section Fri
 open OracleComp OracleSpec ProtocolSpec
 open NNReal Finset Function ProbabilityTheory
 
-variable {F : Type} [NonBinaryField F] [Finite F] [DecidableEq F]
-variable (D : Subgroup Fˣ) {n : ℕ} [DIsCyclicC : IsCyclicWithGen D] [DSmooth : SmoothPowerOfTwo n D]
-variable (g : Fˣ)
-variable {k : ℕ} (s : Fin (k + 1) → ℕ+) (d : ℕ+)
-variable (domain_size_cond : (2 ^ (∑ i, (s i).1)) * d ≤ 2 ^ n) (i : Fin k)
+variable {𝔽 : Type} [NonBinaryField 𝔽] [Finite 𝔽] [DecidableEq 𝔽]
+variable (D : Subgroup 𝔽ˣ) {n : ℕ} [DIsCyclicC : IsCyclicWithGen D] [DSmooth : SmoothPowerOfTwo n D]
+variable (g : 𝔽ˣ)
+variable (s : Fin (n + 1) → ℕ+) (d : ℕ+)
+variable (domain_size_cond : (2 ^ (∑ i, (s i).1)) * d ≤ 2 ^ n)
 
-def pows (z : F) (ℓ : ℕ) : Matrix Unit (Fin ℓ) F :=
+noncomputable local instance : Fintype 𝔽 := Fintype.ofFinite _
+
+def pows (z : 𝔽) (ℓ : ℕ) : Matrix Unit (Fin ℓ) 𝔽 :=
   Matrix.of <| fun _ j => z ^ j.val
 
 noncomputable def Mg {i : ℕ} (g : Domain.evalDomain D (i + 1))
-  (f : Fin (2 ^ (n - i)) → F)
+  (f : Fin (2 ^ (n - i)) → 𝔽)
   :
-  Matrix Unit (Fin (2 ^ (n - i))) F
+  Matrix Unit (Fin (2 ^ (n - i))) 𝔽
   :=
-  let poly := Lagrange.interpolate (F := F)
-    (@Finset.univ _ (sorry))
-    (fun x => (CosetDomain.domain D g n i x).val) f
+  let poly := Lagrange.interpolate
+    Finset.univ
+    (fun x => (CosetDomain.domain D g n i x).1.1) f
   Matrix.of <| fun _ j => poly.coeff j
 
 lemma Mg_invertible {i : ℕ} {g : Domain.evalDomain D (i + 1)}
@@ -48,127 +50,168 @@ lemma Mg_invertible {i : ℕ} {g : Domain.evalDomain D (i + 1)}
 
 noncomputable def Mg_inv {i : ℕ} (g : Domain.evalDomain D (i + 1))
   :
-  Matrix Unit (Fin (2 ^ (n - i))) F
+  Matrix Unit (Fin (2 ^ (n - i))) 𝔽
   →
-  (Fin (2 ^ (n - i))) → F
-  := Classical.choose (Mg_invertible D (n := n) (g := g) (DSmooth := DSmooth))
+  (Fin (2 ^ (n - i))) → 𝔽
+  := Classical.choose (Mg_invertible D (g := g) (DSmooth := DSmooth))
 
 noncomputable def f_succ {i : ℕ}
-  (f : Fin (2 ^ (n - i)) → F)
-  (z : F)
+  (f : Fin (2 ^ (n - i)) → 𝔽)
+  (z : 𝔽)
   (x : Fin (2 ^ (n - (i + 1))))
   :
-  F
+  𝔽
   :=
   ((pows z (2^(n - i))) * (Matrix.transpose
-    <| Mg D (n := n) (Domain.domain D n (i + 1) x) f)).diag 0
+    <| Mg D (Domain.domain D n (i + 1) x) f)).diag 0
 
 lemma claim_8_1
   {i : ℕ}
   (f : ReedSolomon.code
-     (F := F)
-     (ι := Fin (2 ^ (n - i)))
-     ⟨fun x => (Domain.domain D n i x).val, sorry⟩ (2 ^ (n - i)))
-  (hk : ∃ k', k + 1 = 2 ^ k')
-  (z : F)
+     ⟨fun x => (Domain.domain D n i x).1.1, sorry⟩ (2 ^ (n - i)))
+  (z : 𝔽)
   :
-  f_succ D f.val z ∈ (ReedSolomon.code
-    (F := F)
-    (ι := Fin (2 ^ (n - (i + 1))))
-    ⟨fun x => (Domain.domain D n (i + 1) x).val, sorry⟩ (2 ^ (n - (i + 1)))).carrier
+  f_succ D f.val z ∈
+    (ReedSolomon.code
+      ⟨fun x => (Domain.domain D n (i + 1) x).1.1, sorry⟩
+      (2 ^ (n - (i + 1)))
+    ).carrier
   := by sorry
 
-/-- Affine space: {g | ∃ x : Fin t.succ → F, x 0 = 1 ∧ g = ∑ i, x i • f i  }
+/-- Affine space: {g | ∃ x : Fin t.succ → 𝔽, x 0 = 1 ∧ g = ∑ i, x i • f i  }
 -/
-def Fₛ {t : ℕ} (f : Fin t.succ → (Fin (2 ^ n) → F)) : AffineSubspace F (Fin (2 ^ n) → F) :=
-  f 0 +ᵥ affineSpan F (Finset.univ.image (f ∘ Fin.succ))
+def Fₛ {ι : Type} [Fintype ι] {t : ℕ} (f : Fin t.succ → (ι → 𝔽)) : AffineSubspace 𝔽 (ι → 𝔽) :=
+  f 0 +ᵥ affineSpan 𝔽 (Finset.univ.image (f ∘ Fin.succ))
 
-def correlated_agreement_density (Fₛ : AffineSubspace F (Fin (2 ^ n) → F))
-  (V : Submodule F ((Fin (2 ^ n)) → F)) : ℝ := sorry
+noncomputable def correlated_agreement_density {ι : Type} [Fintype ι]
+  (Fₛ : AffineSubspace 𝔽 (ι → 𝔽)) (V : Submodule 𝔽 (ι → 𝔽)) : ℝ :=
+  let Fc := Fₛ.carrier.toFinset
+  let Vc := V.carrier.toFinset
+  (Fc ∩ Vc).card / Fc.card
 
-noncomputable def εC [Fintype F]
-  {r : ℕ}
-  (ℓ : Fin r → ℕ) (ρ : ℝ) (m : ℕ) : ℝ :=
+noncomputable def εC
+  (𝔽 : Type) (n : ℕ) [Fintype 𝔽] {r : ℕ}
+  (ℓ : Fin r → ℕ+) (ρ_sqrt : ℝ) (m : ℕ) : ℝ :=
   (m + (1 : ℚ)/2)^7 * (2^n)^2
-    / (2 * (Real.sqrt ρ) ^ 3) * (Fintype.card F)
-  + (∑ i, ℓ i) * (2 * m + 1) * (2 ^ n + 1) / (Fintype.card F * Real.sqrt ρ)
+    / (2 * ρ_sqrt ^ 3) * (Fintype.card 𝔽)
+  + (∑ i, (ℓ i).1) * (2 * m + 1) * (2 ^ n + 1) / (Fintype.card 𝔽 * ρ_sqrt)
 
-#synth NonBinaryField F
-#synth IsCyclicWithGen ↥D
-#check Spec.FinalOracleStatement
 
 open Polynomial
 
-def oracle (l : ℕ) (f : Fin n.succ → (Fin (2 ^ n) → F)) (final : F[X]) :
+noncomputable def oracle (l : ℕ) (z : Fin (n + 1) → 𝔽) (f : (CosetDomain.evalDomain D g 0) → 𝔽) :
   QueryImpl
     ([]ₒ ++ₒ ([Spec.FinalOracleStatement D g s]ₒ ++ₒ [(Spec.QueryRound.pSpec D g l).Message]ₒ))
     (OracleComp [(Spec.QueryRound.pSpec D g l).Message]ₒ) where
       impl :=
-        λ q ↦
+        fun q ↦
           match q with
           | query (.inl i) _ => PEmpty.elim i
-          | query (.inr (.inl i)) _ =>
-            if h : i.1 < n + 1
-            then sorry
-              -- let bla :=  Fri.CosetDomain.domain D g n;
-              -- pure (f ∘ Fri.CosetDomain.domain D x <| ⟨i.1, h⟩)
-            else pure <| by
-              simpa
+          | query (.inr (.inl i)) dom =>
+            let f0 := Lagrange.interpolate Finset.univ (fun v => v.1.1) f
+            let chals : List (Fin (n + 1) × 𝔽) :=
+              ((List.finRange (n + 1)).map (fun i => (i, z i))).take i.1
+            let fi : 𝔽[X] := List.foldl (fun f (i, α) => Polynomial.foldNth (s i) f α) f0 chals
+            if h : i.1 = n + 1
+            then pure <| by
+              simp only
                 [
-                  OracleSpec.range, OracleSpec.append, OracleInterface.toOracleSpec, Spec.FinalOracleStatement,
-                  OracleInterface.Response, Spec.instOracleInterfaceFinalOracleStatement,
-                  show i.1 = n + 1 by grind [cases Fin]
-                ] using final
-          | query (.inr (.inr i)) _ => _
+                  OracleSpec.range, OracleSpec.append,
+                  OracleInterface.toOracleSpec, Spec.FinalOracleStatement
+                ]
+              unfold OracleInterface.Response Spec.instOracleInterfaceFinalOracleStatement
+              simp [h]
+              exact fi
+            else pure <| by
+              simp only
+                [
+                  OracleSpec.range, OracleSpec.append,
+                  OracleInterface.toOracleSpec, Spec.FinalOracleStatement
+                ]
+              unfold OracleInterface.Response Spec.instOracleInterfaceFinalOracleStatement
+              simp [h]
+              simp only
+                [
+                  OracleSpec.domain, OracleSpec.append,
+                  OracleInterface.toOracleSpec, Spec.FinalOracleStatement
+                ] at dom
+              unfold OracleInterface.Query Spec.instOracleInterfaceFinalOracleStatement at dom
+              simp only [h, ↓reduceDIte] at dom
+              exact fi.eval dom.1.1
+          | query (.inr (.inr i)) t => OracleComp.lift (query i t)
 
-instance {g : Fˣ} {l : ℕ} : [(Spec.QueryRound.pSpec D g l).Message]ₒ.FiniteRange where
-  range_inhabited' := sorry
-  range_fintype' := sorry
+instance {g : 𝔽ˣ} {l : ℕ} : [(Spec.QueryRound.pSpec D g l).Message]ₒ.FiniteRange where
+  range_inhabited' := by
+    intros i
+    unfold Spec.QueryRound.pSpec MessageIdx at i
+    have : i.1 = 0 := by omega
+    have h := this ▸ i.2
+    simp at h
+  range_fintype' := by
+    intros i
+    unfold Spec.QueryRound.pSpec MessageIdx at i
+    have : i.1 = 0 := by omega
+    have h := this ▸ i.2
+    simp at h
 
 lemma lemma_8_2
-  {l : ℕ}
-  {n : ℕ}
+  {t : ℕ}
   {α : ℝ}
-  {f : Fin n.succ → (Fin (2 ^ n) → F)}
-  {final : F[X]}
+  (f : Fin t.succ → (CosetDomain.evalDomain D g 0 → 𝔽))
   (h_agreement :
     correlated_agreement_density
       (Fₛ f)
-      (ReedSolomon.code (F := F)
-        (ι := Fin (2 ^ n))
-        ⟨fun x => (Domain.domain D n 0 x).val, sorry⟩ (2 ^ n))
+      (ReedSolomon.code ⟨fun x => x.1.1, fun a b h ↦ by aesop⟩ (2 ^ n))
     ≤ α)
   {m : ℕ}
-  {g : Fˣ}
+  (m_ge_3 : m ≥ 3)
   :
-  let εQ (z : Spec.FinalStatement F n) (x : Fin l → CosetDomain.evalDomain D g 0) :=
-    [
-      fun _ => True |
-      (
-        (do
-          simulateQ (oracle D g s l f final)
-            (
-              (
-                Fri.Spec.QueryRound.queryVerifier D g
-                  (n := n + 1) (k := n) (s := 1) (l := l) (by simp)
-              ).verify
-              z
-              (by
-                unfold Challenges Spec.QueryRound.pSpec
-                simp only [Fin.vcons_fin_zero, Nat.reduceAdd, ChallengeIdx, Challenge]
-                rintro ⟨⟨i, h'⟩, h⟩
-                have : i = 0 := by omega
-                simp only [this]
-                exact x
-              )
-            )
-        ) : OracleComp [(Spec.QueryRound.pSpec D g l).Message]ₒ (Spec.FinalStatement F n))
-    ];
-  True
-  -- OptionT.isSome ((Fri.Spec.QueryRound.queryVerifier D x (s := 0) (l := 1)
-  --   (by sorry)).verify sorry sorry)
-  :=
-  by sorry
+    let ρ_sqrt :=
+      ReedSolomonCode.sqrtRate
+        (2 ^ n)
+        (Embedding.trans (CosetDomain.domainEnum (n := n) D g 0) (CosetDomain.domainEmb D g))
+    let α0 : ℝ := max α (ρ_sqrt * (1 + 1 / 2 * m))
+    let εC : ℝ :=
+      (m + (1 : ℚ)/2)^7 * (2^n)^2
+        / (2 * ρ_sqrt ^ 3) * (Fintype.card 𝔽)
+      + (∑ i, (s i).1) * (2 * m + 1) * (2 ^ n + 1) / (Fintype.card 𝔽 * ρ_sqrt)
+    let εQ  (x : Fin t → 𝔽)
+            (z : Fin (n + 1) → 𝔽) :=
+      Pr_{let samp ←$ᵖ (CosetDomain.evalDomain D g 0)}[
+        [
+          fun _ => True |
+          (
+            (do
+              simulateQ (oracle D g s 1 z (fun v ↦ f 0 v + ∑ i, x i * f i.succ v))
+                (
+                  (
+                    Fri.Spec.QueryRound.queryVerifier D g
+                      (n := n + 1) (k := n) (s := s) (l := 1)
+                        (by
+                          apply Spec.round_bound (d := d)
+                          transitivity
+                          · exact domain_size_cond
+                          · apply pow_le_pow (by decide) (by decide)
+                            simp
+                        )
+                  ).verify
+                  z
+                  (fun i => by
+                    simpa only
+                      [
+                        Spec.QueryRound.pSpec, Challenge,
+                        show i.1 = 0 by omega, Fin.isValue,
+                        Fin.vcons_zero
+                      ] using fun _ => samp
+                  )
+                )
+            ) : OracleComp [(Spec.QueryRound.pSpec D g 1).Message]ₒ (Spec.FinalStatement 𝔽 n)
+          )
+        ] = 1
+      ]
+    Pr_{let x ←$ᵖ (Fin t → 𝔽); let z ←$ᵖ (Fin (n + 1) → 𝔽)}[ εQ x z ≤ ENNReal.ofReal α0 ] ≤
+      ENNReal.ofReal εC
+  := by sorry
 
 
 

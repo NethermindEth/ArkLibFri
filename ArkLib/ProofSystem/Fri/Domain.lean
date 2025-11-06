@@ -590,6 +590,21 @@ lemma dom_n_eq_triv : evalDomain D x n = {x ^ (2 ^ n)} := by
   rw [Domain.dom_n_eq_triv]
   simp
 
+noncomputable local instance : Fintype F := Fintype.ofFinite _
+
+noncomputable instance : Nonempty ↑(CosetDomain.evalDomain D x 0) := by
+  apply Nonempty.intro
+  exact
+    ⟨x,
+    by
+      simp
+      have := (@mem_leftCoset_iff Fˣ _ (Subgroup.zpowers DIsCyclicC.gen.1) x x).mpr (by simp)
+      convert this
+      exact op_der_eq.symm
+    ⟩
+
+noncomputable instance : Fintype ↑(CosetDomain.evalDomain D x 0) := inferInstance
+
 instance domain_neg_inst {F : Type} [NonBinaryField F] [Finite F] {D : Subgroup Fˣ} {n : ℕ}
     [DIsCyclicC : IsCyclicWithGen ↥D] [DSmooth : SmoothPowerOfTwo n ↥D]
     {x : Fˣ} (i : Fin n) : Neg (evalDomain D x i) where
