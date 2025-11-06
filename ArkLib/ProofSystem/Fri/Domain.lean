@@ -477,6 +477,57 @@ def domainEmb {i : ℕ} : evalDomain D x i ↪ F :=
       simp only [h]
   ⟩
 
+noncomputable def domainToFin {i : Fin (n + 1)} : evalDomain D x i → Fin (2 ^ (n - i)) :=
+  fun g =>
+    have : ∃ ind : Fin (2 ^ (n - i)),
+            g.1.1 = x.1 ^ (2 ^ i.1) * ((DIsCyclicC.gen.1 ^ (2 ^ i.1)) ^ ind.1) := by
+      have h := g.2
+      unfold evalDomain at h
+      have h' : (x ^ 2 ^ i.1)⁻¹ * ↑g ∈ ↑(Domain.evalDomain D ↑i) := by
+        apply (@mem_leftCoset_iff Fˣ _ (Domain.evalDomain D ↑i) g.1 (x ^ (2 ^ i.1))).mp
+        convert h
+        exact op_der_eq
+      unfold Domain.evalDomain at h'
+      rw [Subgroup.mem_zpowers_iff] at h'
+      rcases h' with ⟨ind, h'⟩
+      have h' :
+        ∃ ind : ℕ,
+          (DIsCyclicC.gen.1 ^ 2 ^ i.1) ^ ind = (x ^ 2 ^ i.1)⁻¹ * ↑g ∧ ind < 2 ^ (n - i) := by
+        exists Int.toNat (ind % (2 ^ (n - i)))
+        have k_rel : ∃ m, ind = ind % (2 ^ (n - i)) + m * (2 ^ (n - i)) := by
+          exists (ind / (2 ^ (n - i)))
+          exact Eq.symm (Int.emod_add_ediv' ind (2 ^ (n - i)))
+        rcases k_rel with ⟨m, k_rel⟩
+        rw [k_rel] at h'
+        have cast_rw {a : Fˣ} {n : ℕ} : a ^ n = a ^ (n : ℤ) := by
+          exact rfl
+        rw [cast_rw]
+        have : 0 ≤ ind % 2 ^ (n - i) := by
+          apply Int.emod_nonneg ind
+          exact Ne.symm (NeZero.ne' (2 ^ (n - i)))
+        simp only [Int.ofNat_toNat, this, sup_of_le_left, evalDomain]
+        rw [←h', zpow_add, mul_comm m, zpow_mul]
+        norm_cast
+        rw
+          [
+            (pow_mul DIsCyclicC.gen (2 ^ i.1) (2 ^ (n - i.1))).symm,
+            ←pow_add, Nat.add_sub_of_le (by omega), ←DSmooth.smooth, pow_orderOf_eq_one
+          ]
+        simp only [Nat.cast_pow, Nat.cast_ofNat, one_zpow, mul_one, Nat.ofNat_pos, pow_pos,
+          Int.toNat_lt', true_and, gt_iff_lt]
+        have h' := @Int.emod_lt ind (2 ^ (n - i.1)) (by simp)
+        simp only [Int.natAbs_pow, Int.reduceAbs, Nat.cast_pow, Nat.cast_ofNat] at h'
+        exact h'
+      rcases h' with ⟨ind, h', cond⟩
+      exists ⟨ind, cond⟩
+      have h' : g.1 = (x ^ 2 ^ i.1) * (DIsCyclicC.gen ^ 2 ^ i.1) ^ ind := by
+        apply Eq.symm
+        rw [h']
+        simp
+      rw [h']
+      norm_cast
+    Classical.choose this
+
 def injectF {F : Type} [NonBinaryField F] {D : Subgroup Fˣ} [DIsCyclicC : IsCyclicWithGen ↥D]
   {x : Fˣ} {i : ℕ} :
       evalDomain D x i ↪ F :=

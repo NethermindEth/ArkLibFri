@@ -69,13 +69,13 @@ noncomputable def f_succ {i : ℕ}
 lemma claim_8_1
   {i : Fin n}
   (f : ReedSolomon.code
-        (Embedding.trans (CosetDomain.domainEnum (n := n) D g i.castSucc) CosetDomain.injectF)
+        ((CosetDomain.domainEnum (n := n) D g i.castSucc).trans CosetDomain.injectF)
         (2 ^ (n - i)))
   (z : 𝔽)
   :
   f_succ D f.val z ∈
     (ReedSolomon.code
-      (Embedding.trans (CosetDomain.domainEnum (n := n) D g i.succ) CosetDomain.injectF)
+      ((CosetDomain.domainEnum (n := n) D g i.succ).trans CosetDomain.injectF)
       (2 ^ (n - (i + 1)))
     ).carrier
   := by sorry
