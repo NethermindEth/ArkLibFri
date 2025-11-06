@@ -65,15 +65,17 @@ noncomputable def f_succ {i : ℕ}
   ((pows z (2^(n - i))) * (Matrix.transpose
     <| Mg D (Domain.domain D n (i + 1) x) f)).diag 0
 
+
 lemma claim_8_1
-  {i : ℕ}
+  {i : Fin n}
   (f : ReedSolomon.code
-     ⟨fun x => (Domain.domain D n i x).1.1, sorry⟩ (2 ^ (n - i)))
+        (Embedding.trans (CosetDomain.domainEnum (n := n) D g i.castSucc) CosetDomain.injectF)
+        (2 ^ (n - i)))
   (z : 𝔽)
   :
   f_succ D f.val z ∈
     (ReedSolomon.code
-      ⟨fun x => (Domain.domain D n (i + 1) x).1.1, sorry⟩
+      (Embedding.trans (CosetDomain.domainEnum (n := n) D g i.succ) CosetDomain.injectF)
       (2 ^ (n - (i + 1)))
     ).carrier
   := by sorry

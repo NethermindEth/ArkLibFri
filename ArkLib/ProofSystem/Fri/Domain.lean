@@ -477,6 +477,17 @@ def domainEmb {i : ℕ} : evalDomain D x i ↪ F :=
       simp only [h]
   ⟩
 
+def injectF {F : Type} [NonBinaryField F] {D : Subgroup Fˣ} [DIsCyclicC : IsCyclicWithGen ↥D]
+  {x : Fˣ} {i : ℕ} :
+      evalDomain D x i ↪ F :=
+  ⟨
+    fun x => x.1.1,
+    by
+      intros a b h
+      apply SetCoe.ext
+      exact Units.val_inj.mp h
+  ⟩
+
 /- Helper lemmas for constructing operations on/lifting between domains. -/
 
 omit [Finite F] in
