@@ -91,14 +91,6 @@ noncomputable def correlated_agreement_density {ι : Type} [Fintype ι]
   let Vc := V.carrier.toFinset
   (Fc ∩ Vc).card / Fc.card
 
-noncomputable def εC
-  (𝔽 : Type) (n : ℕ) [Fintype 𝔽] {r : ℕ}
-  (ℓ : Fin r → ℕ+) (ρ_sqrt : ℝ) (m : ℕ) : ℝ :=
-  (m + (1 : ℚ)/2)^7 * (2^n)^2
-    / (2 * ρ_sqrt ^ 3) * (Fintype.card 𝔽)
-  + (∑ i, (ℓ i).1) * (2 * m + 1) * (2 ^ n + 1) / (Fintype.card 𝔽 * ρ_sqrt)
-
-
 open Polynomial
 
 noncomputable def oracle (l : ℕ) (z : Fin (n + 1) → 𝔽) (f : (CosetDomain.evalDomain D g 0) → 𝔽) :
@@ -156,6 +148,7 @@ instance {g : 𝔽ˣ} {l : ℕ} : [(Spec.QueryRound.pSpec D g l).Message]ₒ.Fin
     have h := this ▸ i.2
     simp at h
 
+open ENNReal in
 lemma lemma_8_2
   {t : ℕ}
   {α : ℝ}
@@ -172,8 +165,8 @@ lemma lemma_8_2
       ReedSolomonCode.sqrtRate
         (2 ^ n)
         (Embedding.trans (CosetDomain.domainEnum (n := n) D g 0) (CosetDomain.domainEmb D g))
-    let α0 : ℝ := max α (ρ_sqrt * (1 + 1 / 2 * m))
-    let εC : ℝ :=
+    let α0 : ℝ≥0∞ := ENNReal.ofReal (max α (ρ_sqrt * (1 + 1 / 2 * m)))
+    let εC : ℝ≥0∞ := ENNReal.ofReal <|
       (m + (1 : ℚ)/2)^7 * (2^n)^2
         / (2 * ρ_sqrt ^ 3) * (Fintype.card 𝔽)
       + (∑ i, (s i).1) * (2 * m + 1) * (2 ^ n + 1) / (Fintype.card 𝔽 * ρ_sqrt)
@@ -207,12 +200,11 @@ lemma lemma_8_2
                       ] using fun _ => samp
                   )
                 )
-            ) : OracleComp [(Spec.QueryRound.pSpec D g 1).Message]ₒ (Spec.FinalStatement 𝔽 n)
+            )
           )
         ] = 1
       ]
-    Pr_{let x ←$ᵖ (Fin t → 𝔽); let z ←$ᵖ (Fin (n + 1) → 𝔽)}[ εQ x z ≤ ENNReal.ofReal α0 ] ≤
-      ENNReal.ofReal εC
+    Pr_{let x ←$ᵖ (Fin t → 𝔽); let z ←$ᵖ (Fin (n + 1) → 𝔽)}[ εQ x z ≤ α0 ] ≤ εC
   := by sorry
 
 
