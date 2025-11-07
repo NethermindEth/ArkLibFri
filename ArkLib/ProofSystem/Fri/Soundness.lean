@@ -33,6 +33,9 @@ noncomputable local instance : Fintype 𝔽 := Fintype.ofFinite _
 def pows (z : 𝔽) (ℓ : ℕ) : Matrix Unit (Fin ℓ) 𝔽 :=
   Matrix.of <| fun _ j => z ^ j.val
 
+noncomputable def powsDom (z : 𝔽) (i : ℕ) : Matrix Unit (CosetDomain.evalDomain D g i) 𝔽 :=
+  Matrix.of <| fun _ j => z ^ (CosetDomain.domainToFin (n := n) D g j).val
+
 noncomputable def Mg {i : ℕ} (g : Domain.evalDomain D (i + 1))
   (f : Fin (2 ^ (n - i)) → 𝔽)
   :
@@ -42,6 +45,14 @@ noncomputable def Mg {i : ℕ} (g : Domain.evalDomain D (i + 1))
     Finset.univ
     (fun x => (CosetDomain.domain D g n i x).1.1) f
   Matrix.of <| fun _ j => poly.coeff j
+
+noncomputable def MgDom {i : ℕ} {g : 𝔽ˣ}
+  (f : CosetDomain.evalDomain D g i → 𝔽)
+  :
+  Matrix Unit (CosetDomain.evalDomain D g i) 𝔽
+  :=
+  let poly := Lagrange.interpolate Finset.univ (·.1.1) f
+  Matrix.of <| fun _ j => poly.coeff (CosetDomain.domainToFin (n := n) D g j)
 
 lemma Mg_invertible {i : ℕ} {g : Domain.evalDomain D (i + 1)}
   :
@@ -65,8 +76,33 @@ noncomputable def f_succ {i : ℕ}
   ((pows z (2^(n - i))) * (Matrix.transpose
     <| Mg D (Domain.domain D n (i + 1) x) f)).diag 0
 
+open scoped Matrix in
+noncomputable def dom_next {i : ℕ}
+  (f : CosetDomain.evalDomain D g i → 𝔽)
+  (z : 𝔽)
+  (x : CosetDomain.evalDomain D g (i + 1))
+  :
+  𝔽
+  :=
+  let f : CosetDomain.evalDomain D x (i + 1) → 𝔽 :=
+    fun dom ↦ f dom
+  powsDom (n := n) D g z i * (MgDom (g := x) (n := n) D f)ᵀ |>.diag 0
 
 lemma claim_8_1
+  {i : Fin n}
+  (f : ReedSolomon.code
+        (CosetDomain.domainEmb (i := i.1) D g)
+        (2 ^ (n - i)))
+  (z : 𝔽)
+  :
+  (fun g' ↦ dom_next (n := n) (i := i) D g'.1 f.1 z ) ∈
+    (ReedSolomon.code
+      (CosetDomain.domainEmb (i := i.1 + 1) D g)
+      (2 ^ (n - (i + 1)))
+    ).carrier
+  := by sorry
+
+lemma claim_8_1'
   {i : Fin n}
   (f : ReedSolomon.code
         ((CosetDomain.domainEnum (n := n) D g i.castSucc).trans CosetDomain.injectF)
@@ -93,7 +129,7 @@ noncomputable def correlated_agreement_density {ι : Type} [Fintype ι]
 
 open Polynomial
 
-noncomputable def oracle (l : ℕ) (z : Fin (n + 1) → 𝔽) (f : (CosetDomain.evalDomain D g 0) → 𝔽) :
+noncomputable def oracle (l : ℕ) (z : Fin (n + 1) → 𝔽) (f : CosetDomain.evalDomain D g 0 → 𝔽) :
   QueryImpl
     ([]ₒ ++ₒ ([Spec.FinalOracleStatement D g s]ₒ ++ₒ [(Spec.QueryRound.pSpec D g l).Message]ₒ))
     (OracleComp [(Spec.QueryRound.pSpec D g l).Message]ₒ) where

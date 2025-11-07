@@ -477,14 +477,16 @@ def domainEmb {i : ℕ} : evalDomain D x i ↪ F :=
       simp only [h]
   ⟩
 
-noncomputable def domainToFin {i : Fin (n + 1)} : evalDomain D x i → Fin (2 ^ (n - i)) :=
+noncomputable def domainToFin {i} : evalDomain D x i → Fin (2 ^ (n - i)) :=
   fun g =>
+    if hi : n < i then ⟨0, by simp⟩
+    else
     have : ∃ ind : Fin (2 ^ (n - i)),
-            g.1.1 = x.1 ^ (2 ^ i.1) * ((DIsCyclicC.gen.1 ^ (2 ^ i.1)) ^ ind.1) := by
+            g.1.1 = x.1 ^ (2 ^ i) * ((DIsCyclicC.gen.1 ^ (2 ^ i)) ^ ind.1) := by
       have h := g.2
       unfold evalDomain at h
-      have h' : (x ^ 2 ^ i.1)⁻¹ * ↑g ∈ ↑(Domain.evalDomain D ↑i) := by
-        apply (@mem_leftCoset_iff Fˣ _ (Domain.evalDomain D ↑i) g.1 (x ^ (2 ^ i.1))).mp
+      have h' : (x ^ 2 ^ i)⁻¹ * ↑g ∈ ↑(Domain.evalDomain D ↑i) := by
+        apply (@mem_leftCoset_iff Fˣ _ (Domain.evalDomain D ↑i) g.1 (x ^ (2 ^ i))).mp
         convert h
         exact op_der_eq
       unfold Domain.evalDomain at h'
@@ -492,7 +494,7 @@ noncomputable def domainToFin {i : Fin (n + 1)} : evalDomain D x i → Fin (2 ^ 
       rcases h' with ⟨ind, h'⟩
       have h' :
         ∃ ind : ℕ,
-          (DIsCyclicC.gen.1 ^ 2 ^ i.1) ^ ind = (x ^ 2 ^ i.1)⁻¹ * ↑g ∧ ind < 2 ^ (n - i) := by
+          (DIsCyclicC.gen.1 ^ 2 ^ i) ^ ind = (x ^ 2 ^ i)⁻¹ * ↑g ∧ ind < 2 ^ (n - i) := by
         exists Int.toNat (ind % (2 ^ (n - i)))
         have k_rel : ∃ m, ind = ind % (2 ^ (n - i)) + m * (2 ^ (n - i)) := by
           exists (ind / (2 ^ (n - i)))
@@ -510,17 +512,17 @@ noncomputable def domainToFin {i : Fin (n + 1)} : evalDomain D x i → Fin (2 ^ 
         norm_cast
         rw
           [
-            (pow_mul DIsCyclicC.gen (2 ^ i.1) (2 ^ (n - i.1))).symm,
+            (pow_mul DIsCyclicC.gen (2 ^ i) (2 ^ (n - i))).symm,
             ←pow_add, Nat.add_sub_of_le (by omega), ←DSmooth.smooth, pow_orderOf_eq_one
           ]
         simp only [Nat.cast_pow, Nat.cast_ofNat, one_zpow, mul_one, Nat.ofNat_pos, pow_pos,
           Int.toNat_lt', true_and, gt_iff_lt]
-        have h' := @Int.emod_lt ind (2 ^ (n - i.1)) (by simp)
+        have h' := @Int.emod_lt ind (2 ^ (n - i)) (by simp)
         simp only [Int.natAbs_pow, Int.reduceAbs, Nat.cast_pow, Nat.cast_ofNat] at h'
         exact h'
       rcases h' with ⟨ind, h', cond⟩
       exists ⟨ind, cond⟩
-      have h' : g.1 = (x ^ 2 ^ i.1) * (DIsCyclicC.gen ^ 2 ^ i.1) ^ ind := by
+      have h' : g.1 = (x ^ 2 ^ i) * (DIsCyclicC.gen ^ 2 ^ i) ^ ind := by
         apply Eq.symm
         rw [h']
         simp
