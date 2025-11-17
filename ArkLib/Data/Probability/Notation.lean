@@ -62,7 +62,7 @@ expands to
 (do let x ← PMF.uniformOfFintype F; let y ← PMF.uniformOfFintype F; return x = y).val True
 ```
 -/
-syntax (name := prStx) "Pr_{" doSeq "}[" term "]" : term
+syntax (name := prStx) "Pr_{" doSeq "}" "[" term "]" : term
 
 /--
 Elaboration rule for `Pr_{...}[...]` notation.

@@ -185,6 +185,9 @@ theorem correlatedAgreement_affine_curves [DecidableEq ι] {k : ℕ} {u : Fin k 
       k * (errorBound δ deg domain)) :
   correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
 
+abbrev shiftSpan {k : ℕ} (u : Fin (k + 1) → ι → F) :=
+  affineSpan F (Finset.univ.image (Fin.tail u)).toSet
+
 open Affine in
 /-- Theorem 1.6 (Correlated agreement over affine spaces) in [BCIKS20].
 
@@ -200,7 +203,7 @@ the affine span is formed as the span of the difference of the rest of the vecto
 theorem correlatedAgreement_affine_spaces {k : ℕ} [NeZero k] {u : Fin (k + 1) → ι → F}
   {deg : ℕ} {domain : ι ↪ F} {δ : ℝ≥0} (hδ : δ ≤ 1 - (ReedSolomonCode.sqrtRate deg domain))
   (hproximity :
-    Pr_{let y ← $ᵖ (u 0 +ᵥ affineSpan F (Finset.univ.image (Fin.tail u)).toSet)}[
+    Pr_{let y ← $ᵖ (u 0 +ᵥ shiftSpan u)}[
         Code.relHammingDistToCode (ι := ι) (F := F) y (ReedSolomon.code domain deg) ≤ δ
     ] > errorBound δ deg domain) :
   correlatedAgreement (ReedSolomon.code domain deg) δ u := by sorry
@@ -214,18 +217,16 @@ variable {F : Type} [Field F] [DecidableEq F] [DecidableEq (RatFunc F)]
 
 open Polynomial Bivariate
 
-
 noncomputable def eval_on_Z₀ (p : (RatFunc F)) (z : F) : F :=
   RatFunc.eval (RingHom.id _) z p
 
+scoped notation3:max R "[Z][X]" => Polynomial (Polynomial R)
 
-notation3:max R "[Z][X]" => Polynomial (Polynomial R)
+scoped notation3:max R "[Z][X][Y]" => Polynomial (Polynomial (Polynomial (R)))
 
-notation3:max R "[Z][X][Y]" => Polynomial (Polynomial (Polynomial (R)))
-
-notation3:max "Y" => Polynomial.X
-notation3:max "X" => Polynomial.C Polynomial.X
-notation3:max "Z" => Polynomial.C (Polynomial.C Polynomial.X)
+scoped notation3:max "Y" => Polynomial.X
+scoped notation3:max "X" => Polynomial.C Polynomial.X
+scoped notation3:max "Z" => Polynomial.C (Polynomial.C Polynomial.X)
 
 noncomputable opaque eval_on_Z (p : F[Z][X][Y]) (z : F) : F[X][Y] :=
   p.map (Polynomial.mapRingHom (Polynomial.evalRingHom z))
@@ -246,6 +247,7 @@ section
 open GuruswamiSudan
 open Polynomial.Bivariate
 open RatFunc
+open scoped Trivariate
 
 /-- The degree bound (a.k.a. `D_X`) for instantiation of Guruswami-Sudan
     in lemma 5.3 of the Proximity Gap paper.
@@ -298,6 +300,7 @@ section
 
 open Polynomial
 open Polynomial.Bivariate
+open scoped Trivariate
 
 /-- Following the Proximity Gap paper this the Y-degree of
     a trivariate polynomial `Q`.
@@ -363,6 +366,8 @@ lemma modified_guruswami_has_a_solution
     := by sorry
 
 end
+
+open scoped Trivariate
 
 variable {m : ℕ} (k : ℕ) {δ : ℚ} {x₀ : F} {u₀ u₁ : Fin n → F} {Q : F[Z][X][Y]} {ωs : Fin n ↪ F}
          [Finite F]
@@ -737,13 +742,9 @@ every point of the underlying linear subspace `U'` is also `δ`-close to `V`.
 theorem average_proximity_implies_proximity_of_linear_subspace [DecidableEq ι] [DecidableEq F]
   {u : Fin (l + 2) → ι → F} {k : ℕ} {domain : ι ↪ F} {δ : ℝ≥0}
   (hδ : δ ∈ Set.Ioo 0 (1 - (ReedSolomonCode.sqrtRate (k + 1) domain))) :
-  letI U' : Finset (ι → F) :=
-    SetLike.coe (affineSpan F (Finset.univ.image (Fin.tail u))) |>.toFinset
-  letI U : Finset (ι → F) := u 0 +ᵥ U'
-  haveI : Nonempty U := sorry
   letI ε : ℝ≥0 := ProximityGap.errorBound δ (k + 1) domain
   letI V := ReedSolomon.code domain (k + 1)
-  Pr_{let u ←$ᵖ U}[δᵣ(u.1, V) ≤ δ] > ε → ∀ u' ∈ U', δᵣ(u', V) ≤ δ := by
+  Pr_{let u ←$ᵖ (u 0 +ᵥ shiftSpan u)}[δᵣ(u.1, V) ≤ δ] > ε → ∀ u' ∈ shiftSpan u, δᵣ(u', V) ≤ δ := by
   sorry
 
 end
@@ -887,8 +888,7 @@ theorem weighted_correlated_agreement_over_affine_spaces
   (hμ : ∀ i, ∃ n : ℤ, (μ i).1 = (n : ℚ) / (M : ℚ)) →
   letI ε := ProximityGap.errorBound α deg domain
   letI pr :=
-    Pr_{let u ←$ᵖ (u 0 +ᵥ affineSpan F (Finset.univ.image (Fin.tail u)).toSet)
-    }[agree_set μ u (finCarrier domain deg) ≥ α]
+    Pr_{let u ←$ᵖ (u 0 +ᵥ shiftSpan u)}[agree_set μ u (finCarrier domain deg) ≥ α]
   pr > ε →
   pr ≥ ENNReal.ofReal (
          ((M * Fintype.card ι + 1) : ℝ) / (Fintype.card F : ℝ)
@@ -921,8 +921,8 @@ theorem weighted_correlated_agreement_over_affine_spaces'
   (hμ : ∀ i, ∃ n : ℤ, (μ i).1 = (n : ℚ) / (M : ℚ)) :
   letI sqrtRate := ReedSolomonCode.sqrtRate deg domain
   letI pr :=
-    Pr_{let u ←$ᵖ (u 0 +ᵥ affineSpan F (Finset.univ.image (Fin.tail u)).toSet)
-    }[agree_set μ u (finCarrier domain deg) ≥ α]
+    Pr_{let u ←$ᵖ (u 0 +ᵥ shiftSpan u)}
+       [agree_set μ u (finCarrier domain deg) ≥ α]
   (hα : sqrtRate * (1 + 1 / (2 * m : ℝ)) ≤ α) →
   letI numeratorl : ℝ := (1 + 1 / (2 * m : ℝ))^7 * m^7 * (Fintype.card ι)^2
   letI denominatorl : ℝ := (3 * sqrtRate^3) * Fintype.card F
