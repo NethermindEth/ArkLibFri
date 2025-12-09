@@ -74,6 +74,9 @@ def batchSpec (F : Type) (m : ℕ) : ProtocolSpec 1 := ⟨!v[.V_to_P], !v[Fin m 
 instance : ∀ j, OracleInterface ((batchSpec F m).Message j)
   | ⟨0, h⟩ => nomatch h
 
+instance : ∀ j, OracleInterface ((batchSpec F m).Challenge j) :=
+  ProtocolSpec.challengeOracleInterface
+
 /-- The batching round oracle prover. -/
 noncomputable def batchProver :
   OracleProver []ₒ
@@ -98,8 +101,7 @@ noncomputable def batchProver :
           ps 0 + ∑ i, Polynomial.C (cs i) * (ps i.succ).1,
           by
             unfold Fri.Spec.Witness
-            simp only [List.toFinset_finRange, Fin.coe_ofNat_eq_mod, Nat.zero_mod, List.take_zero,
-              List.toFinset_nil, sum_empty, tsub_zero]
+            simp only [Fin.coe_ofNat_eq_mod, Nat.zero_mod]
             apply mem_degreeLT.mpr
             by_cases h : ↑(ps 0) + ∑ i, Polynomial.C (cs i) * ↑(ps i.succ) = 0
             · rw [h]
