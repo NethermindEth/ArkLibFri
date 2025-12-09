@@ -215,6 +215,8 @@ end Completeness
 
 section Soundness
 
+variable (domain_size_cond : (2 ^ (∑ i, (s i : ℕ))) * d ≤ 2 ^ n)
+
 /-- Affine space: {g | ∃ x : Fin t.succ → 𝔽, x 0 = 1 ∧ g = ∑ i, x i • f i  }
 -/
 def Fₛ {ι : Type} [Fintype ι] {t : ℕ} (f : Fin t.succ → (ι → 𝔽)) : AffineSubspace 𝔽 (ι → 𝔽) :=
@@ -287,17 +289,23 @@ instance {g : 𝔽ˣ} {l : ℕ} : [(Spec.QueryRound.pSpec D g l).Message]ₒ.Fin
     have h := this ▸ i.2
     simp at h
 
-variable (domain_size_cond : (2 ^ (∑ i, (s i : ℕ))) * d ≤ 2 ^ n)
+open ENNReal in
+noncomputable def εC
+    (𝔽 : Type) [Finite 𝔽] (n : ℕ) {k : ℕ} (s : Fin (k + 1) → ℕ+) (m : ℕ) (ρ_sqrt : ℝ≥0) : ℝ≥0∞ :=
+  ENNReal.ofReal <|
+      (m + (1 : ℚ)/2)^7 * (2^n)^2
+        / ((2 * ρ_sqrt ^ 3) * (Fintype.card 𝔽))
+      + (∑ i, 2 ^ (s i).1) * (2 * m + 1) * (2 ^ n + 1) / (Fintype.card 𝔽 * ρ_sqrt)
 
 open ENNReal in
-lemma lemma_8_2
+lemma fri_query_soundness
   {t : ℕ}
   {α : ℝ}
   (f : Fin t.succ → (CosetDomain.evalDomain D g 0 → 𝔽))
   (h_agreement :
     correlated_agreement_density
       (Fₛ f)
-      (ReedSolomon.code ⟨fun x => x.1.1, fun a b h ↦ by aesop⟩ (2 ^ n))
+      (ReedSolomon.code (CosetDomain.domainEmb (i := 0) D g) (2 ^ n))
     ≤ α)
   {m : ℕ}
   (m_ge_3 : m ≥ 3)
@@ -306,11 +314,7 @@ lemma lemma_8_2
       ReedSolomonCode.sqrtRate
         (2 ^ n)
         (CosetDomain.domainEmb (i := 0) D g)
-    let α0 : ℝ≥0∞ := ENNReal.ofReal (max α (ρ_sqrt * (1 + 1 / 2 * m)))
-    let εC : ℝ≥0∞ := ENNReal.ofReal <|
-      (m + (1 : ℚ)/2)^7 * (2^n)^2
-        / (2 * ρ_sqrt ^ 3) * (Fintype.card 𝔽)
-      + (∑ i, (s i).1) * (2 * m + 1) * (2 ^ n + 1) / (Fintype.card 𝔽 * ρ_sqrt)
+    let α0 : ℝ≥0∞ := ENNReal.ofReal (max α (ρ_sqrt * (1 + 1 / (2 * (m : ℝ≥0)))))
     let εQ  (x : Fin t → 𝔽)
             (z : Fin (k + 1) → 𝔽) :=
       Pr_{let samp ←$ᵖ (CosetDomain.evalDomain D g 0)}[
@@ -323,14 +327,15 @@ lemma lemma_8_2
                 (
                   (
                     Fri.Spec.QueryRound.queryVerifier D g
-                      (n := n) (k := k) (s := s) (l := 1)
-                        (by
-                          apply Spec.round_bound (d := d)
-                          transitivity
-                          · exact domain_size_cond
-                          · apply pow_le_pow (by decide) (by decide)
-                            simp
-                        )
+                      (n := n) s
+                      (by
+                        apply Spec.round_bound (d := d)
+                        transitivity
+                        · exact domain_size_cond
+                        · apply pow_le_pow (by decide) (by decide)
+                          simp
+                      )
+                      1
                   ).verify
                   z
                   (fun i =>
@@ -347,7 +352,7 @@ lemma lemma_8_2
           )
         ] = 1
       ]
-    Pr_{let x ←$ᵖ (Fin t → 𝔽); let z ←$ᵖ (Fin (k + 1) → 𝔽)}[ εQ x z ≤ α0 ] ≤ εC
+    Pr_{let x ←$ᵖ (Fin t → 𝔽); let z ←$ᵖ (Fin (k + 1) → 𝔽)}[ εQ x z > α0 ] ≤ εC 𝔽 n s m ρ_sqrt
   := by sorry
 
 instance instFinRangeOfAppend {m n : ℕ} {pSpec₁ : ProtocolSpec m} {pSpec₂ : ProtocolSpec n}
@@ -422,10 +427,8 @@ instance {t l : ℕ} :
   -- · rcases i
   -- ·
 
--- #check Equiv.finite_iff
-
 open ENNReal in
-lemma lemma_8_3
+lemma fri_soundness
   {t l m : ℕ}
   (f : Fin t.succ → (CosetDomain.evalDomain D g 0 → 𝔽))
   (m_ge_3 : m ≥ 3)
@@ -434,11 +437,7 @@ lemma lemma_8_3
       ReedSolomonCode.sqrtRate
         (2 ^ n)
         (CosetDomain.domainEmb (i := 0) D g)
-    let α : ℝ≥0 := (ρ_sqrt * (1 + 1 / 2 * m))
-    let εC : ℝ≥0∞ := ENNReal.ofReal <|
-      (m + (1 : ℚ)/2)^7 * (2^n)^2
-        / (2 * ρ_sqrt ^ 3) * (Fintype.card 𝔽)
-      + (∑ i, (s i).1) * (2 * m + 1) * (2 ^ n + 1) / (Fintype.card 𝔽 * ρ_sqrt)
+    let α : ℝ≥0 := (ρ_sqrt * (1 + 1 / (2 * (m : ℝ≥0))))
     (∃ prov : OracleProver (WitOut := Unit) ..,
         [fun _ => True |
           OracleReduction.run () f ()
@@ -446,10 +445,10 @@ lemma lemma_8_3
               prov,
               (BatchedFri.Spec.batchedFRIreduction (n := n) D g k s d domain_size_cond l t).verifier
             ⟩
-         ] > εC + α ^ l) →
+         ] > εC 𝔽 n s m ρ_sqrt + α ^ l) →
       ProximityGap.correlatedAgreement
         (ReedSolomon.code (CosetDomain.domainEmb (i := 0) D g) (2 ^ n)).carrier
-        α f := by
+        (1 - α) f := by
   sorry
 
 end Soundness
