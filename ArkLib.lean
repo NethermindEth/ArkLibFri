@@ -175,3 +175,4 @@ import ArkLib.ProofSystem.Whir.RBRSoundness
 import ArkLib.ToMathlib.BigOperators.Fin
 import ArkLib.ToMathlib.Finset.Basic
 import ArkLib.ToMathlib.List.Basic
+import ArkLib.ToMathlib.Polynomial.ExtEval
