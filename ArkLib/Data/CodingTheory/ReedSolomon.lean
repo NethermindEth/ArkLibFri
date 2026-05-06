@@ -8,6 +8,7 @@ Mirco Richter, Chung Thai Nguyen
 import ArkLib.Data.Matrix.Vandermonde
 import ArkLib.Data.MvPolynomial.LinearMvExtension
 import ArkLib.Data.Polynomial.Interface
+import ArkLib.Data.CodingTheory.ReedSolomon.FftDomain
 import CompPoly.Data.Polynomial.MonomialBasis
 import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.RingTheory.Henselian
@@ -563,35 +564,24 @@ noncomputable def decodeLT : (ReedSolomon.code domain deg) →ₗ[F] (Polynomial
 
 open LinearMvExtension
 
-variable {F : Type*} [Semiring F] [DecidableEq F]
-         {ι : Type*} [Fintype ι]
+variable {F : Type} [Semiring F] [DecidableEq F]
+         {ι : Type} [Fintype ι]
 
-/-- A domain `ι ↪ F` is `smooth`, if `ι ⊆ F`, `|ι| = 2^k` for some `k` and there exists a subgroup
- `H` in the group of units `Rˣ` and an invertible element `a ∈ R` such that `ι = a • H` -/
-class Smooth
-  (domain : ι ↪ F) where
-    H : Subgroup (Units F)
-    a           : Units F
-    h_coset     : Finset.image domain Finset.univ
-                  = (fun h : Units F => (a : F) * (h : F)) '' (H : Set (Units F))
-    h_card_pow2 : ∃ k : ℕ, Fintype.card ι = 2 ^ k
-
-variable {F : Type*} [Field F] [DecidableEq F]
-        {ι : Type*} [Fintype ι] [DecidableEq ι]
-        {domain : ι ↪ F} [Smooth domain]
-        {m : ℕ}
+variable {F : Type} [Field F] [DecidableEq F]
+        {ι : Type} [Fintype ι] [DecidableEq ι]
+        {m : ℕ} {domain : SmoothCosetFftDomain m F}
 
 /-- Definition 4.2, WHIR[ACFY24]
 Smooth Reed-Solomon codes are Reed-Solomon codes defined over smooth domains, such that their
 decoded univariate polynomials are of degree less than `2ᵐ` for some `m ∈ ℕ`. -/
-noncomputable def smoothCode
-    (domain : ι ↪ F) [Smooth domain]
-  (m : ℕ) : Submodule F (ι → F) := ReedSolomon.code domain (2^m)
+noncomputable def smoothCode {m : ℕ}
+    (domain : SmoothCosetFftDomain m F) : Submodule F (Fin (2 ^ m) → F) := 
+    ReedSolomon.code (domain : Fin (2 ^ m) ↪ F) (2 ^ m)
 
 /-- The linear map that maps smooth Reed-Solomon Code words to their decoded degreewise linear
 `m`-variate polynomial. -/
 noncomputable def mVdecode :
-  (smoothCode domain m) →ₗ[F] MvPolynomial (Fin m) F :=
+  (smoothCode domain) →ₗ[F] MvPolynomial (Fin m) F :=
     linearMvExtension.comp decodeLT
 
 /-- Auxiliary function to assign values to the weight polynomial variables: index `0` ↦ `p.eval b`,
@@ -614,22 +604,22 @@ def weightConstraint
 Constrained Reed-Solomon codes are smooth codes whose decoded `m`-variate polynomial satisfies the
 weight constraint for given `w` and `σ`.
 -/
-def constrainedCode
-    (domain : ι ↪ F) [Smooth domain] (m : ℕ)
-  (w : MvPolynomial (Fin (m + 1)) F) (σ : F) : Set (ι → F) :=
-    { f | ∃ (h : f ∈ smoothCode domain m),
-      weightConstraint (mVdecode (⟨f, h⟩ : smoothCode domain m)) w σ }
+def constrainedCode {m : ℕ}
+    (domain : SmoothCosetFftDomain m F)
+  (w : MvPolynomial (Fin (m + 1)) F) (σ : F) : Set (Fin (2 ^ m) → F) :=
+    { f | ∃ (h : f ∈ smoothCode domain),
+      weightConstraint (mVdecode (⟨f, h⟩ : smoothCode domain)) w σ }
 
 /-- Definition 4.6, WHIR[ACFY24]
 Multi-constrained Reed-Solomon codes are smooth codes whose decoded `m`-variate polynomial satisfies
 the `t` weight constraints for given `w₀,..., wₜ₋₁` and `σ₀,..., σₜ₋₁`. -/
-def multiConstrainedCode
-    (domain : ι ↪ F) [Smooth domain] (m t : ℕ)
+def multiConstrainedCode {m : ℕ}
+    (domain : SmoothCosetFftDomain m F) (t : ℕ)
   (w : Fin t → MvPolynomial (Fin (m + 1)) F)
-  (σ : Fin t → F) : Set (ι → F) :=
+  (σ : Fin t → F) : Set (Fin (2 ^ m) → F) :=
     { f |
-      ∃ (h : f ∈ smoothCode domain m),
-        ∀ i : Fin t, weightConstraint (mVdecode (⟨f, h⟩ : smoothCode domain m)) (w i) (σ i)}
+      ∃ (h : f ∈ smoothCode domain),
+        ∀ i : Fin t, weightConstraint (mVdecode (⟨f, h⟩ : smoothCode domain)) (w i) (σ i)}
 
 end
 end ReedSolomon
