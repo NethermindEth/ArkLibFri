@@ -7,6 +7,8 @@ Authors: Poulami Das (Least Authority), Alexander Hicks
 import ArkLib.Data.CodingTheory.ReedSolomon
 import ArkLib.Data.CodingTheory.ListDecodability
 
+import ArkLib.Data.Domain.CosetFftDomain.Mem
+
 /-!
 # Block Relative Distance for smooth Reed-Solomon Codes
 
@@ -37,29 +39,7 @@ namespace BlockRelDistance
 open ListDecodable NNReal ReedSolomon
 
 variable {F : Type*} [Field F]
-         {ι : Type*} [Fintype ι] [Pow ι ℕ]
-
-/-- The `2^k`-th power images over an embedding `φ : ι ↪ F` and a finite set
-  of elements `S : Finset ι`.
-
-  In particular, it returns the set of field elements `y ∈ F` for which there exists `x ∈ S`
-  such that `y = (φ x)^(2ᵏ)`. It models the image of the map `x ↦ (φ x)^(2ᵏ)` restricted to `S`.
-  Semantically: `indexPowT S φ k = { (φ x)^(2ᵏ) | x ∈ S } ⊆ F`.
--/
-def indexPowT (S : Finset ι) (φ : ι ↪ F) (k : ℕ) := { y : F // ∃ x ∈ S, y = (φ x) ^ (2^k) }
-
-/-- For i ≤ k, the generic `2^(k-i)`-th power fiber over `y ∈ indexPowT S φ k`.
-  For `φ' : ι^(2ⁱ) → F`, this defines the preimage of `y` under the map
-  `x^(2ⁱ) ↦ x^(2ᵏ)` restricted to `x^(2ⁱ) ∈ S'`.
-
-  It returns the subset `S'` of elements of type `ι^(2ⁱ)`
-    such that `(x^(2ⁱ))^(2^(k-i)) = x^(2^k) = y`.
-  Example i = 0 : powFiberT 0 k S' φ' y = { x ∈ S' | (x)^(2^k) = y }.
-  Example i = 1 : powFiberT 1 k S' φ' y = { x^2 ∈ S' | (x^2)^(2^(k-1)) = y }.
--/
-def powFiberT (i : ℕ) {k : ℕ} {S : Finset ι} {φ : ι ↪ F} (S' : Finset (indexPowT S φ i))
-  (φ' : (indexPowT S φ i) ↪ F) (y : indexPowT S φ k) :=
-  { x : (indexPowT S φ i) // x ∈ S' ∧ (φ' x) ^ (2^(k-i)) = y.val }
+variable {n : ℕ}
 
 /-- Definition 4.16
   For `ι` be a smooth evaluation domain, `k` be a folding parameter, `z ∈ (ι^(2ᵏ))`,
