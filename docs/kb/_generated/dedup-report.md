@@ -4,9 +4,9 @@ Generated from `docs/kb/_generated/declarations.json`. **Eyeball, do not auto-re
 
 ## Stats
 
-- `ArkLib` — 519 files, 8710 declarations
+- `ArkLib` — 781 files, 11843 declarations
 
-## Same short-name across multiple files (264 groups)
+## Same short-name across multiple files (282 groups)
 
 Each group lists declarations sharing a short name across ≥2 files. Most are legitimate (overloaded interface, paper-shape vs general form), but the list is the right anchor to look for duplicates.
 
@@ -24,9 +24,9 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def Sumcheck.Interaction.MultivariateRound.reduction` [ArkLib/ProofSystem/Sumcheck/Interaction/MultivariateRound.lean:78](../../../ArkLib/ProofSystem/Sumcheck/Interaction/MultivariateRound.lean#L78) — The message is private prover input; the verifier sees only its evaluation interface.
 - `def Sumcheck.Spec.reduction` [ArkLib/ProofSystem/Sumcheck/Spec/General.lean:172](../../../ArkLib/ProofSystem/Sumcheck/Spec/General.lean#L172) — The sum-check protocol as a reduction
 - `def Sumcheck.Spec.SingleRound.Simple.reduction` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:410](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L410) — The reduction for the simple description of a single round of sum-check
-- `def Sumcheck.Spec.SingleRound.reduction` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:971](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L971) — The sum-check reduction for the `i`-th round of the sum-check protocol
+- `def Sumcheck.Spec.SingleRound.reduction` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:812](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L812) — The sum-check reduction for the `i`-th round of the sum-check protocol
 - `def ToyProblem.Impl.IRS.reduction` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:265](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L265) — The honest toy-problem reduction instantiated with the executable interleaved-RS encoder.
-- `def ToyProblem.Spec.reduction` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:420](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L420) — Honest reduction for the toy protocol: the package `{prover, verifier}` over the bundled-input `Redu
+- `def ToyProblem.Spec.reduction` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:422](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L422) — Honest reduction for the toy protocol: the package `{prover, verifier}` over the bundled-input `Redu
 - `def ToyProblem.SimplifiedIOR.reduction` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:228](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L228) — Honest reduction for the simplified IOR.
 
 ### `verifier` (16 declarations, 14 files)
@@ -43,9 +43,9 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def Sumcheck.Interaction.SingleRound.verifier` [ArkLib/ProofSystem/Sumcheck/Interaction/SingleRound.lean:75](../../../ArkLib/ProofSystem/Sumcheck/Interaction/SingleRound.lean#L75) — The verifier receives no concrete polynomial; all polynomial use is through evaluation.
 - `def Sumcheck.Spec.verifier` [ArkLib/ProofSystem/Sumcheck/Spec/General.lean:153](../../../ArkLib/ProofSystem/Sumcheck/Spec/General.lean#L153) — The verifier for the (full) sum-check protocol
 - `def Sumcheck.Spec.SingleRound.Simple.verifier` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:391](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L391) — The verifier for the simple description of a single round of sum-check
-- `def Sumcheck.Spec.SingleRound.verifier` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:959](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L959) — The verifier for the `i`-th round of the sum-check protocol
-- `def Sumcheck.Spec.SingleRound.Unfolded.verifier` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:1238](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L1238) — The (non-oracle) verifier of the sum-check protocol for the `i`-th round, where `i < n + 1`
-- `def ToyProblem.Spec.verifier` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:406](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L406) — Honest verifier for the toy protocol. Takes the bundled input `(stmt, oStmt) = ((v, μ₁, μ₂), (f₁, f₂
+- `def Sumcheck.Spec.SingleRound.verifier` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:800](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L800) — The verifier for the `i`-th round of the sum-check protocol
+- `def Sumcheck.Spec.SingleRound.Unfolded.verifier` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:1079](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L1079) — The (non-oracle) verifier of the sum-check protocol for the `i`-th round, where `i < n + 1`
+- `def ToyProblem.Spec.verifier` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:408](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L408) — Honest verifier for the toy protocol. Takes the bundled input `(stmt, oStmt) = ((v, μ₁, μ₂), (f₁, f₂
 - `def ToyProblem.SimplifiedIOR.verifier` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:217](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L217) — Honest verifier for the simplified IOR. Reads `γ` from the transcript and produces the new statement
 
 ### `oracleReduction` (14 declarations, 12 files)
@@ -60,9 +60,9 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def Sumcheck.Spec.oracleReduction` [ArkLib/ProofSystem/Sumcheck/Spec/General.lean:184](../../../ArkLib/ProofSystem/Sumcheck/Spec/General.lean#L184) — The sum-check protocol as an oracle reduction
 - `def Sumcheck.Spec.SingleRound.Simpler.oracleReduction` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:306](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L306) — (no docstring)
 - `def Sumcheck.Spec.SingleRound.Simple.oracleReduction` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:444](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L444) — (no docstring)
-- `def Sumcheck.Spec.SingleRound.oracleReduction` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:990](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L990) — The sum-check oracle reduction for the `i`-th round of the sum-check protocol
+- `def Sumcheck.Spec.SingleRound.oracleReduction` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:831](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L831) — The sum-check oracle reduction for the `i`-th round of the sum-check protocol
 - `def ToyProblem.Impl.IRS.oracleReduction` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:276](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L276) — Oracle-flavoured honest toy-problem reduction instantiated with the executable interleaved-RS encode
-- `def ToyProblem.Spec.oracleReduction` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:535](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L535) — Honest oracle reduction for the toy protocol: the `OracleProver` / `OracleVerifier` pair packaged as
+- `def ToyProblem.Spec.oracleReduction` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:537](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L537) — Honest oracle reduction for the toy protocol: the `OracleProver` / `OracleVerifier` pair packaged as
 - `def ToyProblem.SimplifiedIOR.oracleReduction` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:313](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L313) — The simplified protocol as a genuine interactive oracle reduction.
 
 ### `oracleVerifier` (13 declarations, 12 files)
@@ -77,8 +77,8 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def RingSwitching.BatchingPhase.oracleVerifier` [ArkLib/ProofSystem/RingSwitching/Packing/BatchingPhase.lean:175](../../../ArkLib/ProofSystem/RingSwitching/Packing/BatchingPhase.lean#L175) — The batching-phase verifier as an instance of the family-shared check-then-update scalar-round verif
 - `def Sumcheck.Spec.oracleVerifier` [ArkLib/ProofSystem/Sumcheck/Spec/General.lean:162](../../../ArkLib/ProofSystem/Sumcheck/Spec/General.lean#L162) — The oracle verifier for the (full) sum-check protocol
 - `def Sumcheck.Spec.SingleRound.Simple.oracleVerifier` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:423](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L423) — (no docstring)
-- `def Sumcheck.Spec.SingleRound.oracleVerifier` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:965](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L965) — The oracle verifier for the `i`-th round of the sum-check protocol
-- `def ToyProblem.Spec.oracleVerifier` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:513](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L513) — Oracle verifier for the toy protocol. Queries the prover's message `g` once and the two oracle codew
+- `def Sumcheck.Spec.SingleRound.oracleVerifier` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:806](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L806) — The oracle verifier for the `i`-th round of the sum-check protocol
+- `def ToyProblem.Spec.oracleVerifier` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:515](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L515) — Oracle verifier for the toy protocol. Queries the prover's message `g` once and the two oracle codew
 - `def ToyProblem.SimplifiedIOR.oracleVerifier` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:302](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L302) — Oracle verifier for the simplified IOR. The explicit output is the combined linear claim; the output
 
 ### `prover` (13 declarations, 12 files)
@@ -93,8 +93,8 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def RingSwitching.Lift.prover` [ArkLib/ProofSystem/RingSwitching/Lift/Reduction.lean:148](../../../ArkLib/ProofSystem/RingSwitching/Lift/Reduction.lean#L148) — Honest prover shell. Its commitment is definitionally derived from the output opening.
 - `def Sumcheck.Interaction.SingleRound.prover` [ArkLib/ProofSystem/Sumcheck/Interaction/SingleRound.lean:88](../../../ArkLib/ProofSystem/Sumcheck/Interaction/SingleRound.lean#L88) — An honest prover sends its input polynomial and retains the evaluated output statement.
 - `def Sumcheck.Spec.SingleRound.Simple.prover` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:365](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L365) — The prover in the simple description of a single round of sum-check. Takes in input `target : R` and
-- `def Sumcheck.Spec.SingleRound.Unfolded.prover` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:1228](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L1228) — The overall prover for the `i`-th round of the sum-check protocol, where `i < n`. This is only well-
-- `def ToyProblem.Spec.prover` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:362](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L362) — Honest prover for the toy protocol. After receiving the combination randomness `γ`, the prover sends
+- `def Sumcheck.Spec.SingleRound.Unfolded.prover` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:1069](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L1069) — The overall prover for the `i`-th round of the sum-check protocol, where `i < n`. This is only well-
+- `def ToyProblem.Spec.prover` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:364](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L364) — Honest prover for the toy protocol. After receiving the combination randomness `γ`, the prover sends
 - `def ToyProblem.SimplifiedIOR.prover` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:186](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L186) — Honest prover for the simplified IOR. After receiving `γ`, sets the new witness `M_new := M₀ + γ·M₁`
 
 ### `pSpec` (12 declarations, 10 files)
@@ -109,7 +109,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def Fri.Spec.QueryRound.pSpec` [ArkLib/ProofSystem/Fri/Spec/SingleRound.lean:755](../../../ArkLib/ProofSystem/Fri/Spec/SingleRound.lean#L755) — (no docstring)
 - `def Sumcheck.Spec.pSpec` [ArkLib/ProofSystem/Sumcheck/Spec/General.lean:129](../../../ArkLib/ProofSystem/Sumcheck/Spec/General.lean#L129) — The protocol specification for the general sum-check protocol, which is the composition of the singl
 - `def Sumcheck.Spec.SingleRound.pSpec` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:154](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L154) — The protocol specification for a single round of sum-check. Has the form `⟨!v[.P_to_V, .V_to_P], !v[
-- `def ToyProblem.Spec.pSpec` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:221](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L221) — Protocol specification for the toy protocol: three rounds, in the order V → P  (γ : F)            --
+- `def ToyProblem.Spec.pSpec` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:223](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L223) — Protocol specification for the toy protocol: three rounds, in the order V → P  (γ : F)            --
 - `def ToyProblem.SimplifiedIOR.pSpec` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:164](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L164) — Protocol specification for the simplified IOR: a single `V → P` round sending the combination random
 
 ### `oracleProver` (11 declarations, 10 files)
@@ -123,7 +123,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def SendWitness.oracleProver` [ArkLib/ProofSystem/Component/SendWitness.lean:188](../../../ArkLib/ProofSystem/Component/SendWitness.lean#L188) — The oracle prover for the `SendWitness` oracle reduction. For each round `i : Fin (FinEnum.card ιw)`
 - `def SendSingleWitness.oracleProver` [ArkLib/ProofSystem/Component/SendWitness.lean:291](../../../ArkLib/ProofSystem/Component/SendWitness.lean#L291) — The oracle prover for the `SendSingleWitness` oracle reduction. The prover sends the witness `wit` t
 - `def RingSwitching.BatchingPhase.oracleProver` [ArkLib/ProofSystem/RingSwitching/Packing/BatchingPhase.lean:122](../../../ArkLib/ProofSystem/RingSwitching/Packing/BatchingPhase.lean#L122) — (no docstring)
-- `def ToyProblem.Spec.oracleProver` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:465](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L465) — Same as `prover` but exposed at the `OracleProver` signature. The underlying `Prover` is identical (
+- `def ToyProblem.Spec.oracleProver` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:467](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L467) — Same as `prover` but exposed at the `OracleProver` signature. The underlying `Prover` is identical (
 - `def ToyProblem.SimplifiedIOR.oracleProver` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:293](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L293) — Honest prover at the oracle-reduction signature.
 
 ### `OracleStatement` (8 declarations, 8 files)
@@ -135,7 +135,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `abbrev Spartan.Spec.OracleStatement` [ArkLib/ProofSystem/Spartan/Basic.lean:147](../../../ArkLib/ProofSystem/Spartan/Basic.lean#L147) — This unfolds to `A, B, C : Matrix (Fin 2 ^ ℓ_m) (Fin 2 ^ ℓ_n) R`
 - `def StirIOP.OracleStatement` [ArkLib/ProofSystem/Stir/MainThm.lean:90](../../../ArkLib/ProofSystem/Stir/MainThm.lean#L90) — `OracleStatement` defines the oracle message type for a multi-indexed setting: given base input type
 - `def Sumcheck.Spec.OracleStatement` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:141](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L141) — Oracle statement for sum-check, which is a multivariate polynomial over `n` variables of individual
-- `def ToyProblem.Spec.OracleStatement` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:185](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L185) — Oracle statements of the toy protocol: the two purported codewords `f₁, f₂ : ι → A`. The verifier on
+- `def ToyProblem.Spec.OracleStatement` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:187](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L187) — Oracle statements of the toy protocol: the two purported codewords `f₁, f₂ : ι → A`. The verifier on
 
 ### `oracleVerifier_rbrKnowledgeSoundness` (9 declarations, 7 files)
 
@@ -144,10 +144,10 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `theorem ReduceClaim.oracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Component/ReduceClaim.lean:357](../../../ArkLib/ProofSystem/Component/ReduceClaim.lean#L357) — The `ReduceClaim` oracle reduction satisfies perfect round-by-round knowledge soundness. Note that s
 - `theorem Sumcheck.Spec.oracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Sumcheck/Spec/General.lean:223](../../../ArkLib/ProofSystem/Sumcheck/Spec/General.lean#L223) — Round-by-round knowledge soundness with error `deg / \|R\|` per challenge for the (full) sum-check pro
 - `theorem Sumcheck.Spec.SingleRound.Simpler.oracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:321](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L321) — (no docstring)
-- `theorem Sumcheck.Spec.SingleRound.Simple.oracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:735](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L735) — Round-by-round knowledge soundness for the oracle verifier
-- `theorem Sumcheck.Spec.SingleRound.oracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:1122](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L1122) — Round-by-round knowledge soundness theorem for single-round of sum-check, obtained by transporting t
-- `theorem ToyProblem.Impl.IRS.oracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:1040](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L1040) — Existential averaged RBR knowledge soundness, retained as a compatibility corollary of the exact-obj
-- `theorem ToyProblem.Spec.oracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:1414](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L1414) — Averaged round-by-round knowledge soundness, retained under the established public API name as a cor
+- `theorem Sumcheck.Spec.SingleRound.Simple.oracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:576](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L576) — Round-by-round knowledge soundness for the oracle verifier
+- `theorem Sumcheck.Spec.SingleRound.oracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:963](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L963) — Round-by-round knowledge soundness theorem for single-round of sum-check, obtained by transporting t
+- `theorem ToyProblem.Impl.IRS.oracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:1039](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L1039) — Existential averaged RBR knowledge soundness, retained as a compatibility corollary of the exact-obj
+- `theorem ToyProblem.Spec.oracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:1408](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L1408) — Averaged round-by-round knowledge soundness, retained under the established public API name as a cor
 
 ### `instOutputIsPure` (8 declarations, 7 files)
 
@@ -177,7 +177,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def Fri.Spec.Statement` [ArkLib/ProofSystem/Fri/Spec/SingleRound.lean:80](../../../ArkLib/ProofSystem/Fri/Spec/SingleRound.lean#L80) — For the `i`-th round of the protocol, the input statement is equal to the challenges sent from round
 - `abbrev Spartan.Spec.Statement` [ArkLib/ProofSystem/Spartan/Basic.lean:143](../../../ArkLib/ProofSystem/Spartan/Basic.lean#L143) — This unfolds to `𝕩 : Fin (2 ^ ℓ_n - 2 ^ ℓ_w) → R`
 - `structure Sumcheck.Structured.Statement` [ArkLib/ProofSystem/Sumcheck/Structured.lean:235](../../../ArkLib/ProofSystem/Sumcheck/Structured.lean#L235) — Statement per iterated sumcheck round
-- `def ToyProblem.Spec.Statement` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:179](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L179) — Input (explicit) statement of the toy protocol: the linear-constraint vector `v ∈ F^k` and the two c
+- `def ToyProblem.Spec.Statement` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:181](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L181) — Input (explicit) statement of the toy protocol: the linear-constraint vector `v ∈ F^k` and the two c
 
 ### `Witness` (6 declarations, 6 files)
 
@@ -186,7 +186,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def R1CS.Witness` [ArkLib/ProofSystem/ConstraintSystem/R1CS.lean:54](../../../ArkLib/ProofSystem/ConstraintSystem/R1CS.lean#L54) — (no docstring)
 - `def Fri.Spec.Witness` [ArkLib/ProofSystem/Fri/Spec/SingleRound.lean:109](../../../ArkLib/ProofSystem/Fri/Spec/SingleRound.lean#L109) — The FRI protocol has as witness the polynomial that is supposed to correspond to the codeword in the
 - `abbrev Spartan.Spec.Witness` [ArkLib/ProofSystem/Spartan/Basic.lean:151](../../../ArkLib/ProofSystem/Spartan/Basic.lean#L151) — This unfolds to `𝕨 : Fin 2 ^ ℓ_w → R`
-- `def ToyProblem.Spec.Witness` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:193](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L193) — Honest witness: the underlying messages `M₁, M₂ : Fin k → F` whose encodings are the oracle codeword
+- `def ToyProblem.Spec.Witness` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:195](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L195) — Honest witness: the underlying messages `M₁, M₂ : Fin k → F` whose encodings are the oracle codeword
 
 ### `inputRelation` (8 declarations, 5 files)
 
@@ -223,8 +223,8 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `theorem DoNothing.reduction_perfectCompleteness` [ArkLib/ProofSystem/Component/DoNothing.lean:57](../../../ArkLib/ProofSystem/Component/DoNothing.lean#L57) — The `DoNothing` reduction satisfies perfect completeness for any relation.
 - `theorem RingSwitching.Lift.reduction_perfectCompleteness` [ArkLib/ProofSystem/RingSwitching/Lift/Reduction.lean:312](../../../ArkLib/ProofSystem/RingSwitching/Lift/Reduction.lean#L312) — **Perfect completeness at the plain linear relation `relLin`.** The specialization of `reduction_per
 - `theorem Sumcheck.Spec.reduction_perfectCompleteness` [ArkLib/ProofSystem/Sumcheck/Spec/General.lean:211](../../../ArkLib/ProofSystem/Sumcheck/Spec/General.lean#L211) — Perfect completeness for the (full) sum-check protocol
-- `theorem Sumcheck.Spec.SingleRound.Simple.reduction_perfectCompleteness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:534](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L534) — Perfect completeness for the (non-oracle) reduction
-- `theorem Sumcheck.Spec.SingleRound.reduction_perfectCompleteness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:1083](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L1083) — (no docstring)
+- `theorem Sumcheck.Spec.SingleRound.Simple.reduction_perfectCompleteness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:531](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L531) — Perfect completeness for the (non-oracle) reduction
+- `theorem Sumcheck.Spec.SingleRound.reduction_perfectCompleteness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:924](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L924) — (no docstring)
 
 ### `oracleVerifier_materializeOutput` (5 declarations, 5 files)
 
@@ -325,8 +325,8 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 ### `oracleReduction_perfectCompleteness` (5 declarations, 3 files)
 
 - `theorem DoNothing.oracleReduction_perfectCompleteness` [ArkLib/ProofSystem/Component/DoNothing.lean:103](../../../ArkLib/ProofSystem/Component/DoNothing.lean#L103) — The `DoNothing` oracle reduction satisfies perfect completeness for any relation.
-- `theorem Sumcheck.Spec.SingleRound.Simple.oracleReduction_perfectCompleteness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:721](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L721) — Perfect completeness for the oracle reduction
-- `theorem Sumcheck.Spec.SingleRound.oracleReduction_perfectCompleteness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:1101](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L1101) — Completeness theorem for single-round of sum-check, obtained by transporting the completeness proof
+- `theorem Sumcheck.Spec.SingleRound.Simple.oracleReduction_perfectCompleteness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:562](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L562) — Perfect completeness for the oracle reduction
+- `theorem Sumcheck.Spec.SingleRound.oracleReduction_perfectCompleteness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:942](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L942) — Completeness theorem for single-round of sum-check, obtained by transporting the completeness proof
 - `theorem ToyProblem.Spec.oracleReduction_perfectCompleteness` [ArkLib/ProofSystem/ToyProblem/Spec/Completeness.lean:117](../../../ArkLib/ProofSystem/ToyProblem/Spec/Completeness.lean#L117) — **Honest completeness of the three-round toy protocol** (protocol-level form). The honest oracle red
 - `theorem ToyProblem.SimplifiedIOR.oracleReduction_perfectCompleteness` [ArkLib/ProofSystem/ToyProblem/Spec/Completeness.lean:332](../../../ArkLib/ProofSystem/ToyProblem/Spec/Completeness.lean#L332) — **Perfect completeness of the simplified IOR** (protocol-level form). For every verifier challenge,
 
@@ -379,7 +379,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def AGM.Adversary.run` [ArkLib/AGM/Basic.lean:167](../../../ArkLib/AGM/Basic.lean#L167) — Running the adversary on a given table, returning the list of group elements it is supposed to outpu
 - `def Interaction.Oracle.ClosedStage.run` [ArkLib/Interaction/Oracle/Composition.lean:119](../../../ArkLib/Interaction/Oracle/Composition.lean#L119) — Execute using exactly the input claim's behavior, and close with the resources of that run. The conc
 - `def Interaction.Oracle.OrderedExecution.run` [ArkLib/Interaction/Oracle/Composition.lean:145](../../../ArkLib/Interaction/Oracle/Composition.lean#L145) — Execute a finite family of actual oracle reductions across explicit dependent interfaces. Each accep
-- `def Prover.run` [ArkLib/OracleReduction/Execution.lean:149](../../../ArkLib/OracleReduction/Execution.lean#L149) — Run the prover in an interactive reduction. Returns the output statement and witness, and the transc
+- `def Prover.run` [ArkLib/OracleReduction/Execution.lean:151](../../../ArkLib/OracleReduction/Execution.lean#L151) — Run the prover in an interactive reduction. Returns the output statement and witness, and the transc
 
 ### `toFinset` (4 declarations, 3 files)
 
@@ -392,8 +392,8 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 - `theorem DoNothing.verifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Component/DoNothing.lean:63](../../../ArkLib/ProofSystem/Component/DoNothing.lean#L63) — The `DoNothing` verifier is perfectly round-by-round knowledge sound.
 - `theorem ReduceClaim.verifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Component/ReduceClaim.lean:174](../../../ArkLib/ProofSystem/Component/ReduceClaim.lean#L174) — The `ReduceClaim` oracle reduction satisfies perfect round-by-round knowledge soundness. Note that s
-- `theorem Sumcheck.Spec.SingleRound.Simple.verifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:729](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L729) — Round-by-round knowledge soundness for the verifier
-- `theorem Sumcheck.Spec.SingleRound.verifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:1091](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L1091) — (no docstring)
+- `theorem Sumcheck.Spec.SingleRound.Simple.verifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:570](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L570) — Round-by-round knowledge soundness for the verifier
+- `theorem Sumcheck.Spec.SingleRound.verifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:932](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L932) — (no docstring)
 
 ### `Opening` (3 declarations, 3 files)
 
@@ -404,7 +404,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 ### `OutputStatement` (3 declarations, 3 files)
 
 - `abbrev Sumcheck.Spec.OutputStatement` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:136](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L136) — (no docstring)
-- `def ToyProblem.Spec.OutputStatement` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:198](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L198) — Output statement: the IOR is a yes/no test — accept (return `()`) or short-circuit to `none` via `Op
+- `def ToyProblem.Spec.OutputStatement` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:200](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L200) — Output statement: the IOR is a yes/no test — accept (return `()`) or short-circuit to `none` via `Op
 - `def ToyProblem.SimplifiedIOR.OutputStatement` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:94](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L94) — Output statement for C6.9: the new `(v, μ_new)` pair. The constraint count drops from 2 to 1 (a sing
 
 ### `PublicParams` (3 declarations, 3 files)
@@ -563,11 +563,17 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def RandomQuery.knowledgeStateFunction` [ArkLib/ProofSystem/Component/RandomQuery.lean:216](../../../ArkLib/ProofSystem/Component/RandomQuery.lean#L216) — The knowledge state function for the `RandomQuery` oracle reduction.
 - `def ReduceClaim.knowledgeStateFunction` [ArkLib/ProofSystem/Component/ReduceClaim.lean:141](../../../ArkLib/ProofSystem/Component/ReduceClaim.lean#L141) — The knowledge state function for the `ReduceClaim` reduction.
 
+### `map` (3 declarations, 3 files)
+
+- `def Fin.map` [ArkLib/Data/Fin/Sigma.lean:509](../../../ArkLib/Data/Fin/Sigma.lean#L509) — (no docstring)
+- `def PolynomialDifferential.JetPrefixPresentation.map` [ArkLib/Data/Polynomial/Differential/JetPrefixPresentation.lean:169](../../../ArkLib/Data/Polynomial/Differential/JetPrefixPresentation.lean#L169) — Mapping coefficients along `φ` maps a presentation of `Q` to a presentation of `Q.map φ`.
+- `def Interaction.Oracle.Terminal.map` [ArkLib/Interaction/Oracle/Terminal.lean:39](../../../ArkLib/Interaction/Oracle/Terminal.lean#L39) — Transform accepted claims, preserving rejection and faults.
+
 ### `rbrExtractor` (3 declarations, 3 files)
 
 - `def RandomQuery.rbrExtractor` [ArkLib/ProofSystem/Component/RandomQuery.lean:209](../../../ArkLib/ProofSystem/Component/RandomQuery.lean#L209) — The round-by-round extractor is trivial since the output witness is `Unit`.
 - `def ToyProblem.Impl.IRS.rbrExtractor` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:361](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L361) — Named executable round-by-round extractor for interleaved RS.
-- `def ToyProblem.Spec.rbrExtractor` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:1212](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L1212) — The round-by-round extractor: round 0 extracts a relaxed-relation witness by choice, round 1 passes
+- `def ToyProblem.Spec.rbrExtractor` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:1209](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L1209) — The round-by-round extractor: round 0 extracts a relaxed-relation witness by choice, round 1 passes
 
 ### `relIn` (3 declarations, 3 files)
 
@@ -624,10 +630,10 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 ### `knowledgeSoundness` (5 declarations, 2 files)
 
-- `def Verifier.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:344](../../../ArkLib/OracleReduction/Security/Basic.lean#L344) — A reduction satisfies **(straightline) knowledge soundness** with error `knowledgeError ≥ 0` and wit
-- `def OracleVerifier.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:500](../../../ArkLib/OracleReduction/Security/Basic.lean#L500) — Knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
-- `def Proof.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:553](../../../ArkLib/OracleReduction/Security/Basic.lean#L553) — (no docstring)
-- `def OracleProof.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:593](../../../ArkLib/OracleReduction/Security/Basic.lean#L593) — Knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
+- `def Verifier.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:343](../../../ArkLib/OracleReduction/Security/Basic.lean#L343) — A reduction satisfies **(straightline) knowledge soundness** with error `knowledgeError ≥ 0` and wit
+- `def OracleVerifier.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:499](../../../ArkLib/OracleReduction/Security/Basic.lean#L499) — Knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
+- `def Proof.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:552](../../../ArkLib/OracleReduction/Security/Basic.lean#L552) — (no docstring)
+- `def OracleProof.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:592](../../../ArkLib/OracleReduction/Security/Basic.lean#L592) — Knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
 - `def Verifier.StateRestoration.knowledgeSoundness` [ArkLib/OracleReduction/Security/StateRestoration.lean:156](../../../ArkLib/OracleReduction/Security/StateRestoration.lean#L156) — State-restoration knowledge soundness (w/ straightline extractor). The state-restoration extractor r
 
 ### `new` (5 declarations, 2 files)
@@ -640,10 +646,10 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 ### `soundness` (5 declarations, 2 files)
 
-- `def Verifier.soundness` [ArkLib/OracleReduction/Security/Basic.lean:271](../../../ArkLib/OracleReduction/Security/Basic.lean#L271) — A reduction satisfies **soundness** with error `soundnessError ≥ 0` and with respect to input langua
-- `def OracleVerifier.soundness` [ArkLib/OracleReduction/Security/Basic.lean:481](../../../ArkLib/OracleReduction/Security/Basic.lean#L481) — Soundness of an oracle reduction is the same as for non-oracle reductions.
-- `def Proof.soundness` [ArkLib/OracleReduction/Security/Basic.lean:547](../../../ArkLib/OracleReduction/Security/Basic.lean#L547) — (no docstring)
-- `def OracleProof.soundness` [ArkLib/OracleReduction/Security/Basic.lean:584](../../../ArkLib/OracleReduction/Security/Basic.lean#L584) — Soundness of an oracle reduction is the same as for non-oracle reductions.
+- `def Verifier.soundness` [ArkLib/OracleReduction/Security/Basic.lean:270](../../../ArkLib/OracleReduction/Security/Basic.lean#L270) — A reduction satisfies **soundness** with error `soundnessError ≥ 0` and with respect to input langua
+- `def OracleVerifier.soundness` [ArkLib/OracleReduction/Security/Basic.lean:480](../../../ArkLib/OracleReduction/Security/Basic.lean#L480) — Soundness of an oracle reduction is the same as for non-oracle reductions.
+- `def Proof.soundness` [ArkLib/OracleReduction/Security/Basic.lean:546](../../../ArkLib/OracleReduction/Security/Basic.lean#L546) — (no docstring)
+- `def OracleProof.soundness` [ArkLib/OracleReduction/Security/Basic.lean:583](../../../ArkLib/OracleReduction/Security/Basic.lean#L583) — Soundness of an oracle reduction is the same as for non-oracle reductions.
 - `def Verifier.StateRestoration.soundness` [ArkLib/OracleReduction/Security/StateRestoration.lean:133](../../../ArkLib/OracleReduction/Security/StateRestoration.lean#L133) — State-restoration soundness
 
 ### `cast_eq_dcast₂` (4 declarations, 2 files)
@@ -693,9 +699,9 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 ### `correctness` (3 declarations, 2 files)
 
-- `def Commitment.correctness` [ArkLib/Commitments/Functional/Basic.lean:92](../../../ArkLib/Commitments/Functional/Basic.lean#L92) — A commitment scheme satisfies **correctness** with error `correctnessError` if for all `data : Data`
-- `theorem KZG.correctness` [ArkLib/Commitments/Functional/KZG/Correctness.lean:57](../../../ArkLib/Commitments/Functional/KZG/Correctness.lean#L57) — Algebraic correctness of one KZG opening for a coefficient vector.
-- `theorem KZG.CommitmentScheme.correctness` [ArkLib/Commitments/Functional/KZG/Correctness.lean:167](../../../ArkLib/Commitments/Functional/KZG/Correctness.lean#L167) — The KZG scheme satisfies perfect correctness as defined in `CommitmentScheme`.
+- `def Commitment.correctness` [ArkLib/Commitments/Functional/Basic.lean:93](../../../ArkLib/Commitments/Functional/Basic.lean#L93) — A commitment scheme satisfies **correctness** with error `correctnessError` if for all `data : Data`
+- `theorem KZG.correctness` [ArkLib/Commitments/Functional/KZG/Correctness.lean:59](../../../ArkLib/Commitments/Functional/KZG/Correctness.lean#L59) — Algebraic correctness of one KZG opening for a coefficient vector.
+- `theorem KZG.CommitmentScheme.correctness` [ArkLib/Commitments/Functional/KZG/Correctness.lean:169](../../../ArkLib/Commitments/Functional/KZG/Correctness.lean#L169) — The KZG scheme satisfies perfect correctness as defined in `CommitmentScheme`.
 
 ### `experiment` (3 declarations, 2 files)
 
@@ -766,7 +772,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 ### `Accepts` (2 declarations, 2 files)
 
 - `def ReedSolomon.ListDecoding.Accepts` [ArkLib/Data/CodingTheory/ReedSolomon/ListSpecification.lean:45](../../../ArkLib/Data/CodingTheory/ReedSolomon/ListSpecification.lean#L45) — The Reed–Solomon acceptance predicate at an absolute agreement threshold.
-- `def ToyProblem.Spec.Accepts` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:254](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L254) — The decision predicate, factored out so completeness proofs and the verifier object share the same s
+- `def ToyProblem.Spec.Accepts` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:256](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L256) — The decision predicate, factored out so completeness proofs and the verifier object share the same s
 
 ### `CandidateCertificate` (2 declarations, 2 files)
 
@@ -800,23 +806,18 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 ### `OutputOracleStatement` (2 declarations, 2 files)
 
-- `def ToyProblem.Spec.OutputOracleStatement` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:202](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L202) — Output oracle statement: the IOR has no output oracle component.
+- `def ToyProblem.Spec.OutputOracleStatement` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:204](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L204) — Output oracle statement: the IOR has no output oracle component.
 - `def ToyProblem.SimplifiedIOR.OutputOracleStatement` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:99](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L99) — Output oracle statement: the single combined codeword `f_new := f₁ + γ • f₂ : ι → A`.
 
 ### `OutputWitness` (2 declarations, 2 files)
 
-- `def ToyProblem.Spec.OutputWitness` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:209](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L209) — Output witness: empty.
+- `def ToyProblem.Spec.OutputWitness` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:211](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L211) — Output witness: empty.
 - `def ToyProblem.SimplifiedIOR.OutputWitness` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:109](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L109) — Output witness for C6.9: the combined message `M_new := M₁ + γ·M₂`.
 
 ### `Params` (2 declarations, 2 files)
 
 - `structure Poseidon2.Params` [ArkLib/Data/Hash/Poseidon2.lean:412](../../../ArkLib/Data/Hash/Poseidon2.lean#L412) — The parameters determining a Poseidon2 permutation (over the KoalaBear field)
 - `structure StirIOP.Params` [ArkLib/ProofSystem/Stir/MainThm.lean:41](../../../ArkLib/ProofSystem/Stir/MainThm.lean#L41) — **Per‑round protocol parameters:** For a fixed depth `M`, the reduction runs `M + 1` rounds. In roun
-
-### `Pr_or_le` (2 declarations, 2 files)
-
-- `theorem Probability.Pr_or_le` [ArkLib/Data/Probability/Instances.lean:536](../../../ArkLib/Data/Probability/Instances.lean#L536) — **Union Bound (binary form)** The probability of a disjunction of two events is at most the sum of t
-- `theorem ToyProblem.Pr_or_le` [ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean:226](../../../ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean#L226) — Deprecated compatibility name for the general probability union bound.
 
 ### `Problem` (2 declarations, 2 files)
 
@@ -832,6 +833,26 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 - `def Interaction.Oracle.Reduction.execute` [ArkLib/Interaction/Oracle/Execution.lean:271](../../../ArkLib/Interaction/Oracle/Execution.lean#L271) — Execute the package with arbitrary pure input behavior. This is single-run semantics, not run-derive
 - `def Interaction.Reduction.execute` [ArkLib/Interaction/Reduction.lean:146](../../../ArkLib/Interaction/Reduction.lean#L146) — Execute a reduction with PolyFun's canonical two-party runner.
+
+### `Slot` (2 declarations, 2 files)
+
+- `def CubicStaircase.Slot` [ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean:57](../../../ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean#L57) — A slot is a total degree `s < ⌈L⌉₊`, a first exponent `b₀ ≤ s`, and a weighted exponent `x < ⌈D * (L
+- `def QuadraticStaircase.Slot` [ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean:54](../../../ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean#L54) — A slot is an unweighted exponent `u < ⌈L⌉₊` and a weighted exponent `x < ⌈D * (L - u)⌉₊`.
+
+### `Slot.exponents` (2 declarations, 2 files)
+
+- `def CubicStaircase.Slot.exponents` [ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean:73](../../../ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean#L73) — The exponent triple `(x, b₀, s - b₀)` of a slot.
+- `def QuadraticStaircase.Slot.exponents` [ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean:69](../../../ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean#L69) — The exponent pair `(x, u)` of a slot, weighted exponent first.
+
+### `Slot.exponents_injective` (2 declarations, 2 files)
+
+- `theorem CubicStaircase.Slot.exponents_injective` [ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean:77](../../../ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean#L77) — Distinct slots have distinct exponent triples: `s` is recovered as `b₀ + b₁`.
+- `theorem QuadraticStaircase.Slot.exponents_injective` [ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean:73](../../../ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean#L73) — Distinct slots have distinct exponent pairs.
+
+### `Slot.weighted_degree_lt` (2 declarations, 2 files)
+
+- `theorem CubicStaircase.Slot.weighted_degree_lt` [ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean:90](../../../ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean#L90) — The exponent triple `(x, b₀, b₁)` of a slot satisfies `x + D * (b₀ + b₁) < D * L`.
+- `theorem QuadraticStaircase.Slot.weighted_degree_lt` [ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean:81](../../../ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean#L81) — The exponent pair `(x, u)` of a slot satisfies `x + D * u < D * L`.
 
 ### `SumcheckMultiplierParam` (2 declarations, 2 files)
 
@@ -851,16 +872,21 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 ### `Verifier.run` (2 declarations, 2 files)
 
 - `def Interaction.Verifier.run` [ArkLib/Interaction/Reduction.lean:175](../../../ArkLib/Interaction/Reduction.lean#L175) — Run a focal strategy against an input-indexed verifier.
-- `def Verifier.run` [ArkLib/OracleReduction/Execution.lean:179](../../../ArkLib/OracleReduction/Execution.lean#L179) — Run the (non-oracle) verifier in an interactive reduction. It takes in the input statement and the t
+- `def Verifier.run` [ArkLib/OracleReduction/Execution.lean:181](../../../ArkLib/OracleReduction/Execution.lean#L181) — Run the (non-oracle) verifier in an interactive reduction. It takes in the input statement and the t
 
 ### `agree` (2 declarations, 2 files)
 
 - `def Code.agree` [ArkLib/Data/CodingTheory/Basic/Distance.lean:175](../../../ArkLib/Data/CodingTheory/Basic/Distance.lean#L175) — The number of positions at which the two words `u` and `v` agree.
-- `def ProximityGap.WeightedAgreement.agree` [ArkLib/Data/CodingTheory/ProximityGap/Basic.lean:190](../../../ArkLib/Data/CodingTheory/ProximityGap/Basic.lean#L190) — Relative `μ`-agreement between words `u` and `v`.
+- `def ProximityGap.WeightedAgreement.agree` [ArkLib/Data/CodingTheory/ProximityGap/Basic.lean:189](../../../ArkLib/Data/CodingTheory/ProximityGap/Basic.lean#L189) — Relative `μ`-agreement between words `u` and `v`.
+
+### `agreementThreshold` (2 declarations, 2 files)
+
+- `def ReedSolomon.HiddenDerivative.agreementThreshold` [ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/Basic.lean:68](../../../ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/Basic.lean#L68) — The agreement threshold `A = ⌈ε n⌉`: the number of agreement points that a listed codeword must have
+- `def ReedSolomon.agreementThreshold` [ArkLib/Data/CodingTheory/ReedSolomon/AgreementThreshold.lean:40](../../../ArkLib/Data/CodingTheory/ReedSolomon/AgreementThreshold.lean#L40) — The integral agreement threshold `k + ⌈δ n⌉` for block length `n` and message length `k`.
 
 ### `append_completeness_of_guarded_verifiers` (2 declarations, 2 files)
 
-- `theorem Reduction.append_completeness_of_guarded_verifiers` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:203](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L203) — Sequential composition preserves completeness for guarded verifiers when the prover execution factor
+- `theorem Reduction.append_completeness_of_guarded_verifiers` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:152](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L152) — Sequential composition preserves completeness for guarded verifiers when the prover execution factor
 - `theorem OracleReduction.append_completeness_of_guarded_verifiers` [ArkLib/OracleReduction/Composition/Sequential/OracleCompleteness.lean:39](../../../ArkLib/OracleReduction/Composition/Sequential/OracleCompleteness.lean#L39) — Oracle reductions with guarded ordinary verifiers compose with the sum of their errors when prover e
 
 ### `append_left_injective` (2 declarations, 2 files)
@@ -870,7 +896,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 ### `append_perfectCompleteness_of_guarded_verifiers` (2 declarations, 2 files)
 
-- `theorem Reduction.append_perfectCompleteness_of_guarded_verifiers` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:219](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L219) — Guarded verifiers compose perfectly when prover execution factors at the seam and the suffix is perf
+- `theorem Reduction.append_perfectCompleteness_of_guarded_verifiers` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:168](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L168) — Guarded verifiers compose perfectly when prover execution factors at the seam and the suffix is perf
 - `theorem OracleReduction.append_perfectCompleteness_of_guarded_verifiers` [ArkLib/OracleReduction/Composition/Sequential/OracleCompleteness.lean:56](../../../ArkLib/OracleReduction/Composition/Sequential/OracleCompleteness.lean#L56) — Oracle reductions with guarded ordinary verifiers compose perfectly when prover execution factors at
 
 ### `append_right_injective` (2 declarations, 2 files)
@@ -895,8 +921,8 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 ### `binding` (2 declarations, 2 files)
 
-- `def Commitment.binding` [ArkLib/Commitments/Functional/Basic.lean:218](../../../ArkLib/Commitments/Functional/Basic.lean#L218) — A commitment scheme satisfies **(evaluation) binding** with error `bindingError` if for all adversar
-- `theorem KZG.CommitmentScheme.binding` [ArkLib/Commitments/Functional/KZG/Binding.lean:760](../../../ArkLib/Commitments/Functional/KZG/Binding.lean#L760) — The KZG scheme satisfies evaluation binding provided `t`-SDH holds.
+- `def Commitment.binding` [ArkLib/Commitments/Functional/Basic.lean:219](../../../ArkLib/Commitments/Functional/Basic.lean#L219) — A commitment scheme satisfies **(evaluation) binding** with error `bindingError` if for all adversar
+- `theorem KZG.CommitmentScheme.binding` [ArkLib/Commitments/Functional/KZG/Binding.lean:751](../../../ArkLib/Commitments/Functional/KZG/Binding.lean#L751) — The KZG scheme satisfies evaluation binding provided `t`-SDH holds.
 
 ### `biniusProfile` (2 declarations, 2 files)
 
@@ -938,15 +964,20 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `theorem CoordinateWise.ScalarRound.branch_relOut_language` [ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/ScalarRound.lean:361](../../../ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/ScalarRound.lean#L361) — Acceptance of the star tree specializes, per branch `j`, to membership of the branch's verifier outp
 - `theorem CoordinateWise.SingleRound.branch_relOut_language` [ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/SingleRound.lean:392](../../../ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/SingleRound.lean#L392) — Acceptance of the star tree specializes, per branch `j`, to membership of the branch's verifier outp
 
+### `card_slot` (2 declarations, 2 files)
+
+- `theorem CubicStaircase.card_slot` [ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean:65](../../../ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean#L65) — The number of slots is `count D L`.
+- `theorem QuadraticStaircase.card_slot` [ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean:62](../../../ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean#L62) — The number of slots is `count D L`.
+
 ### `certifiedExtractorError` (2 declarations, 2 files)
 
 - `def ToyProblem.Impl.IRS.certifiedExtractorError` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:687](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L687) — Full extractor-certified error: the spot-check failure probability combined sharply with the executa
-- `def ToyProblem.certifiedExtractorError` [ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean:1361](../../../ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean#L1361) — The executable extractor's full fixed-radius certificate.  Unlike `winningSetUpperBound`, its combin
+- `def ToyProblem.certifiedExtractorError` [ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean:1358](../../../ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean#L1358) — The executable extractor's full fixed-radius certificate.  Unlike `winningSetUpperBound`, its combin
 
 ### `certifiedGammaError` (2 declarations, 2 files)
 
 - `def ToyProblem.Impl.IRS.certifiedGammaError` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:665](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L665) — The certified combination-round error for the executable interleaved-RS extractor.  This is the fini
-- `def ToyProblem.certifiedGammaError` [ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean:1276](../../../ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean#L1276) — The finite nonnegative-real reflection of the executable extractor's canonical affine-line MCA-plus-
+- `def ToyProblem.certifiedGammaError` [ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean:1271](../../../ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean#L1271) — The finite nonnegative-real reflection of the executable extractor's canonical affine-line MCA-plus-
 
 ### `chalPathAux` (2 declarations, 2 files)
 
@@ -966,7 +997,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 ### `coe_certifiedGammaError` (2 declarations, 2 files)
 
 - `theorem ToyProblem.Impl.IRS.coe_certifiedGammaError` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:672](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L672) — The certified combination-round error coerces back to its defining MCA-plus-list expression.
-- `theorem ToyProblem.coe_certifiedGammaError` [ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean:1286](../../../ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean#L1286) — `certifiedGammaError` coerces to the exact MCA-plus-list certificate.
+- `theorem ToyProblem.coe_certifiedGammaError` [ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean:1281](../../../ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean#L1281) — `certifiedGammaError` coerces to the exact MCA-plus-list certificate.
 
 ### `collect_branch_data` (2 declarations, 2 files)
 
@@ -1007,6 +1038,11 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 - `theorem coreInteractionOracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Binius/BinaryBasefold/CoreInteractionPhase.lean:842](../../../ArkLib/ProofSystem/Binius/BinaryBasefold/CoreInteractionPhase.lean#L842) — Round-by-round knowledge soundness for the core interaction oracle verifier
 - `theorem Binius.FRIBinius.CoreInteractionPhase.coreInteractionOracleVerifier_rbrKnowledgeSoundness` [ArkLib/ProofSystem/Binius/FRIBinius/CoreInteractionPhase.lean:850](../../../ArkLib/ProofSystem/Binius/FRIBinius/CoreInteractionPhase.lean#L850) — Round-by-round knowledge soundness for the core interaction oracle verifier
+
+### `count` (2 declarations, 2 files)
+
+- `def CubicStaircase.count` [ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean:52](../../../ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean#L52) — The number of natural triples `(x, b₀, b₁)` with `x + D * (b₀ + b₁) < D * L`, written as a sum over
+- `def QuadraticStaircase.count` [ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean:50](../../../ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean#L50) — The number of natural pairs `(x, u)` with `x + D * u < D * L`, written as a sum over `u`: there are
 
 ### `decoder` (2 declarations, 2 files)
 
@@ -1073,6 +1109,21 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `theorem Sumcheck.Interaction.SingleRound.executeCore_honest` [ArkLib/ProofSystem/Sumcheck/Interaction/Closing.lean:95](../../../ArkLib/ProofSystem/Sumcheck/Interaction/Closing.lean#L95) — The actual executor produces the paired honest run, pointwise in the challenge.
 - `theorem Sumcheck.Interaction.MultivariateRound.executeCore_honest` [ArkLib/ProofSystem/Sumcheck/Interaction/MultivariateRound.lean:264](../../../ArkLib/ProofSystem/Sumcheck/Interaction/MultivariateRound.lean#L264) — Honest execution exports the original polynomial at the actual next statement.
 
+### `exists_frobeniusContraction_fractionRing` (2 declarations, 2 files)
+
+- `theorem MvPolynomial.exists_frobeniusContraction_fractionRing` [ArkLib/Data/MvPolynomial/FrobeniusContraction.lean:156](../../../ArkLib/Data/MvPolynomial/FrobeniusContraction.lean#L156) — Over a unique factorization domain of characteristic `p`, the terminal polynomial `G` of `exists_irr
+- `theorem Polynomial.exists_frobeniusContraction_fractionRing` [ArkLib/Data/Polynomial/FrobeniusContraction.lean:149](../../../ArkLib/Data/Polynomial/FrobeniusContraction.lean#L149) — Over a GCD domain of characteristic `p`, the terminal polynomial `G` of the Frobenius contraction of
+
+### `exists_irreducible_frobeniusContraction` (2 declarations, 2 files)
+
+- `theorem MvPolynomial.exists_irreducible_frobeniusContraction` [ArkLib/Data/MvPolynomial/FrobeniusContraction.lean:82](../../../ArkLib/Data/MvPolynomial/FrobeniusContraction.lean#L82) — In characteristic `p` without zero divisors, an irreducible polynomial `F` of positive degree in `no
+- `theorem Polynomial.exists_irreducible_frobeniusContraction` [ArkLib/Data/Polynomial/FrobeniusContraction.lean:87](../../../ArkLib/Data/Polynomial/FrobeniusContraction.lean#L87) — If `P` is irreducible of positive degree, the terminal polynomial `G` of `exists_frobeniusContractio
+
+### `exists_irreducible_frobeniusContraction_expChar` (2 declarations, 2 files)
+
+- `theorem MvPolynomial.exists_irreducible_frobeniusContraction_expChar` [ArkLib/Data/MvPolynomial/FrobeniusContraction.lean:105](../../../ArkLib/Data/MvPolynomial/FrobeniusContraction.lean#L105) — In exponential characteristic `p` without zero divisors, an irreducible polynomial `F` of positive d
+- `theorem Polynomial.exists_irreducible_frobeniusContraction_expChar` [ArkLib/Data/Polynomial/FrobeniusContraction.lean:125](../../../ArkLib/Data/Polynomial/FrobeniusContraction.lean#L125) — In exponential characteristic `p` without zero divisors, an irreducible positive-degree polynomial `
+
 ### `finalSumcheckKnowledgeError` (2 declarations, 2 files)
 
 - `def Binius.BinaryBasefold.CoreInteraction.finalSumcheckKnowledgeError` [ArkLib/ProofSystem/Binius/BinaryBasefold/Steps.lean:1017](../../../ArkLib/ProofSystem/Binius/BinaryBasefold/Steps.lean#L1017) — RBR knowledge error for the final sumcheck step
@@ -1138,6 +1189,11 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `lemma GuruswamiSudan.guruswami_sudan_for_proximity_gap_property` [ArkLib/Data/CodingTheory/GuruswamiSudan/GuruswamiSudan.lean:931](../../../ArkLib/Data/CodingTheory/GuruswamiSudan/GuruswamiSudan.lean#L931) — Constructive witness property for the Guruswami–Sudan system. When `m > 0` and the codeword polynomi
 - `lemma ProximityGap.guruswami_sudan_for_proximity_gap_property` [ArkLib/Data/CodingTheory/ProximityGap/BCIKS20/ListDecoding/Guruswami.lean:58](../../../ArkLib/Data/CodingTheory/ProximityGap/BCIKS20/ListDecoding/Guruswami.lean#L58) — The second part of Lemma 5.3 from [BCIKS20]. For any solution `Q` of the Guruswami-Sudan system, and
 
+### `harmonic_eq_sum_fin` (2 declarations, 2 files)
+
+- `theorem ReedSolomon.HiddenDerivative.harmonic_eq_sum_fin` [ArkLib/Data/CodingTheory/HiddenDerivative/Interpolation/WeightedSupport/Moments.lean:67](../../../ArkLib/Data/CodingTheory/HiddenDerivative/Interpolation/WeightedSupport/Moments.lean#L67) — The harmonic number as a sum over `Fin n`.
+- `theorem ReedSolomon.HiddenDerivative.RatePartition.harmonic_eq_sum_fin` [ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/RatePartition/Moment.lean:77](../../../ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/RatePartition/Moment.lean#L77) — The harmonic number as a sum over `Fin n`.
+
 ### `hint` (2 declarations, 2 files)
 
 - `def DomainSeparator.hint` [ArkLib/Data/Hash/DomainSep.lean:199](../../../ArkLib/Data/Hash/DomainSep.lean#L199) — Hint `count` native elements. Rust interface: ```rust pub fn hint(self, label: &str) -> Self ```
@@ -1167,6 +1223,11 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 - `instance SendClaim.instOutputOracleInterface` [ArkLib/ProofSystem/Component/SendClaim.lean:64](../../../ArkLib/ProofSystem/Component/SendClaim.lean#L64) — (no docstring)
 - `instance SendSingleWitness.instOutputOracleInterface` [ArkLib/ProofSystem/Component/SendWitness.lean:273](../../../ArkLib/ProofSystem/Component/SendWitness.lean#L273) — (no docstring)
+
+### `jetDegree` (2 declarations, 2 files)
+
+- `def ReedSolomon.HiddenDerivative.FirstOrderFiniteRateParameters.jetDegree` [ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/FirstOrder/FiniteRateParameters.lean:94](../../../ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/FirstOrder/FiniteRateParameters.lean#L94) — The total jet-degree cap belonging to a finite rate parameter certificate.
+- `def PolynomialDifferential.jetDegree` [ArkLib/Data/Polynomial/Differential/JetDegree.lean:45](../../../ArkLib/Data/Polynomial/Differential/JetDegree.lean#L45) — The individual degree in the formal Hasse variable `Y_j`.
 
 ### `lastPathAux` (2 declarations, 2 files)
 
@@ -1213,11 +1274,6 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def Interaction.Oracle.PhasedResult.logView` [ArkLib/Interaction/Oracle/PhasedExecution.lean:69](../../../ArkLib/Interaction/Oracle/PhasedExecution.lean#L69) — Keep the complete chronological world log paired with the source-run observations.
 - `def Interaction.Oracle.PhasedRun.logView` [ArkLib/Interaction/Oracle/PhasedRun.lean:53](../../../ArkLib/Interaction/Oracle/PhasedRun.lean#L53) — All paired source observations and the complete world log.
 
-### `map` (2 declarations, 2 files)
-
-- `def Fin.map` [ArkLib/Data/Fin/Sigma.lean:509](../../../ArkLib/Data/Fin/Sigma.lean#L509) — (no docstring)
-- `def Interaction.Oracle.Terminal.map` [ArkLib/Interaction/Oracle/Terminal.lean:39](../../../ArkLib/Interaction/Oracle/Terminal.lean#L39) — Transform accepted claims, preserving rejection and faults.
-
 ### `mapSource` (2 declarations, 2 files)
 
 - `def Interaction.Oracle.OpenClaim.mapSource` [ArkLib/Interaction/Oracle/Claim.lean:77](../../../ArkLib/Interaction/Oracle/Claim.lean#L77) — Route the source of a claim without altering its public statement.
@@ -1236,7 +1292,22 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 ### `minRelHammingDistCode_le_one` (2 declarations, 2 files)
 
 - `lemma Code.minRelHammingDistCode_le_one` [ArkLib/Data/CodingTheory/Basic/RelativeDistance.lean:642](../../../ArkLib/Data/CodingTheory/Basic/RelativeDistance.lean#L642) — The minimum relative Hamming distance is at most `1`; the lower bound `0 ≤ δᵣ C` is automatic in `ℚ≥
-- `theorem ToyProblem.minRelHammingDistCode_le_one` [ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean:171](../../../ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean#L171) — Deprecated compatibility name for the general coding-theory bound.
+- `theorem ToyProblem.minRelHammingDistCode_le_one` [ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean:172](../../../ArkLib/ProofSystem/ToyProblem/SoundnessBounds.lean#L172) — Deprecated compatibility name for the general coding-theory bound.
+
+### `mono` (2 declarations, 2 files)
+
+- `theorem MvPolynomial.CoeffNatDegreeLE.mono` [ArkLib/ToMathlib/MvPolynomial/PolynomialCoefficients.lean:122](../../../ArkLib/ToMathlib/MvPolynomial/PolynomialCoefficients.lean#L122) — The degree bound can be increased.
+- `theorem MvPolynomial.SupportWeightOffset.mono` [ArkLib/ToMathlib/MvPolynomial/SupportWeightOffset.lean:55](../../../ArkLib/ToMathlib/MvPolynomial/SupportWeightOffset.lean#L55) — The allowance can be increased.
+
+### `monomial` (2 declarations, 2 files)
+
+- `def GuruswamiSudan.monomial` [ArkLib/Data/CodingTheory/GuruswamiSudan/Basic.lean:113](../../../ArkLib/Data/CodingTheory/GuruswamiSudan/Basic.lean#L113) — The monomial X^i Y^j as a bivariate polynomial.
+- `theorem MvPolynomial.SupportWeightOffset.monomial` [ArkLib/ToMathlib/MvPolynomial/SupportWeightOffset.lean:60](../../../ArkLib/ToMathlib/MvPolynomial/SupportWeightOffset.lean#L60) — A monomial has allowance `d` when its exponent does. The coefficient is arbitrary; a zero coefficien
+
+### `ne_zero` (2 declarations, 2 files)
+
+- `lemma Domain.CosetFftDomainClass.ne_zero` [ArkLib/Data/Domain/CosetFftDomain/Defs.lean:81](../../../ArkLib/Data/Domain/CosetFftDomain/Defs.lean#L81) — Every point of a coset FFT domain is nonzero.
+- `theorem PolynomialDifferential.SeparantChain.ne_zero` [ArkLib/Data/Polynomial/Differential/SeparantChain.lean:115](../../../ArkLib/Data/Polynomial/Differential/SeparantChain.lean#L115) — The starting equation of a separant chain is nonzero.
 
 ### `observe` (2 declarations, 2 files)
 
@@ -1245,8 +1316,8 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 ### `oracleVerifier_rbrKnowledgeSoundnessWorstCase` (2 declarations, 2 files)
 
-- `theorem ToyProblem.Impl.IRS.oracleVerifier_rbrKnowledgeSoundnessWorstCase` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:986](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L986) — Existential worst-case RBR knowledge soundness, retained as a compatibility corollary of the exact-o
-- `theorem ToyProblem.Spec.oracleVerifier_rbrKnowledgeSoundnessWorstCase` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:1377](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L1377) — Worst-case-per-fixed-prefix round-by-round knowledge soundness of the toy protocol in the alphabet-g
+- `theorem ToyProblem.Impl.IRS.oracleVerifier_rbrKnowledgeSoundnessWorstCase` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:985](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L985) — Existential worst-case RBR knowledge soundness, retained as a compatibility corollary of the exact-o
+- `theorem ToyProblem.Spec.oracleVerifier_rbrKnowledgeSoundnessWorstCase` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:1371](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L1371) — Worst-case-per-fixed-prefix round-by-round knowledge soundness of the toy protocol in the alphabet-g
 
 ### `oracles` (2 declarations, 2 files)
 
@@ -1265,7 +1336,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 ### `outputRelationFor` (2 declarations, 2 files)
 
-- `def ToyProblem.Spec.outputRelationFor` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:290](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L290) — The IOR-shaped **fixed-encoding** *relaxed* output relation. The soundness statement of L6.6/6.8 is
+- `def ToyProblem.Spec.outputRelationFor` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:292](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L292) — The IOR-shaped **fixed-encoding** *relaxed* output relation. The soundness statement of L6.6/6.8 is
 - `def ToyProblem.SimplifiedIOR.outputRelationFor` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:122](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L122) — The 1-arity relaxed relation `R̃¹_{C,δ}` — the output relation of the simplified IOR. Bundles the po
 
 ### `outputSimulation` (2 declarations, 2 files)
@@ -1313,6 +1384,11 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `theorem Interaction.Oracle.PhasedRun.phases_reached` [ArkLib/Interaction/Oracle/PhasedRun.lean:67](../../../ArkLib/Interaction/Oracle/PhasedRun.lean#L67) — Every action boundary, including setup, extends to the same complete concrete path.
 - `theorem Interaction.Oracle.WorldSegments.phases_reached` [ArkLib/Interaction/Oracle/WorldSegments.lean:135](../../../ArkLib/Interaction/Oracle/WorldSegments.lean#L135) — Every recorded action boundary is a concrete prefix of this same complete execution, including agree
 
+### `pow` (2 declarations, 2 files)
+
+- `theorem MvPolynomial.CoeffNatDegreeLE.pow` [ArkLib/ToMathlib/MvPolynomial/PolynomialCoefficients.lean:142](../../../ArkLib/ToMathlib/MvPolynomial/PolynomialCoefficients.lean#L142) — The `n`-th power multiplies the coefficient degree bound by `n`.
+- `theorem MvPolynomial.SupportWeightOffset.pow` [ArkLib/ToMathlib/MvPolynomial/SupportWeightOffset.lean:90](../../../ArkLib/ToMathlib/MvPolynomial/SupportWeightOffset.lean#L90) — The `n`-th power multiplies the allowance by `n`.
+
 ### `prepend` (2 declarations, 2 files)
 
 - `def Interaction.Oracle.WorldSegments.prepend` [ArkLib/Interaction/Oracle/WorldSegments.lean:88](../../../ArkLib/Interaction/Oracle/WorldSegments.lean#L88) — Prefix labels on a residual phase are lifted through the already crossed concrete edge.
@@ -1355,13 +1431,13 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 ### `rbrKnowledgeStateFunction` (2 declarations, 2 files)
 
-- `def ToyProblem.Impl.IRS.rbrKnowledgeStateFunction` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:896](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L896) — Knowledge-state function paired with the executable interleaved-RS round-by-round extractor.  This i
-- `def ToyProblem.Spec.rbrKnowledgeStateFunction` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:1230](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L1230) — The round-by-round knowledge state function: relaxed-relation membership at round 0, `GammaState` af
+- `def ToyProblem.Impl.IRS.rbrKnowledgeStateFunction` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:895](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L895) — Knowledge-state function paired with the executable interleaved-RS round-by-round extractor.  This i
+- `def ToyProblem.Spec.rbrKnowledgeStateFunction` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:1227](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L1227) — The round-by-round knowledge state function: relaxed-relation membership at round 0, `GammaState` af
 
 ### `rbrWitMid` (2 declarations, 2 files)
 
 - `def ToyProblem.Impl.IRS.rbrWitMid` [ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean:354](../../../ArkLib/ProofSystem/ToyProblem/Impl/IRS.lean#L354) — Intermediate witness types for the executable round-by-round extractor.
-- `def ToyProblem.Spec.rbrWitMid` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:1105](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L1105) — L6.8 intermediate witness types: input witness at round 0, the γ-round candidate message during roun
+- `def ToyProblem.Spec.rbrWitMid` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:1102](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L1102) — L6.8 intermediate witness types: input witness at round 0, the γ-round candidate message during roun
 
 ### `readChallenges` (2 declarations, 2 files)
 
@@ -1391,7 +1467,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 ### `reduction_verifier_eq_verifier` (2 declarations, 2 files)
 
 - `lemma Sumcheck.Spec.reduction_verifier_eq_verifier` [ArkLib/ProofSystem/Sumcheck/Spec/General.lean:197](../../../ArkLib/ProofSystem/Sumcheck/Spec/General.lean#L197) — (no docstring)
-- `lemma Sumcheck.Spec.SingleRound.reduction_verifier_eq_verifier` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:998](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L998) — (no docstring)
+- `lemma Sumcheck.Spec.SingleRound.reduction_verifier_eq_verifier` [ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean:839](../../../ArkLib/ProofSystem/Sumcheck/Spec/SingleRound.lean#L839) — (no docstring)
 
 ### `refl` (2 declarations, 2 files)
 
@@ -1400,7 +1476,7 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 ### `relaxedRelationFor_iff_exists_outputRelationFor` (2 declarations, 2 files)
 
-- `theorem ToyProblem.Spec.relaxedRelationFor_iff_exists_outputRelationFor` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:316](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L316) — The language-level relaxed relation `RelaxedRelationFor` is precisely the existential closure of the
+- `theorem ToyProblem.Spec.relaxedRelationFor_iff_exists_outputRelationFor` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:318](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L318) — The language-level relaxed relation `RelaxedRelationFor` is precisely the existential closure of the
 - `theorem ToyProblem.SimplifiedIOR.relaxedRelationFor_iff_exists_outputRelationFor` [ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean:132](../../../ArkLib/ProofSystem/ToyProblem/Spec/SimplifiedIOR.lean#L132) — The language-level one-word relaxed relation is precisely the existential closure of the witness-bea
 
 ### `rightpad` (2 declarations, 2 files)
@@ -1453,6 +1529,11 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `theorem Sumcheck.Interaction.MultivariateRound.simulate_terminal` [ArkLib/ProofSystem/Sumcheck/Interaction/MultivariateRound.lean:119](../../../ArkLib/ProofSystem/Sumcheck/Interaction/MultivariateRound.lean#L119) — The actual terminal computation reads its next target from the sent message.
 - `theorem Sumcheck.Interaction.SingleRound.simulate_terminal` [ArkLib/ProofSystem/Sumcheck/Interaction/SingleRound.lean:114](../../../ArkLib/ProofSystem/Sumcheck/Interaction/SingleRound.lean#L114) — The terminal program checks and evaluates the sent polynomial.
 
+### `six_mul_sum` (2 declarations, 2 files)
+
+- `theorem Polynomial.SymbolicInterpolation.six_mul_sum` [ArkLib/Data/Polynomial/SymbolicInterpolationSupport.lean:77](../../../ArkLib/Data/Polynomial/SymbolicInterpolationSupport.lean#L77) — (no docstring)
+- `theorem CubicStaircase.six_mul_sum` [ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean:100](../../../ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean#L100) — The unrounded sum has the closed form `6 * ∑ s < n, (s + 1) * (L - s) = n * (n + 1) * (3 * L - 2 * n
+
 ### `spec` (2 declarations, 2 files)
 
 - `abbrev Interaction.Oracle.OracleFamily.spec` [ArkLib/Interaction/Oracle/Virtual.lean:43](../../../ArkLib/Interaction/Oracle/Virtual.lean#L43) — The dependent query signature of the explicit interfaces.
@@ -1487,6 +1568,11 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 
 - `def Interaction.Oracle.OpenClaim.substWithSuffix` [ArkLib/Interaction/Oracle/Claim.lean:107](../../../ArkLib/Interaction/Oracle/Claim.lean#L107) — Substitute the middle interface while retaining independent suffix resources.
 - `def Interaction.Oracle.VirtualOracle.substWithSuffix` [ArkLib/Interaction/Oracle/Virtual.lean:166](../../../ArkLib/Interaction/Oracle/Virtual.lean#L166) — Substitution with additional downstream sources kept available.
+
+### `sum` (2 declarations, 2 files)
+
+- `def Interaction.Oracle.SourceCtx.sum` [ArkLib/Interaction/Oracle/Source.lean:74](../../../ArkLib/Interaction/Oracle/Source.lean#L74) — Disjoint query alternatives, realized by a pair of environments. This is signature addition, not a r
+- `theorem MvPolynomial.SupportWeightOffset.sum` [ArkLib/ToMathlib/MvPolynomial/SupportWeightOffset.lean:97](../../../ArkLib/ToMathlib/MvPolynomial/SupportWeightOffset.lean#L97) — Finite sums keep a common allowance.
 
 ### `sumQueries` (2 declarations, 2 files)
 
@@ -1593,12 +1679,17 @@ Each group lists declarations sharing a short name across ≥2 files. Most are l
 - `def Binius.BinaryBasefold.witnessStructuralInvariant` [ArkLib/ProofSystem/Binius/BinaryBasefold/Basic.lean:846](../../../ArkLib/ProofSystem/Binius/BinaryBasefold/Basic.lean#L846) — This condition ensures that the witness polynomial `H` has the correct structure `eq(...) * t(...)`
 - `def RingSwitching.witnessStructuralInvariant` [ArkLib/ProofSystem/RingSwitching/Packing/Prelude.lean:438](../../../ArkLib/ProofSystem/RingSwitching/Packing/Prelude.lean#L438) — This condition ensures that the witness polynomial `H` has the correct structure `A(...) * t'(...)`
 
-### `Pr_eq_zero_of_forall_not` (2 declarations, 2 files)
+### `log_five_hundred_lt` (2 declarations, 2 files)
 
-- `lemma ToyProblem.Spec.Pr_eq_zero_of_forall_not` [ArkLib/ProofSystem/ToyProblem/Spec/General.lean:1085](../../../ArkLib/ProofSystem/ToyProblem/Spec/General.lean#L1085) — `Pr_{x ← D}[P x] = 0` for a never-satisfied predicate `P`.
-- `theorem ToyProblem.Spec.Pr_eq_zero_of_forall_not` [ArkLib/ProofSystem/ToyProblem/Spec/KnowledgeSoundness.lean:58](../../../ArkLib/ProofSystem/ToyProblem/Spec/KnowledgeSoundness.lean#L58) — A predicate false at every point has probability zero.
+- `theorem ReedSolomon.HiddenDerivative.RatePartition.log_five_hundred_lt` [ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/RatePartition/Moment.lean:64](../../../ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/RatePartition/Moment.lean#L64) — (no docstring)
+- `theorem ReedSolomon.HiddenDerivative.RatePartition.log_five_hundred_lt` [ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/RatePartition/UniformGamma.lean:82](../../../ArkLib/Data/CodingTheory/HiddenDerivative/Parameters/RatePartition/UniformGamma.lean#L82) — (no docstring)
 
-## Near-duplicate docstrings (Jaccard ≥ 0.85, 79 cross-file pairs)
+### `two_mul_ncard_cast` (2 declarations, 2 files)
+
+- `theorem MvPolynomial.two_mul_ncard_cast` [ArkLib/ToMathlib/RingTheory/MvPolynomial/AffineHilbertCappedBidegree.lean:79](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/AffineHilbertCappedBidegree.lean#L79) — For `C ≤ B`, twice the number of capped exponents on `Fin 2` with bounds `(B, C)`, cast to `ℚ`.
+- `theorem MvPolynomial.two_mul_ncard_cast` [ArkLib/ToMathlib/RingTheory/MvPolynomial/AffineHilbertCappedDegree.lean:74](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/AffineHilbertCappedDegree.lean#L74) — For `C ≤ B`, twice the number of capped exponents on `Fin 2` with bounds `(B, C)`, cast to `ℚ`.
+
+## Near-duplicate docstrings (Jaccard ≥ 0.85, 93 cross-file pairs)
 
 Each pair has docstrings sharing a high fraction of (4+-letter) words, in different files. Most are unrelated coincidences in boilerplate; look for pairs where the *concept* matches.
 
@@ -1740,28 +1831,46 @@ Each pair has docstrings sharing a high fraction of (4+-letter) words, in differ
 - **1.00** `Interaction.Oracle.executeStrategiesLogged` [ArkLib/Interaction/Oracle/LoggedExecution.lean:105](../../../ArkLib/Interaction/Oracle/LoggedExecution.lean#L105) vs `Interaction.Oracle.executeStrategiesPhased` [ArkLib/Interaction/Oracle/PhasedExecution.lean:80](../../../ArkLib/Interaction/Oracle/PhasedExecution.lean#L80)
     - a: Execute restricted strategies in the paired runner's ownership order, logging each verifier local ac
     - b: Execute restricted strategies in the paired runner's ownership order, logging each verifier local ac
-- **1.00** `KZG.CommitmentScheme.map_binding_instance_drag` [ArkLib/Commitments/Functional/KZG/Binding.lean:661](../../../ArkLib/Commitments/Functional/KZG/Binding.lean#L661) vs `KZG.CommitmentScheme.map_instance_drag` [ArkLib/Commitments/Functional/KZG/FunctionBinding/Basic.lean:543](../../../ArkLib/Commitments/Functional/KZG/FunctionBinding/Basic.lean#L543)
+- **1.00** `KZG.CommitmentScheme.map_binding_instance_drag` [ArkLib/Commitments/Functional/KZG/Binding.lean:654](../../../ArkLib/Commitments/Functional/KZG/Binding.lean#L654) vs `KZG.CommitmentScheme.map_instance_drag` [ArkLib/Commitments/Functional/KZG/FunctionBinding/Basic.lean:536](../../../ArkLib/Commitments/Functional/KZG/FunctionBinding/Basic.lean#L536)
     - a: Transition 3: dragging the map into the probability event.
     - b: Transition 3: dragging the map into the probability event
+- **1.00** `MvPolynomial.cappedBidegreeExponents.finite` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean:164](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean#L164) vs `MvPolynomial.cappedDegreeExponents.finite` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean:122](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean#L122)
+    - a: The capped exponents form a finite set when `σ` is finite.
+    - b: The capped exponents form a finite set when `σ` is finite.
+- **1.00** `MvPolynomial.cappedBidegreeExponents_add_subset` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean:129](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean#L129) vs `MvPolynomial.cappedDegreeExponents_add_subset` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean:104](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean#L104)
+    - a: The bounds of capped exponents add under addition.
+    - b: The bounds of capped exponents add under addition.
+- **1.00** `MvPolynomial.monomialMap_cappedBidegreeExponents_surjective` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean:217](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean#L217) vs `MvPolynomial.monomialMap_cappedDegreeExponents_surjective` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean:158](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean#L158)
+    - a: For positive `a`, `b` and `c`, the monomial map of the capped exponents is surjective.
+    - b: For positive `b` and `c`, the monomial map of the capped exponents is surjective.
+- **1.00** `MvPolynomial.mul_mem_restrictCappedBidegree` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean:200](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean#L200) vs `MvPolynomial.mul_mem_restrictCappedDegree` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean:142](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean#L142)
+    - a: The bounds of capped polynomials add under multiplication.
+    - b: The bounds of capped polynomials add under multiplication.
+- **1.00** `MvPolynomial.restrictCappedBidegree.moduleFinite` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean:222](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean#L222) vs `MvPolynomial.restrictCappedDegree.moduleFinite` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean:163](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean#L163)
+    - a: With finitely many variables, the capped polynomials form a finite module.
+    - b: With finitely many variables, the capped polynomials form a finite module.
+- **1.00** `MvPolynomial.single_mem_cappedBidegreeExponents` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean:121](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedBidegree.lean#L121) vs `MvPolynomial.single_mem_cappedDegreeExponents` [ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean:96](../../../ArkLib/ToMathlib/RingTheory/MvPolynomial/CappedDegree.lean#L96)
+    - a: For positive `a`, `b` and `c`, the exponent `Finsupp.single v 1` is a capped exponent.
+    - b: For positive `b` and `c`, the exponent `Finsupp.single v 1` is a capped exponent.
 - **1.00** `OracleVerifier.liftContext_soundness` [ArkLib/OracleReduction/LiftContext/OracleReduction.lean:275](../../../ArkLib/OracleReduction/LiftContext/OracleReduction.lean#L275) vs `Verifier.liftContext_soundness` [ArkLib/OracleReduction/LiftContext/Reduction.lean:401](../../../ArkLib/OracleReduction/LiftContext/Reduction.lean#L401)
     - a: Lifting the reduction preserves soundness, assuming the lens satisfies its soundness conditions
     - b: Lifting the reduction preserves soundness, assuming the lens satisfies its soundness conditions
 - **1.00** `Prover.processRoundFS` [ArkLib/OracleReduction/FiatShamir/Basic.lean:81](../../../ArkLib/OracleReduction/FiatShamir/Basic.lean#L81) vs `Prover.processRoundDSFS` [ArkLib/OracleReduction/FiatShamir/DuplexSponge/Defs.lean:171](../../../ArkLib/OracleReduction/FiatShamir/DuplexSponge/Defs.lean#L171)
     - a: Prover's function for processing the next round, given the current result of the previous round. Thi
     - b: Prover's function for processing the next round, given the current result of the previous round. Thi
-- **1.00** `Prover.runToRound` [ArkLib/OracleReduction/Execution.lean:117](../../../ArkLib/OracleReduction/Execution.lean#L117) vs `Prover.runToRoundDSFS` [ArkLib/OracleReduction/FiatShamir/DuplexSponge/Defs.lean:203](../../../ArkLib/OracleReduction/FiatShamir/DuplexSponge/Defs.lean#L203)
+- **1.00** `Prover.runToRound` [ArkLib/OracleReduction/Execution.lean:119](../../../ArkLib/OracleReduction/Execution.lean#L119) vs `Prover.runToRoundDSFS` [ArkLib/OracleReduction/FiatShamir/DuplexSponge/Defs.lean:203](../../../ArkLib/OracleReduction/FiatShamir/DuplexSponge/Defs.lean#L203)
     - a: Run the prover in an interactive reduction up to round index `i`, via first inputting the statement
     - b: Run the prover in an interactive reduction up to round index `i`, via first inputting the statement
-- **1.00** `Prover.runToRound` [ArkLib/OracleReduction/Execution.lean:117](../../../ArkLib/OracleReduction/Execution.lean#L117) vs `Prover.runToRoundFS` [ArkLib/OracleReduction/FiatShamir/Basic.lean:103](../../../ArkLib/OracleReduction/FiatShamir/Basic.lean#L103)
+- **1.00** `Prover.runToRound` [ArkLib/OracleReduction/Execution.lean:119](../../../ArkLib/OracleReduction/Execution.lean#L119) vs `Prover.runToRoundFS` [ArkLib/OracleReduction/FiatShamir/Basic.lean:103](../../../ArkLib/OracleReduction/FiatShamir/Basic.lean#L103)
     - a: Run the prover in an interactive reduction up to round index `i`, via first inputting the statement
     - b: Run the prover in an interactive reduction up to round index `i`, via first inputting the statement
 - **1.00** `Prover.runToRoundFS` [ArkLib/OracleReduction/FiatShamir/Basic.lean:103](../../../ArkLib/OracleReduction/FiatShamir/Basic.lean#L103) vs `Prover.runToRoundDSFS` [ArkLib/OracleReduction/FiatShamir/DuplexSponge/Defs.lean:203](../../../ArkLib/OracleReduction/FiatShamir/DuplexSponge/Defs.lean#L203)
     - a: Run the prover in an interactive reduction up to round index `i`, via first inputting the statement
     - b: Run the prover in an interactive reduction up to round index `i`, via first inputting the statement
-- **1.00** `Reduction.append_completeness_of_prover_factorization` [ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean:125](../../../ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean#L125) vs `Reduction.append_completeness_of_guarded_prover_factorization` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:148](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L148)
+- **1.00** `Reduction.append_completeness_of_prover_factorization` [ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean:98](../../../ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean#L98) vs `Reduction.append_completeness_of_guarded_prover_factorization` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:115](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L115)
     - a: Quantitative completeness from equality of simulated prover programs at every input and initial shar
     - b: Quantitative completeness from equality of simulated prover programs at every input and initial shar
-- **1.00** `Verifier.coordinateWiseSpecialSound_iff_exists` [ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/Basic.lean:281](../../../ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/Basic.lean#L281) vs `Verifier.treeSpecialSound_iff_exists` [ArkLib/OracleReduction/Security/TranscriptTree/Basic.lean:784](../../../ArkLib/OracleReduction/Security/TranscriptTree/Basic.lean#L784)
+- **1.00** `Verifier.coordinateWiseSpecialSound_iff_exists` [ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/Basic.lean:281](../../../ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/Basic.lean#L281) vs `Verifier.treeSpecialSound_iff_exists` [ArkLib/OracleReduction/Security/TranscriptTree/Basic.lean:783](../../../ArkLib/OracleReduction/Security/TranscriptTree/Basic.lean#L783)
     - a: The existential notion is definitionally the existential closure of the named one.
     - b: The existential notion is definitionally the existential closure of the named one.
 - **1.00** `coreInteractionOracleReduction` [ArkLib/ProofSystem/Binius/BinaryBasefold/CoreInteractionPhase.lean:792](../../../ArkLib/ProofSystem/Binius/BinaryBasefold/CoreInteractionPhase.lean#L792) vs `Binius.FRIBinius.CoreInteractionPhase.coreInteractionOracleReduction` [ArkLib/ProofSystem/Binius/FRIBinius/CoreInteractionPhase.lean:787](../../../ArkLib/ProofSystem/Binius/FRIBinius/CoreInteractionPhase.lean#L787)
@@ -1782,61 +1891,46 @@ Each pair has docstrings sharing a high fraction of (4+-letter) words, in differ
 - **0.94** `ArkLib.Lattices.CyclotomicModulus.Rq.eq_zero_of_l1Norm_eq_zero` [ArkLib/Data/Lattices/CyclotomicRing/NormBounds/Basic.lean:320](../../../ArkLib/Data/Lattices/CyclotomicRing/NormBounds/Basic.lean#L320) vs `ArkLib.Lattices.CyclotomicModulus.Rq.eq_zero_of_l2NormSq_eq_zero` [ArkLib/Data/Lattices/CyclotomicRing/NormBounds/LyubashevskySeiler.lean:311](../../../ArkLib/Data/Lattices/CyclotomicRing/NormBounds/LyubashevskySeiler.lean#L311)
     - a: A ring element with zero centered `ℓ₁` norm is `0`: every centered coefficient representative below
     - b: A ring element with zero centered squared `ℓ₂` norm is `0`: every centered coefficient representativ
-- **0.94** `Reduction.append_completeness_of_pure_verifiers` [ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean:185](../../../ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean#L185) vs `Reduction.append_completeness_of_guarded_verifiers` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:203](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L203)
+- **0.94** `Reduction.append_completeness_of_pure_verifiers` [ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean:140](../../../ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean#L140) vs `Reduction.append_completeness_of_guarded_verifiers` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:152](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L152)
     - a: Sequential composition preserves completeness for pure verifiers when the prover execution factors a
     - b: Sequential composition preserves completeness for guarded verifiers when the prover execution factor
-- **0.88** `Reduction.append_perfectCompleteness_of_pure_verifiers` [ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean:201](../../../ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean#L201) vs `Reduction.append_perfectCompleteness_of_guarded_verifiers` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:219](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L219)
+- **0.92** `CubicStaircase.count` [ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean:52](../../../ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean#L52) vs `QuadraticStaircase.count` [ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean:50](../../../ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean#L50)
+    - a: The number of natural triples `(x, b₀, b₁)` with `x + D * (b₀ + b₁) < D * L`, written as a sum over
+    - b: The number of natural pairs `(x, u)` with `x + D * u < D * L`, written as a sum over `u`: there are
+- **0.89** `CubicStaircase.count_ge_cubic` [ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean:140](../../../ArkLib/ToMathlib/Combinatorics/CubicStaircase.lean#L140) vs `QuadraticStaircase.count_ge_quadratic` [ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean:114](../../../ArkLib/ToMathlib/Combinatorics/QuadraticStaircase.lean#L114)
+    - a: `D * (max L 0) ^ 3 / 6 ≤ count D L` for every weight `D` and every real cutoff `L`. There is no hypo
+    - b: `D * (max L 0) ^ 2 / 2 ≤ count D L` for every weight `D` and every real cutoff `L`. There is no hypo
+- **0.89** `ReedSolomon.HiddenDerivative.exactInterpolationExponents` [ArkLib/Data/CodingTheory/HiddenDerivative/Interpolation/Index.lean:165](../../../ArkLib/Data/CodingTheory/HiddenDerivative/Interpolation/Index.lean#L165) vs `ReedSolomon.HiddenDerivative.weightedSupportExponents` [ArkLib/Data/CodingTheory/HiddenDerivative/Interpolation/WeightedSupport/Basic.lean:92](../../../ArkLib/Data/CodingTheory/HiddenDerivative/Interpolation/WeightedSupport/Basic.lean#L92)
+    - a: The finite set of eligible exponents. It is specified through `Set.Finite.toFinset`, so it is not an
+    - b: The finite set of weighted-support eligible exponents. It is specified through `Set.Finite.toFinset`
+- **0.89** `ReedSolomon.HiddenDerivative.firstOrderExponents` [ArkLib/Data/CodingTheory/HiddenDerivative/Interpolation/FirstOrder/Space.lean:86](../../../ArkLib/Data/CodingTheory/HiddenDerivative/Interpolation/FirstOrder/Space.lean#L86) vs `ReedSolomon.HiddenDerivative.exactInterpolationExponents` [ArkLib/Data/CodingTheory/HiddenDerivative/Interpolation/Index.lean:165](../../../ArkLib/Data/CodingTheory/HiddenDerivative/Interpolation/Index.lean#L165)
+    - a: The finite set of first-order eligible exponents. It is specified through `Set.Finite.toFinset`, so
+    - b: The finite set of eligible exponents. It is specified through `Set.Finite.toFinset`, so it is not an
+- **0.88** `Reduction.append_perfectCompleteness_of_pure_verifiers` [ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean:156](../../../ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean#L156) vs `Reduction.append_perfectCompleteness_of_guarded_verifiers` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:168](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L168)
     - a: Pure verifiers compose perfectly when prover execution factors at the seam and the suffix is perfect
     - b: Guarded verifiers compose perfectly when prover execution factors at the seam and the suffix is perf
-- **0.88** `OracleProof.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:593](../../../ArkLib/OracleReduction/Security/Basic.lean#L593) vs `OracleProof.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:848](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L848)
+- **0.88** `OracleProof.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:592](../../../ArkLib/OracleReduction/Security/Basic.lean#L592) vs `OracleProof.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:812](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L812)
     - a: Knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
     - b: Round-by-round knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
-- **0.88** `OracleProof.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:593](../../../ArkLib/OracleReduction/Security/Basic.lean#L593) vs `OracleVerifier.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:777](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L777)
+- **0.88** `OracleProof.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:592](../../../ArkLib/OracleReduction/Security/Basic.lean#L592) vs `OracleVerifier.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:741](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L741)
     - a: Knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
     - b: Round-by-round knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
-- **0.88** `OracleVerifier.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:500](../../../ArkLib/OracleReduction/Security/Basic.lean#L500) vs `OracleProof.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:848](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L848)
+- **0.88** `OracleVerifier.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:499](../../../ArkLib/OracleReduction/Security/Basic.lean#L499) vs `OracleProof.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:812](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L812)
     - a: Knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
     - b: Round-by-round knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
-- **0.88** `OracleVerifier.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:500](../../../ArkLib/OracleReduction/Security/Basic.lean#L500) vs `OracleVerifier.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:777](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L777)
+- **0.88** `OracleVerifier.knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:499](../../../ArkLib/OracleReduction/Security/Basic.lean#L499) vs `OracleVerifier.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:741](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L741)
     - a: Knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
     - b: Round-by-round knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
-- **0.88** `OracleVerifier.knowledgeSoundnessWith` [ArkLib/OracleReduction/Security/Basic.lean:489](../../../ArkLib/OracleReduction/Security/Basic.lean#L489) vs `OracleProof.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:848](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L848)
+- **0.88** `OracleVerifier.knowledgeSoundnessWith` [ArkLib/OracleReduction/Security/Basic.lean:488](../../../ArkLib/OracleReduction/Security/Basic.lean#L488) vs `OracleProof.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:812](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L812)
     - a: Knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
     - b: Round-by-round knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
-- **0.88** `OracleVerifier.knowledgeSoundnessWith` [ArkLib/OracleReduction/Security/Basic.lean:489](../../../ArkLib/OracleReduction/Security/Basic.lean#L489) vs `OracleVerifier.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:777](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L777)
+- **0.88** `OracleVerifier.knowledgeSoundnessWith` [ArkLib/OracleReduction/Security/Basic.lean:488](../../../ArkLib/OracleReduction/Security/Basic.lean#L488) vs `OracleVerifier.rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:741](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L741)
     - a: Knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
     - b: Round-by-round knowledge soundness of an oracle reduction is the same as for non-oracle reductions.
-- **0.88** `Reduction.completeness_of_pure_states` [ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean:100](../../../ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean#L100) vs `Reduction.completeness_of_guarded_states` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:123](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L123)
+- **0.88** `PolynomialDifferential.initialJetEquation_mem_of_mem_initialJetPrimeFamily` [ArkLib/Data/Polynomial/Differential/TaylorChartGeometry.lean:208](../../../ArkLib/Data/Polynomial/Differential/TaylorChartGeometry.lean#L208) vs `PolynomialDifferential.initialJetEquation_mem_of_mem_highTaylorPrimeFamily` [ArkLib/Data/Polynomial/Differential/TaylorChartIncidence.lean:129](../../../ArkLib/Data/Polynomial/Differential/TaylorChartIncidence.lean#L129)
+    - a: Every member of the initial prime family contains the initial equation.
+    - b: Every member of the high-cut prime family contains the initial equation.
+- **0.88** `Reduction.completeness_of_pure_states` [ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean:82](../../../ArkLib/OracleReduction/Composition/Sequential/Append/Completeness.lean#L82) vs `Reduction.completeness_of_guarded_states` [ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean:99](../../../ArkLib/OracleReduction/Composition/Sequential/GuardedCompleteness.lean#L99)
     - a: Completeness from every deterministic oracle state implies completeness from any initial state distr
     - b: Completeness from every deterministic oracle state implies completeness from any initial state distr
-- **0.87** `ArkLib.Lattices.Ajtai.InnerOuter.partialEvalExtractor` [ArkLib/Commitments/Functional/Hachi/Recursion/PartialEval.lean:191](../../../ArkLib/Commitments/Functional/Hachi/Recursion/PartialEval.lean#L191) vs `ArkLib.Lattices.Ajtai.InnerOuter.handoffExtractor` [ArkLib/Commitments/Functional/Hachi/Recursion/TraceHandoff.lean:183](../../../ArkLib/Commitments/Functional/Hachi/Recursion/TraceHandoff.lean#L183)
-    - a: **The partial-evaluation extraction algorithm.** **Sorried** — this def is the extraction *algorithm
-    - b: **The trace-handoff extraction algorithm.** **Sorried** — this def is the extraction *algorithm* its
-- **0.86** `CoordinateWise.ScalarRound.branchPathOf` [ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/ScalarRound.lean:297](../../../ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/ScalarRound.lean#L297) vs `CoordinateWise.SingleRound.branchPathOf` [ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/SingleRound.lean:268](../../../ArkLib/OracleReduction/Security/CoordinateWiseSpecialSoundness/SingleRound.lean#L268)
-    - a: The root-to-leaf path of branch `j` of an **arbitrary** full scalar-round tree — the index at which
-    - b: The root-to-leaf path of branch `j` of an **arbitrary** full single-round tree — the index at which
-- **0.86** `Domain.CosetFftDomainClass.domain_implies_char_ne_2` [ArkLib/Data/Domain/CosetFftDomain/Ops.lean:114](../../../ArkLib/Data/Domain/CosetFftDomain/Ops.lean#L114) vs `Domain.FftDomainClass.domain_implies_char_ne_2` [ArkLib/Data/Domain/FftDomain/Ops.lean:164](../../../ArkLib/Data/Domain/FftDomain/Ops.lean#L164)
-    - a: The existence of a nontrivial smooth coset FFT domain rules out characteristic `2`.
-    - b: The existence of a nontrivial smooth FFT domain rules out characteristic `2`.
-- **0.86** `OracleProof.soundness` [ArkLib/OracleReduction/Security/Basic.lean:584](../../../ArkLib/OracleReduction/Security/Basic.lean#L584) vs `OracleProof.rbrSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:839](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L839)
-    - a: Soundness of an oracle reduction is the same as for non-oracle reductions.
-    - b: Round-by-round soundness of an oracle reduction is the same as for non-oracle reductions.
-- **0.86** `OracleProof.soundness` [ArkLib/OracleReduction/Security/Basic.lean:584](../../../ArkLib/OracleReduction/Security/Basic.lean#L584) vs `OracleVerifier.rbrSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:768](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L768)
-    - a: Soundness of an oracle reduction is the same as for non-oracle reductions.
-    - b: Round-by-round soundness of an oracle reduction is the same as for non-oracle reductions.
-- **0.86** `OracleVerifier.id_knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:726](../../../ArkLib/OracleReduction/Security/Basic.lean#L726) vs `Verifier.id_rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:924](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L924)
-    - a: The identity / trivial verifier is perfectly knowledge sound.
-    - b: The identity / trivial verifier is perfectly round-by-round knowledge sound.
-- **0.86** `OracleVerifier.soundness` [ArkLib/OracleReduction/Security/Basic.lean:481](../../../ArkLib/OracleReduction/Security/Basic.lean#L481) vs `OracleProof.rbrSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:839](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L839)
-    - a: Soundness of an oracle reduction is the same as for non-oracle reductions.
-    - b: Round-by-round soundness of an oracle reduction is the same as for non-oracle reductions.
-- **0.86** `OracleVerifier.soundness` [ArkLib/OracleReduction/Security/Basic.lean:481](../../../ArkLib/OracleReduction/Security/Basic.lean#L481) vs `OracleVerifier.rbrSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:768](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L768)
-    - a: Soundness of an oracle reduction is the same as for non-oracle reductions.
-    - b: Round-by-round soundness of an oracle reduction is the same as for non-oracle reductions.
-- **0.86** `Verifier.id_knowledgeSoundness` [ArkLib/OracleReduction/Security/Basic.lean:663](../../../ArkLib/OracleReduction/Security/Basic.lean#L663) vs `Verifier.id_rbrKnowledgeSoundness` [ArkLib/OracleReduction/Security/RoundByRound.lean:924](../../../ArkLib/OracleReduction/Security/RoundByRound.lean#L924)
-    - a: The identity / trivial verifier is perfectly knowledge sound.
-    - b: The identity / trivial verifier is perfectly round-by-round knowledge sound.
-- **0.86** `proximity_gap_degree_bound` [ArkLib/Data/CodingTheory/GuruswamiSudan/Basic.lean:54](../../../ArkLib/Data/CodingTheory/GuruswamiSudan/Basic.lean#L54) vs `ProximityGap.D_X` [ArkLib/Data/CodingTheory/ProximityGap/BCIKS20/ListDecoding/Guruswami.lean:40](../../../ArkLib/Data/CodingTheory/ProximityGap/BCIKS20/ListDecoding/Guruswami.lean#L40)
-    - a: The degree bound (i.e. `D_X(m) = (m + 1/2) * √ρ * n`) for instantiation of Guruswami-Sudan in Lemma
-    - b: The degree bound (a.k.a. `D_X`) for instantiation of Guruswami-Sudan in Lemma 5.3 of [BCIKS20]. `D_X
 
