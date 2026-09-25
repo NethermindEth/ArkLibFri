@@ -148,24 +148,57 @@ def StmtIn := R
 
 variable [DecidableEq R] [SampleableType R]
 
+@[reducible]
+def partialVerifier
+  (num_rounds : Fin (n + 1))
+: Verifier oSpec
+  (StatementRound R n 0 × (∀ i, OracleStatement R n deg i))
+  (StatementRound R n num_rounds × (∀ i, OracleStatement R n deg i))
+  (pSpec R deg num_rounds)
+:=
+  Verifier.seqCompose (oSpec := oSpec)
+    (Stmt := fun (i : Fin (num_rounds + 1)) ↦
+      StatementRound R n (i.castLE (by grind)) ×
+      (∀ j, OracleStatement R n deg j)
+    )
+    (pSpec := fun _ => SingleRound.pSpec R deg)
+    (V := fun (i : Fin num_rounds) ↦ SingleRound.verifier R n deg D oSpec (i.castLE (by grind)))
+
 /-- The verifier for the (full) sum-check protocol -/
 @[reducible]
 def verifier : Verifier oSpec (StatementRound R n 0 × (∀ i, OracleStatement R n deg i))
     (StatementRound R n (.last n) × (∀ i, OracleStatement R n deg i)) (pSpec R deg n) :=
-  Verifier.seqCompose (oSpec := oSpec)
-    (Stmt := fun i => StatementRound R n i × (∀ j, OracleStatement R n deg j))
-    (pSpec := fun _ => SingleRound.pSpec R deg)
-    (SingleRound.verifier R n deg D oSpec)
+  partialVerifier (num_rounds := .last n)
+    (R := R)
+    (deg := deg)
+    (D := D)
+    (oSpec := oSpec)
+
+@[reducible]
+def partialOracleVerifier
+  (num_rounds : Fin (n + 1))
+: OracleVerifier oSpec
+  (StatementRound R n 0)
+  (OracleStatement R n deg)
+  (StatementRound R n num_rounds)
+  (OracleStatement R n deg)
+  (pSpec R deg num_rounds)
+:=
+  OracleVerifier.seqCompose (oSpec := oSpec)
+    (Stmt := fun (i : Fin (num_rounds + 1)) ↦
+      StatementRound R n (i.castLE (by grind))
+    )
+    (OStmt := fun (i : Fin (num_rounds + 1)) j ↦ OracleStatement R n deg j)
+    (pSpec := fun (i : Fin num_rounds) ↦ SingleRound.pSpec R deg)
+    (V := fun (i : Fin num_rounds) ↦
+      SingleRound.oracleVerifier R n deg D oSpec (i.castLE (by grind))
+    )
 
 /-- The oracle verifier for the (full) sum-check protocol -/
 @[reducible]
 def oracleVerifier : OracleVerifier oSpec (StatementRound R n 0) (OracleStatement R n deg)
     (StatementRound R n (.last n)) (OracleStatement R n deg) (pSpec R deg n) :=
-  OracleVerifier.seqCompose (oSpec := oSpec)
-    (Stmt := StatementRound R n)
-    (OStmt := fun _ => OracleStatement R n deg)
-    (pSpec := fun _ => SingleRound.pSpec R deg)
-    (SingleRound.oracleVerifier R n deg D oSpec)
+  partialOracleVerifier R deg D n oSpec (num_rounds := .last n)
 
 /-- The sum-check protocol as a reduction -/
 @[reducible]
@@ -181,16 +214,36 @@ def reduction : Reduction oSpec
 
 /-- The sum-check protocol as an oracle reduction -/
 @[reducible]
-def oracleReduction : OracleReduction oSpec
-    (StatementRound R n 0) (OracleStatement R n deg) Unit
-    (StatementRound R n (.last n)) (OracleStatement R n deg) Unit
-    (pSpec R deg n) :=
-  OracleReduction.seqCompose (oSpec := oSpec)
-    (Stmt := StatementRound R n)
-    (OStmt := fun _ => OracleStatement R n deg)
-    (Wit := fun _ => Unit)
-    (pSpec := fun _ => SingleRound.pSpec R deg)
-    (SingleRound.oracleReduction R n deg D oSpec)
+def partialOracleReduction
+  (num_rounds : Fin (n + 1))
+: OracleReduction oSpec
+  (StatementRound R n 0)
+  (OracleStatement R n deg)
+  Unit
+  (StatementRound R n num_rounds)
+  (OracleStatement R n deg)
+  Unit
+  (pSpec R deg num_rounds)
+:= OracleReduction.seqCompose
+  (oSpec := oSpec)
+  (Stmt := fun (i : Fin (num_rounds + 1)) => StatementRound R n (i.castLE (by grind)))
+  (OStmt := fun (i : Fin (num_rounds + 1)) => OracleStatement R n deg)
+  (Wit := fun (i : Fin (num_rounds + 1)) => Unit)
+  (pSpec := fun (i : Fin num_rounds) => SingleRound.pSpec R deg)
+  (R := fun (i : Fin num_rounds) =>
+    SingleRound.oracleReduction R n deg D oSpec (i.castLE (by grind))
+  )
+
+
+@[reducible]
+def oracleReduction
+: OracleReduction oSpec
+  (StatementRound R n 0) (OracleStatement R n deg) Unit
+  (StatementRound R n (.last n)) (OracleStatement R n deg) Unit
+  (pSpec R deg n)
+:=
+  partialOracleReduction R deg D n oSpec (.last n)
+
 
 omit [SampleableType R] in
 @[simp]
