@@ -9,61 +9,14 @@ public import ArkLib.Data.CodingTheory.ReedSolomon.Constrained
 public import ArkLib.ProofSystem.Fri.Spec.SingleRound
 public import ArkLib.ProofSystem.Sumcheck.Spec.SingleRound
 public import ArkLib.ProofSystem.Sumcheck.Spec.General
+public import ArkLib.ProofSystem.Whir.Spec.Data
+
+@[expose]
+public section
 
 namespace Whir
 
 namespace Spec
-
-structure Statement
-  {F : Type} [Field F]
-  {log_order : ℕ}
-  (domain : Domain.SmoothCosetFftDomain log_order F)
-where
-  log_degree : ℕ
-  weight_polynomial : MvPolynomial (Fin (log_degree + 1)) F
-  target : F
-
-structure OracleStatement
-  {F : Type} [Field F] [DecidableEq F]
-  {log_order : ℕ}
-  (domain : Domain.SmoothCosetFftDomain log_order F)
-where
-  codeword : domain.toFinset → F
-
-namespace Statement
-
-variable {F : Type} [Field F]
-  {log_order : ℕ}
-  {domain : Domain.SmoothCosetFftDomain log_order F}
-
-abbrev domain_order
-  (_statement : Statement domain)
-: ℕ :=
-  2^log_order
-
-abbrev code
-  (statement : Statement domain)
-: Set (Fin (2^log_order) → F) :=
-  ReedSolomon.constrainedCode
-    domain
-    statement.log_degree
-    statement.weight_polynomial
-    statement.target
-
--- def step
---   (statement : Statement F)
---   (num_sumcheck_rounds : ℕ)
---   (num_steps : ℕ)
--- : Statement F := match num_steps with
---   | 0 => statement
---   | n+1 => step {
---       log_order := statement.log_order - 1
---       domain := statement.domain.subdomain 1
---       log_degree := statement.log_degree - num_sumcheck_rounds
-
---     } n
-
-end Statement
 
 
 section Witness
@@ -249,3 +202,5 @@ end Prover
 end Spec
 
 end Whir
+
+end
