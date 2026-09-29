@@ -10,6 +10,9 @@ public import ArkLib.ProofSystem.Fri.Spec.SingleRound
 public import ArkLib.ProofSystem.Sumcheck.Spec.SingleRound
 public import ArkLib.ProofSystem.Sumcheck.Spec.General
 public import ArkLib.ProofSystem.Whir.Spec.Data
+public import ArkLib.ProofSystem.Whir.Spec.Lenses.Statement
+public import ArkLib.ProofSystem.Whir.Spec.Lenses.OracleStatement
+public import ArkLib.ProofSystem.Whir.Spec.Lenses.Witness
 
 @[expose]
 public section
@@ -18,13 +21,6 @@ namespace Whir
 
 namespace Spec
 
-
-section Witness
-
-@[reducible]
-def Witness (F : Type) :
-
-end Witness
 
 
 section ProtocolSpec
@@ -105,6 +101,10 @@ end ProtocolSpec
 
 section Composition
 
+--αs in sumcheck output statement, no need for messages
+--hk in oracle statement
+--start by constructing trivial versions of missing parts
+
 def StatementIn : Type := sorry
 def OStatementIn (idx : Type) : idx → Type := sorry
 def WitnessIn : Type := sorry
@@ -120,14 +120,117 @@ def WitnessOut : Type := sorry
 def sumcheckPSpec : ProtocolSpec 42 := sorry
 def restPSpec : ProtocolSpec 47 := sorry
 
-def sumcheckReduction
+
+def sumcheckLens
+  {F : Type} [Field F] [DecidableEq F]
+  {log_order : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (num_vars : ℕ)
+  (num_sumcheck_rounds : Fin (num_vars + 2))
+  [OracleInterface (OracleStatement domain)]
+: OracleContext.ExecutableLens
+    (OuterStmtIn := Statement domain num_vars)
+    (InnerStmtIn := (Sumcheck.Spec.StatementRound F (num_vars + 1) 0))
+    (InnerStmtOut := (Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds))
+    (OuterStmtOut :=
+      (Statement domain num_vars) ×
+      (Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
+    )
+    (OuterOStmtIn := fun _ : Unit => OracleStatement domain)
+    (InnerOStmtIn := Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1))
+    (InnerOStmtOut := Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1))
+    (OuterOStmtOut := fun _ : Unit =>
+      OracleStatement domain ×
+      Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1) ()
+    )
+    (OuterWitIn := Witness)
+    (InnerWitIn := Unit)
+    (InnerWitOut := Unit)
+    (OuterWitOut := Witness)
+where
+  stmt := OracleStatement.sumcheckExecutableLens
+    domain num_vars num_sumcheck_rounds
+  wit := Witness.sumcheckLens
+    domain num_vars num_sumcheck_rounds
+
+def output
+  {ι : Type} (oSpec : OracleSpec ι)
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F]
+  {log_order : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (num_vars : ℕ)
+  (num_sumcheck_rounds : Fin (num_vars + 2))
+  [OracleInterface (OracleStatement domain)]
+: OracleVerifier.LiftContextOutput
+  (sumcheckLens domain num_vars num_sumcheck_rounds).stmt
+  (
+    Sumcheck.Spec.partialOracleVerifier
+      (R := F)
+      (deg := 1)
+      (m := 2^log_order)
+      ↑domain
+      (n := num_vars + 1)
+      oSpec
+      num_sumcheck_rounds
+  )
+where
+  outputOracle := Sum.inl {
+    embed := ⟨
+      fun _ => Sum.inl (),
+      by simp [Function.Injective]
+    ⟩
+    hEq := by
+      intro i
+    outputInterface_heq := sorry
+  }
+
+  materialize_eq := sorry
+
+-- TODO change OStmtOut type to not be over unit, but Fin 2, one for OracleStatement, and one for the sumcheck oracle statement
+
+noncomputable def sumcheckReduction
   {ι : Type} (oSpec : OracleSpec ι) (Idx1 Idx2 : Type)
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F]
+  {log_order : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (num_vars : ℕ)
+  (num_sumcheck_rounds : Fin (num_vars + 2))
+  [(i : Idx1) → OracleInterface (OStatementIn Idx1 i)]
+  [(i : sumcheckPSpec.MessageIdx) → OracleInterface (sumcheckPSpec.Message i)]
+  [(i : Idx2) → OracleInterface (OStatementMid Idx2 i)]
+  [OracleInterface (OracleStatement domain)]
 : OracleReduction
     oSpec
-    StatementIn (OStatementIn Idx1) WitnessIn
-    StatementMid (OStatementMid Idx2) WitnessMid
-    sumcheckPSpec
-:= sorry
+    (Statement domain num_vars)
+    (fun _ : Unit => OracleStatement domain)
+    Witness
+    ((Statement domain num_vars) ×
+      (Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
+    )
+    (fun _ : Unit =>
+      OracleStatement domain ×
+      Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1) ()
+    )
+    Witness
+    (Sumcheck.Spec.pSpec F 1 num_sumcheck_rounds)
+:= (
+  Sumcheck.Spec.partialOracleReduction
+    (R := F)
+    (deg := 1)
+    (m := 2^log_order)
+    ↑domain
+    (n := num_vars + 1)
+    oSpec
+    num_sumcheck_rounds
+  ).liftContext (
+    sumcheckLens
+      domain num_vars num_sumcheck_rounds
+  ) (
+    output
+      oSpec domain num_vars num_sumcheck_rounds
+  )
+
+
 
 def restReduction
   {ι : Type} (oSpec : OracleSpec ι) (Idx1 Idx2 : Type)

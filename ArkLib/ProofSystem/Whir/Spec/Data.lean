@@ -36,6 +36,10 @@ structure OracleStatement
 where
   codeword : domain.toFinset → F
 
+structure Witness
+where
+  placeholder : Unit
+
 end Definitions
 
 

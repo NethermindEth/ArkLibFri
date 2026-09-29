@@ -51,6 +51,38 @@ where
     fun _ => ⟨x.2 (), y.2 ()⟩
   ⟩
 
+def sumcheckExecutableLens
+  {F : Type} [Field F] [DecidableEq F]
+  {log_order : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (num_vars : ℕ)
+  (num_sumcheck_rounds : (Fin (num_vars + 2)))
+  [OracleInterface (OracleStatement domain)]
+: OracleStatement.ExecutableLens
+  (OuterStmtIn := Statement domain num_vars)
+  (InnerStmtIn := Sumcheck.Spec.StatementRound F (num_vars + 1) 0)
+  (InnerStmtOut := Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
+  (OuterStmtOut :=
+    (Statement domain num_vars) ×
+    (Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
+  )
+  (OuterOStmtIn := fun _ : Unit => OracleStatement domain)
+  (InnerOStmtIn := Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1))
+  (InnerOStmtOut := Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1))
+  (OuterOStmtOut := fun _ : Unit =>
+    OracleStatement domain ×
+    Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1) ()
+  )
+where
+  projStmt := sorry
+  materializeInput := sorry
+  simulateInput := sorry
+  simulateInput_eq := sorry
+  liftStmt := sorry
+  materializeOutput := sorry
+  simulateOutput := sorry
+  simulateOutput_eq := sorry
+
 end Whir.Spec.OracleStatement
 
 end Public
