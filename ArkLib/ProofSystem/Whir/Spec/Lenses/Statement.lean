@@ -20,15 +20,15 @@ def sumcheckLens
   (num_vars : ℕ)
   (num_sumcheck_rounds : (Fin (num_vars + 2))) -- TODO should probably be a tighter bound
 : Statement.Lens
-  (OuterStmtIn := Statement domain num_vars)
+  (OuterStmtIn := Statement domain)
   (InnerStmtIn := Sumcheck.Spec.StatementRound F (num_vars + 1) 0)
   (InnerStmtOut := Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
   (OuterStmtOut :=
-    (Statement domain num_vars) ×
+    (Statement domain) ×
     (Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
   )
 where
-  toFunA (x : Statement domain num_vars) := {
+  toFunA (x : Statement domain) := {
     target := x.target
     challenges := fun x => nomatch x
     : Sumcheck.Spec.StatementRound F (num_vars + 1) 0

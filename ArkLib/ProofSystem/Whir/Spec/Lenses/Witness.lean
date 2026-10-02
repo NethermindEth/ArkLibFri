@@ -21,7 +21,7 @@ def sumcheckLens
   (num_vars : ℕ)
   (num_sumcheck_rounds : (Fin (num_vars + 2))) -- TODO should probably be a tighter bound
 : Witness.Lens
-  (OuterStmtIn := Statement domain num_vars × (∀ _ : Unit, OracleStatement domain))
+  (OuterStmtIn := Statement domain × ((idx : OracleIdx) → OracleStatement domain num_vars idx))
   (InnerStmtOut :=
     Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds ×
     (∀ i : Unit, Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1) i)
