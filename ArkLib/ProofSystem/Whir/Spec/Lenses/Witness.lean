@@ -26,14 +26,14 @@ def sumcheckLens
     Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds ×
     (∀ i : Unit, Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1) i)
   )
-  (OuterWitIn := Witness)
+  (OuterWitIn := Witness F num_vars)
   (InnerWitIn := Unit)
   (InnerWitOut := Unit)
-  (OuterWitOut := Witness)
+  (OuterWitOut := Witness F num_vars)
 where
   toFunA _ := ()
-  toFunB _ _ := {
-    placeholder := ()
+  toFunB a _ := {
+    f_hat := a.2.f_hat
   }
 
 end Whir.Spec.Witness

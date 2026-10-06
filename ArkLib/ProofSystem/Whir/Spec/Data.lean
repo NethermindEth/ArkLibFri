@@ -62,9 +62,12 @@ def OracleStatementMid
   | .CodeWord => OracleStatement domain num_vars .CodeWord
   | .Sumcheck => Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1) ()
 
+open MvPolynomial in
 structure Witness
+  (F : Type) [Field F]
+  (num_vars : ℕ)
 where
-  placeholder : Unit
+  f_hat : F[X Fin num_vars]
 
 end Definitions
 
