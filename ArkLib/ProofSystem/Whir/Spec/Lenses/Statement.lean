@@ -18,20 +18,20 @@ def sumcheckLens
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
   (num_vars : ℕ)
-  (num_sumcheck_rounds : (Fin (num_vars + 2))) -- TODO should probably be a tighter bound
+  (num_sumcheck_rounds : (Fin (num_vars + 1)))
 : Statement.Lens
   (OuterStmtIn := Statement domain)
-  (InnerStmtIn := Sumcheck.Spec.StatementRound F (num_vars + 1) 0)
-  (InnerStmtOut := Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
+  (InnerStmtIn := Sumcheck.Spec.StatementRound F num_vars 0)
+  (InnerStmtOut := Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
   (OuterStmtOut :=
     (Statement domain) ×
-    (Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
+    (Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
   )
 where
   toFunA (x : Statement domain) := {
     target := x.target
     challenges := fun x => nomatch x
-    : Sumcheck.Spec.StatementRound F (num_vars + 1) 0
+    : Sumcheck.Spec.StatementRound F num_vars 0
   }
   toFunB x y := ⟨x, y⟩
 

@@ -105,24 +105,152 @@ section Composition
 --hk in oracle statement
 --start by constructing trivial versions of missing parts
 
+open MvPolynomial in
+def preSumcheckPSpec
+  (F : Type) [CommSemiring F]
+  (num_vars : ℕ)
+: ProtocolSpec 1 := ⟨
+  !v[.P_to_V],
+  !v[F⦃≤1⦄[X Fin num_vars]]
+⟩
+
+structure preSumcheckProverState
+  {F : Type} [Field F] [DecidableEq F]
+  {log_order : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (num_vars : ℕ)
+where
+  statement : Statement domain
+  oracleStatement : ∀ idx, OracleStatementPre domain num_vars idx
+  witness : Witness F num_vars
+
+open MvPolynomial in
+def preSumcheckProver
+  {OSpecIdx : Type} (oSpec : OracleSpec OSpecIdx)
+  {F : Type} [Field F] [DecidableEq F]
+  {log_order : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (num_vars : ℕ)
+: OracleProver
+  oSpec
+  (Statement domain)
+  (OracleStatementPre domain num_vars)
+  (Witness F num_vars)
+  (Statement domain)
+  (OracleStatement domain num_vars)
+  (Witness F num_vars)
+  (preSumcheckPSpec F num_vars)
+where
+  PrvState _ := preSumcheckProverState domain num_vars
+  input ins := {
+    statement := ins.1.1
+    oracleStatement := ins.1.2
+    witness := ins.2
+  }
+  sendMessage idx state := match idx with
+    | ⟨0, _⟩ => do
+      return (state.witness.f_hat,state)
+  receiveChallenge idx _state := match idx with
+    | ⟨0, h⟩ => nomatch h
+  output state := do
+    return (
+      (
+        state.statement,
+        fun idx => match idx with
+          | .WeightPolynomial => state.oracleStatement .WeightPolynomial
+          | .CodeWord => state.oracleStatement .CodeWord
+          | .CodeWordPolynomial => state.witness.f_hat
+      ),
+      state.witness
+    )
+
+open MvPolynomial in
+instance
+  {F : Type} [Field F]
+  (num_vars : ℕ)
+  (i : (preSumcheckPSpec F num_vars).MessageIdx)
+: OracleInterface ((preSumcheckPSpec F num_vars).Message i) where
+  Query := Fin num_vars → F
+  toOC.spec := OracleSpec.ofFn fun x ↦ F
+  toOC.impl input := do
+    let data ← read
+    let vals : Fin num_vars → F := input
+    let poly : F⦃≤1⦄[X Fin num_vars] := cast (by {
+      fin_cases i
+      rfl
+    }) data
+    return MvPolynomial.eval vals poly
+
+def preSumcheckVerifier
+  {OSpecIdx : Type} (oSpec : OracleSpec OSpecIdx)
+  {F : Type} [Field F] [DecidableEq F]
+  {log_order : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (num_vars : ℕ)
+: OracleVerifier
+    oSpec
+    (Statement domain)
+    (OracleStatementPre domain num_vars)
+    (Statement domain)
+    (OracleStatement domain num_vars)
+    (preSumcheckPSpec F num_vars)
+where
+  verify statement _challenges := do
+    return statement
+  outputOracle := Sum.inl {
+    embed := ⟨
+      fun idx => match idx with
+        | .WeightPolynomial => Sum.inl .WeightPolynomial
+        | .CodeWord => Sum.inl .CodeWord
+        | .CodeWordPolynomial => Sum.inr ⟨0, rfl⟩,
+      by
+        aesop (add simp Function.Injective)
+    ⟩
+    hEq idx := by
+      fin_cases idx
+      all_goals rfl
+    outputInterface_heq idx := by
+      fin_cases idx <;> rfl
+  }
+
+
+def preSumcheckReduction
+  {ι : Type} (oSpec : OracleSpec ι)
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F]
+  {log_order : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (num_vars : ℕ)
+: OracleReduction
+    oSpec
+    (StmtIn := Statement domain)
+    (OStmtIn := OracleStatementPre domain num_vars)
+    (WitIn := Witness F num_vars)
+    (StmtOut := Statement domain)
+    (OStmtOut := OracleStatement domain num_vars)
+    (WitOut := Witness F num_vars)
+    (preSumcheckPSpec F num_vars)
+where
+  prover := preSumcheckProver oSpec domain num_vars
+  verifier := preSumcheckVerifier oSpec domain num_vars
+
 
 def sumcheckLens
   {F : Type} [Field F] [DecidableEq F]
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
   (num_vars : ℕ)
-  (num_sumcheck_rounds : Fin (num_vars + 2))
+  (num_sumcheck_rounds : Fin (num_vars + 1))
 : OracleContext.ExecutableLens
     (OuterStmtIn := Statement domain)
-    (InnerStmtIn := (Sumcheck.Spec.StatementRound F (num_vars + 1) 0))
-    (InnerStmtOut := (Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds))
+    (InnerStmtIn := (Sumcheck.Spec.StatementRound F num_vars 0))
+    (InnerStmtOut := (Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds))
     (OuterStmtOut :=
       (Statement domain) ×
-      (Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
+      (Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
     )
     (OuterOStmtIn := OracleStatement domain num_vars)
-    (InnerOStmtIn := Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1))
-    (InnerOStmtOut := Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1))
+    (InnerOStmtIn := Sumcheck.Spec.OracleStatement F num_vars (deg := 2))
+    (InnerOStmtOut := Sumcheck.Spec.OracleStatement F num_vars (deg := 2))
     (OuterOStmtOut := OracleStatementMid domain num_vars)
     (OuterWitIn := Witness F num_vars)
     (InnerWitIn := Unit)
@@ -134,67 +262,78 @@ where
   wit := Witness.sumcheckLens
     domain num_vars num_sumcheck_rounds
 
--- def embed
---   {num_vars : ℕ}
---   (F : Type) [Field F]
---   (num_sumcheck_rounds : Fin (num_vars + 2))
--- : Fin 2 ↪ Unit ⊕ (Sumcheck.Spec.pSpec F 1 num_sumcheck_rounds).MessageIdx
--- := sorry
-
 def output
   {ι : Type} (oSpec : OracleSpec ι)
   {F : Type} [Field F] [DecidableEq F] [SampleableType F]
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
   (num_vars : ℕ)
-  (num_sumcheck_rounds : Fin (num_vars + 2))
+  (num_sumcheck_rounds : Fin (num_vars + 1))
   (h : num_sumcheck_rounds > 0)
 : OracleVerifier.LiftContextOutput
   (sumcheckLens domain num_vars num_sumcheck_rounds).stmt
   (
     Sumcheck.Spec.partialOracleVerifier
       (R := F)
-      (deg := 1)
+      (deg := 2)
       (m := 2^log_order)
       ↑domain
-      (n := num_vars + 1)
+      (n := num_vars)
       oSpec
       num_sumcheck_rounds
   )
 where
-  -- Can't do an embedding because it's not an injection
-  outputOracle := Sum.inr {
-    materializeOutput := by
-      intro challenges oracles messages idx
-      match idx with
-        | .WeightPolynomial => exact oracles .WeightPolynomial
-        | .CodeWord => exact oracles .CodeWord
-        | .Sumcheck => exact oracles .WeightPolynomial
-    simulateOutputQuery challenges idx :=
-      OracleComp.queryBind (
-        let ⟨idx, data⟩ := idx
-        match idx with
-        | .WeightPolynomial => (Sum.inr (Sum.inl ⟨.WeightPolynomial, data⟩))
-        | .CodeWord => (Sum.inr (Sum.inl ⟨.CodeWord, data⟩))
-        | .Sumcheck => (Sum.inr (Sum.inl ⟨.WeightPolynomial, data⟩))
-      ) (fun response => do return (cast (by {
-        obtain ⟨idx, data⟩ := idx
-        fin_cases idx <;> rfl
-      }) response))
-    simulateOutputQuery_eq := by
-      intro challenges whirOracles messages query
-      aesop
+  outputOracle := Sum.inl {
+    embed := ⟨
+      fun idx => match idx with
+        | .WeightPolynomial => sorry
+        | .CodeWord => sorry
+        | .CodeWordPolynomial => sorry
+        | .Sumcheck => sorry,
+      by sorry
+    ⟩
+    hEq := _
+    outputInterface_heq := _
   }
 
-  materialize_eq := by
-    intro outerStatement challenges outerOracleStatement messages
-    unfold sumcheckLens OracleStatement.sumcheckExecutableLens OracleVerifier.materializeOutputOracle
-    dsimp
-    funext idx
-    fin_cases idx
-    . rfl
-    . rfl
-    . done
+
+
+
+
+
+  -- Can't do an embedding because it's not an injection
+  -- outputOracle := Sum.inr {
+  --   materializeOutput := by
+  --     intro challenges oracles messages idx
+  --     match idx with
+  --       | .WeightPolynomial => exact oracles .WeightPolynomial
+  --       | .CodeWord => exact oracles .CodeWord
+  --       | .Sumcheck => exact oracles .WeightPolynomial
+  --   simulateOutputQuery challenges idx :=
+  --     OracleComp.queryBind (
+  --       let ⟨idx, data⟩ := idx
+  --       match idx with
+  --       | .WeightPolynomial => (Sum.inr (Sum.inl ⟨.WeightPolynomial, data⟩))
+  --       | .CodeWord => (Sum.inr (Sum.inl ⟨.CodeWord, data⟩))
+  --       | .Sumcheck => (Sum.inr (Sum.inl ⟨.WeightPolynomial, data⟩))
+  --     ) (fun response => do return (cast (by {
+  --       obtain ⟨idx, data⟩ := idx
+  --       fin_cases idx <;> rfl
+  --     }) response))
+  --   simulateOutputQuery_eq := by
+  --     intro challenges whirOracles messages query
+  --     aesop
+  -- }
+
+  -- materialize_eq := by
+  --   intro outerStatement challenges outerOracleStatement messages
+  --   unfold sumcheckLens OracleStatement.sumcheckExecutableLens OracleVerifier.materializeOutputOracle
+  --   dsimp
+  --   funext idx
+  --   fin_cases idx
+  --   . rfl
+  --   . rfl
+  --   . done
 
 
 noncomputable def sumcheckReduction

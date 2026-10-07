@@ -27,15 +27,33 @@ structure Statement
 where
   target : F
 
-abbrev OracleIdx := Fin 2
+abbrev OracleIdxPre := Fin 2
+abbrev OracleIdxPre.WeightPolynomial : OracleIdxPre := 0
+abbrev OracleIdxPre.CodeWord : OracleIdxPre := 1
+
+abbrev OracleIdx := Fin 3
 abbrev OracleIdx.WeightPolynomial : OracleIdx := 0
 abbrev OracleIdx.CodeWord : OracleIdx := 1
+abbrev OracleIdx.CodeWordPolynomial : OracleIdx := 2
 
 --TODO rename
-abbrev OracleIdxMid := Fin 3
+abbrev OracleIdxMid := Fin 4
 abbrev OracleIdxMid.WeightPolynomial : OracleIdxMid := 0
 abbrev OracleIdxMid.CodeWord : OracleIdxMid := 1
-abbrev OracleIdxMid.Sumcheck : OracleIdxMid := 2
+abbrev OracleIdxMid.CodeWordPolynomial : OracleIdxMid := 2
+abbrev OracleIdxMid.SumcheckResult : OracleIdxMid := 3
+
+@[reducible]
+def OracleStatementPre
+  {F : Type} [Field F] [DecidableEq F]
+  {log_order : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (num_vars : ℕ) -- m
+  (idx : OracleIdxPre)
+: Type
+:= match idx with
+  | .WeightPolynomial => F⦃≤1⦄[X Fin (num_vars + 1)] -- TODO generalise to higher degree
+  | .CodeWord => domain.toFinset → F
 
 @[reducible]
 def OracleStatement
@@ -46,9 +64,11 @@ def OracleStatement
   (idx : OracleIdx)
 : Type
 := match idx with
-  | .WeightPolynomial => F⦃≤1⦄[X Fin (num_vars + 1)] -- TODO generalise to higher degree
-  | .CodeWord => domain.toFinset → F
+  | .WeightPolynomial => OracleStatementPre domain num_vars .WeightPolynomial
+  | .CodeWord => OracleStatementPre domain num_vars .CodeWord
+  | .CodeWordPolynomial => F⦃≤1⦄[X Fin num_vars]
 
+open Polynomial in
 @[reducible]
 def OracleStatementMid
   {F : Type} [Field F] [DecidableEq F]
@@ -58,16 +78,23 @@ def OracleStatementMid
   (idx : OracleIdxMid)
 : Type
 := match idx with
+    -- ω_hat
   | .WeightPolynomial => OracleStatement domain num_vars .WeightPolynomial
+    -- f
   | .CodeWord => OracleStatement domain num_vars .CodeWord
-  | .Sumcheck => Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1) ()
+    -- f_hat
+  | .CodeWordPolynomial => OracleStatement domain num_vars .CodeWordPolynomial
+    -- h_k
+  | .SumcheckResult => F⦃≤ 2⦄[X] -- TODO is this the correct degree for h_k
 
 open MvPolynomial in
 structure Witness
   (F : Type) [Field F]
   (num_vars : ℕ)
 where
-  f_hat : F[X Fin num_vars]
+  -- TODO do we actually restrict the degree here?
+  -- Or do we just prove in cases of appropriate degree?
+  f_hat : F⦃≤ 1⦄[X Fin num_vars]
 
 end Definitions
 

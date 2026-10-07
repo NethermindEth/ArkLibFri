@@ -19,12 +19,13 @@ def sumcheckLens
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
   (num_vars : ℕ)
-  (num_sumcheck_rounds : (Fin (num_vars + 2))) -- TODO should probably be a tighter bound
+  (num_sumcheck_rounds : (Fin (num_vars + 1)))
 : Witness.Lens
   (OuterStmtIn := Statement domain × ((idx : OracleIdx) → OracleStatement domain num_vars idx))
   (InnerStmtOut :=
-    Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds ×
-    (∀ i : Unit, Sumcheck.Spec.OracleStatement F (num_vars + 1) (deg := 1) i)
+    Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds ×
+    -- TODO potentially increase degree
+    (∀ i : Unit, Sumcheck.Spec.OracleStatement F num_vars (deg := 2) i)
   )
   (OuterWitIn := Witness F num_vars)
   (InnerWitIn := Unit)
