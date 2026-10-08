@@ -122,7 +122,7 @@ structure preSumcheckProverState
 where
   statement : Statement domain
   oracleStatement : ∀ idx, OracleStatementPre domain num_vars idx
-  witness : Witness F num_vars
+  witness : WitnessPreSumcheck F num_vars
 
 open MvPolynomial in
 def preSumcheckProver
@@ -135,10 +135,10 @@ def preSumcheckProver
   oSpec
   (Statement domain)
   (OracleStatementPre domain num_vars)
-  (Witness F num_vars)
+  (WitnessPreSumcheck F num_vars)
   (Statement domain)
   (OracleStatement domain num_vars)
-  (Witness F num_vars)
+  (WitnessPreSumcheck F num_vars)
   (preSumcheckPSpec F num_vars)
 where
   PrvState _ := preSumcheckProverState domain num_vars
@@ -224,17 +224,17 @@ def preSumcheckReduction
     oSpec
     (StmtIn := Statement domain)
     (OStmtIn := OracleStatementPre domain num_vars)
-    (WitIn := Witness F num_vars)
+    (WitIn := WitnessPreSumcheck F num_vars)
     (StmtOut := Statement domain)
     (OStmtOut := OracleStatement domain num_vars)
-    (WitOut := Witness F num_vars)
+    (WitOut := WitnessPreSumcheck F num_vars)
     (preSumcheckPSpec F num_vars)
 where
   prover := preSumcheckProver oSpec domain num_vars
   verifier := preSumcheckVerifier oSpec domain num_vars
 
 
-def sumcheckLens
+noncomputable def sumcheckLens
   {F : Type} [Field F] [DecidableEq F]
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
@@ -251,11 +251,11 @@ def sumcheckLens
     (OuterOStmtIn := OracleStatement domain num_vars)
     (InnerOStmtIn := Sumcheck.Spec.OracleStatement F num_vars (deg := 2))
     (InnerOStmtOut := Sumcheck.Spec.OracleStatement F num_vars (deg := 2))
-    (OuterOStmtOut := OracleStatementMid domain num_vars)
-    (OuterWitIn := Witness F num_vars)
+    (OuterOStmtOut := OracleStatement domain num_vars)
+    (OuterWitIn := WitnessPreSumcheck F num_vars)
     (InnerWitIn := Unit)
     (InnerWitOut := Unit)
-    (OuterWitOut := Witness F num_vars)
+    (OuterWitOut := WitnessPostSumcheck F num_vars)
 where
   stmt := OracleStatement.sumcheckExecutableLens
     domain num_vars num_sumcheck_rounds
@@ -285,16 +285,26 @@ def output
 where
   outputOracle := Sum.inl {
     embed := ⟨
-      fun idx => match idx with
-        | .WeightPolynomial => sorry
-        | .CodeWord => sorry
-        | .CodeWordPolynomial => sorry
-        | .Sumcheck => sorry,
-      by sorry
+      fun idx => Sum.inl idx,
+      by simp [Function.Injective]
     ⟩
-    hEq := _
-    outputInterface_heq := _
+    hEq := by
+      intro i; fin_cases i <;> rfl
+    outputInterface_heq := by
+      intro i
+      fin_cases i
+      all_goals rfl
   }
+
+  materialize_eq := by
+    intro outerStatement challenges outerOracleStatement messages
+    simp only [OracleVerifier.materializeOutputOracle, ProtocolSpec.MessageIdx,
+      Function.Embedding.coeFn_mk]
+    simp only [sumcheckLens, OracleStatement.sumcheckExecutableLens, PFunctor.FreeM.liftBind_eq,
+      OracleSpec.ofPFunctor_toPFunctor, PFunctor.FreeM.bind_eq_bind, bind_pure_comp]
+    funext idx
+    fin_cases idx
+    all_goals rfl
 
 
 
@@ -342,26 +352,26 @@ noncomputable def sumcheckReduction
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
   (num_vars : ℕ)
-  (num_sumcheck_rounds : Fin (num_vars + 2))
+  (num_sumcheck_rounds : Fin (num_vars + 1))
   (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
 : OracleReduction
     oSpec
     (StmtIn := Statement domain)
     (OStmtIn := OracleStatement domain num_vars)
-    (WitIn := Witness F num_vars)
+    (WitIn := WitnessPreSumcheck F num_vars)
     (StmtOut := (Statement domain) ×
-      (Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
+      (Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
     )
-    (OStmtOut := OracleStatementMid domain num_vars)
-    (Witness F num_vars)
-    (Sumcheck.Spec.pSpec F 1 num_sumcheck_rounds)
+    (OStmtOut := OracleStatement domain num_vars)
+    (WitOut := WitnessPostSumcheck F num_vars)
+    (Sumcheck.Spec.pSpec F (deg := 2) num_sumcheck_rounds)
 := (
   Sumcheck.Spec.partialOracleReduction
     (R := F)
-    (deg := 1)
+    (deg := 2)
     (m := 2^log_order)
     ↑domain
-    (n := num_vars + 1)
+    (n := num_vars)
     oSpec
     num_sumcheck_rounds
   ).liftContext (
@@ -399,7 +409,7 @@ where
   Query := sorry
   toOC := sorry
 
-open MvPolynomial in
+open Polynomial MvPolynomial in
 structure ProverStateRound0
   {F : Type} [Field F]
   {log_order : ℕ}
@@ -409,11 +419,11 @@ structure ProverStateRound0
 where
   α : Fin num_sumcheck_rounds → F
   f_hat : F[X Fin num_vars]
-  h_hat_k : F⦃≤ 1⦄[X Unit]
+  h_hat_k : F⦃≤ 2⦄[X]
 
-open MvPolynomial in
+open Polynomial MvPolynomial in
 structure ProverStateRound1
-  {F : Type} [Field F]
+  {F : Type} [Field F] [DecidableEq F]
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
   (num_sumcheck_rounds : ℕ)
@@ -421,12 +431,12 @@ structure ProverStateRound1
 where
   α : Fin num_sumcheck_rounds → F
   f_hat : F[X Fin num_vars]
-  g : ↥(domain.subdomain 1) → F
-  h_hat_k : F⦃≤ 1⦄[X Unit]
+  g : (domain.subdomain 1) → F
+  h_hat_k : F⦃≤ 2⦄[X]
 
-open MvPolynomial in
+open Polynomial MvPolynomial in
 structure ProverStateRound2
-  {F : Type} [Field F]
+  {F : Type} [Field F] [DecidableEq F]
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
   (num_sumcheck_rounds : ℕ)
@@ -434,11 +444,11 @@ structure ProverStateRound2
 where
   α : Fin num_sumcheck_rounds → F
   f_hat : F[X Fin num_vars]
-  g : ↥(domain.subdomain 1) → F
-  h_hat_k : F⦃≤ 1⦄[X Unit]
+  g : (domain.subdomain 1) → F
+  h_hat_k : F⦃≤ 2⦄[X]
   z0 : List F
 
-open MvPolynomial in
+open Polynomial MvPolynomial in
 structure ProverStateRound3
   {F : Type} [Field F]
   {log_order : ℕ}
@@ -448,10 +458,10 @@ structure ProverStateRound3
 where
   α : Fin num_sumcheck_rounds → F
   f_hat : F[X Fin num_vars]
-  h_hat_k : F⦃≤ 1⦄[X Unit]
+  h_hat_k : F⦃≤ 2⦄[X]
   y : F
 
-open MvPolynomial in
+open Polynomial MvPolynomial in
 structure ProverStateRound4
   {F : Type} [Field F]
   {log_order : ℕ}
@@ -461,7 +471,7 @@ structure ProverStateRound4
 where
   α : Fin num_sumcheck_rounds → F
   f_hat : F[X Fin num_vars]
-  h_hat_k : F⦃≤ 1⦄[X Fin (num_vars + 1)]
+  h_hat_k : F⦃≤ 2⦄[X]
   y : F
   γ : F
 
@@ -479,11 +489,11 @@ def restProver
   OracleProver
     oSpec
     (Statement domain × Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
-    (OracleStatementMid domain num_vars)
-    (Witness F num_vars)
+    (OracleStatement domain num_vars)
+    (WitnessPostSumcheck F num_vars)
     (Statement (Domain.CosetFftDomain.subdomain domain 1))
     (OracleStatement (Domain.CosetFftDomain.subdomain domain 1) num_vars)
-    (Witness F num_vars) -- TODO does num vars change here
+    (WitnessPostSumcheck F num_vars) -- TODO does num vars change here
     (restPSpec domain num_sumcheck_rounds num_queries)
 where
   PrvState (round : Fin 5) := match round with
@@ -604,7 +614,7 @@ def restVerifier
   OracleVerifier
     oSpec
     (Statement domain × Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
-    (OracleStatementMid domain num_vars)
+    (OracleStatement domain num_vars)
     (Statement (Domain.CosetFftDomain.subdomain domain 1))
     (OracleStatement (Domain.CosetFftDomain.subdomain domain 1) num_vars)
     (restPSpec domain num_sumcheck_rounds num_queries)
@@ -626,8 +636,8 @@ def restReduction
     (StmtIn := (Statement domain) ×
       (Sumcheck.Spec.StatementRound F (num_vars + 1) num_sumcheck_rounds)
     )
-    (OStmtIn := (OracleStatementMid domain num_vars))
-    (WitIn := Witness)
+    (OStmtIn := (OracleStatement domain num_vars))
+    (WitIn := WitnessPostSumcheck F num_vars)
     (StmtOut := (Statement (domain.subdomain 1)))
     --TODO does num_vars remain the same?
     (OStmtOut := (OracleStatement (domain.subdomain 1) num_vars))

@@ -69,45 +69,33 @@ instance oracleInterface
       let poly : F⦃≤1⦄[X Fin num_vars] := data
       return MvPolynomial.eval vals poly
 
-open Polynomial in
-instance oracleInterfaceMid
-  {F : Type} [Field F] [DecidableEq F]
-  {log_order : ℕ}
-  (domain : Domain.SmoothCosetFftDomain log_order F)
-  (num_vars : ℕ)
-  (idx : OracleIdxMid)
-: OracleInterface (OracleStatementMid domain num_vars idx) where
-  Query := match idx with
-    | .WeightPolynomial => (oracleInterface domain num_vars .WeightPolynomial).Query
-    | .CodeWord => (oracleInterface domain num_vars .CodeWord).Query
-    | .CodeWordPolynomial => (oracleInterface domain num_vars .CodeWordPolynomial).Query
-    | .SumcheckResult => F
-  toOC.spec := match idx with
-    | .WeightPolynomial => (oracleInterface domain num_vars .WeightPolynomial).toOC.spec
-    | .CodeWord => (oracleInterface domain num_vars .CodeWord).toOC.spec
-    | .CodeWordPolynomial => (oracleInterface domain num_vars .CodeWordPolynomial).toOC.spec
-    | .SumcheckResult => F →ₒ F
-  toOC.impl input := match idx with
-    | .WeightPolynomial => (oracleInterface domain num_vars .WeightPolynomial).toOC.impl input
-    | .CodeWord => (oracleInterface domain num_vars .CodeWord).toOC.impl input
-    | .CodeWordPolynomial => (oracleInterface domain num_vars .CodeWordPolynomial).toOC.impl input
-    | .SumcheckResult => do
-      let data ← read
-      let vals : F := input
-      let poly : F⦃≤2⦄[X] := data
-      return Polynomial.eval vals poly
-
-open MvPolynomial in
-def composePolynomials
-  {F : Type} [Field F]
-  {num_vars : ℕ}
-  (f : F⦃≤ 1⦄[X Fin num_vars])
-  (w : F⦃≤ 1⦄[X Fin (num_vars + 1)])
-:
-  F⦃≤2⦄[X Fin num_vars]
-:=
-  --λ ..b => w(f(..b), ..b)
-  sorry
+-- open Polynomial in
+-- instance oracleInterfaceMid
+--   {F : Type} [Field F] [DecidableEq F]
+--   {log_order : ℕ}
+--   (domain : Domain.SmoothCosetFftDomain log_order F)
+--   (num_vars : ℕ)
+--   (idx : OracleIdxMid)
+-- : OracleInterface (OracleStatementMid domain num_vars idx) where
+--   Query := match idx with
+--     | .WeightPolynomial => (oracleInterface domain num_vars .WeightPolynomial).Query
+--     | .CodeWord => (oracleInterface domain num_vars .CodeWord).Query
+--     | .CodeWordPolynomial => (oracleInterface domain num_vars .CodeWordPolynomial).Query
+--     | .SumcheckResult => F
+--   toOC.spec := match idx with
+--     | .WeightPolynomial => (oracleInterface domain num_vars .WeightPolynomial).toOC.spec
+--     | .CodeWord => (oracleInterface domain num_vars .CodeWord).toOC.spec
+--     | .CodeWordPolynomial => (oracleInterface domain num_vars .CodeWordPolynomial).toOC.spec
+--     | .SumcheckResult => F →ₒ F
+--   toOC.impl input := match idx with
+--     | .WeightPolynomial => (oracleInterface domain num_vars .WeightPolynomial).toOC.impl input
+--     | .CodeWord => (oracleInterface domain num_vars .CodeWord).toOC.impl input
+--     | .CodeWordPolynomial => (oracleInterface domain num_vars .CodeWordPolynomial).toOC.impl input
+--     | .SumcheckResult => do
+--       let data ← read
+--       let vals : F := input
+--       let poly : F⦃≤2⦄[X] := data
+--       return Polynomial.eval vals poly
 
 
 -- def sumcheckLens
@@ -199,7 +187,7 @@ def sumcheckExecutableLens
   (OuterOStmtIn := OracleStatement domain num_vars)
   (InnerOStmtIn := Sumcheck.Spec.OracleStatement F num_vars (deg := 2))
   (InnerOStmtOut := Sumcheck.Spec.OracleStatement F num_vars (deg := 2))
-  (OuterOStmtOut := OracleStatementMid domain num_vars)
+  (OuterOStmtOut := OracleStatement domain num_vars)
 where
   -- Create the sumcheck starting statement from the whir statement
   projStmt whirStatement := {
@@ -281,9 +269,6 @@ where
     | .WeightPolynomial => whirOracle .WeightPolynomial
     | .CodeWord => whirOracle .CodeWord
     | .CodeWordPolynomial => whirOracle .CodeWordPolynomial
-    | .SumcheckResult => by
-
-      done
 
   simulateOutput query :=
     let ⟨queryIdx, queryData⟩ := query
@@ -291,7 +276,6 @@ where
       | .WeightPolynomial => Sum.inl (Sigma.mk .WeightPolynomial queryData)
       | .CodeWord => Sum.inl (Sigma.mk .CodeWord queryData)
       | .CodeWordPolynomial => Sum.inl (Sigma.mk .CodeWordPolynomial queryData)
-      | .Sumcheck => Sum.inr (Sigma.mk () queryData)
     OracleComp.queryBind bindQuery (fun x => do
       return (cast (by {
         subst bindQuery

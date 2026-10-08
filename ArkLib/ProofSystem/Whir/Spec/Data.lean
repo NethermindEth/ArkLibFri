@@ -16,6 +16,19 @@ public section Public
 
 namespace Whir.Spec
 
+--TODO please
+open MvPolynomial in
+def composePolynomials
+  {F : Type} [Field F]
+  {num_vars : ℕ}
+  (f : F⦃≤ 1⦄[X Fin num_vars])
+  (w : F⦃≤ 1⦄[X Fin (num_vars + 1)])
+:
+  F⦃≤2⦄[X Fin num_vars]
+:=
+  --λ ..b => w(f(..b), ..b)
+  sorry
+
 section Definitions
 
 open MvPolynomial
@@ -68,33 +81,41 @@ def OracleStatement
   | .CodeWord => OracleStatementPre domain num_vars .CodeWord
   | .CodeWordPolynomial => F⦃≤1⦄[X Fin num_vars]
 
-open Polynomial in
-@[reducible]
-def OracleStatementMid
-  {F : Type} [Field F] [DecidableEq F]
-  {log_order : ℕ}
-  (domain : Domain.SmoothCosetFftDomain log_order F)
-  (num_vars : ℕ) -- m
-  (idx : OracleIdxMid)
-: Type
-:= match idx with
-    -- ω_hat
-  | .WeightPolynomial => OracleStatement domain num_vars .WeightPolynomial
-    -- f
-  | .CodeWord => OracleStatement domain num_vars .CodeWord
-    -- f_hat
-  | .CodeWordPolynomial => OracleStatement domain num_vars .CodeWordPolynomial
-    -- h_k
-  | .SumcheckResult => F⦃≤ 2⦄[X] -- TODO is this the correct degree for h_k
+-- open Polynomial in
+-- @[reducible]
+-- def OracleStatementMid
+--   {F : Type} [Field F] [DecidableEq F]
+--   {log_order : ℕ}
+--   (domain : Domain.SmoothCosetFftDomain log_order F)
+--   (num_vars : ℕ) -- m
+--   (idx : OracleIdxMid)
+-- : Type
+-- := match idx with
+--     -- ω_hat
+--   | .WeightPolynomial => OracleStatement domain num_vars .WeightPolynomial
+--     -- f
+--   | .CodeWord => OracleStatement domain num_vars .CodeWord
+--     -- f_hat
+--   | .CodeWordPolynomial => OracleStatement domain num_vars .CodeWordPolynomial
+--     -- h_k
+--   | .SumcheckResult => F⦃≤ 2⦄[X] -- TODO is this the correct degree for h_k
 
 open MvPolynomial in
-structure Witness
+structure WitnessPreSumcheck
   (F : Type) [Field F]
   (num_vars : ℕ)
 where
   -- TODO do we actually restrict the degree here?
   -- Or do we just prove in cases of appropriate degree?
   f_hat : F⦃≤ 1⦄[X Fin num_vars]
+
+open Polynomial MvPolynomial in
+structure WitnessPostSumcheck
+  (F : Type) [Field F]
+  (num_vars : ℕ)
+where
+  f_hat : F⦃≤ 1⦄[X Fin num_vars]
+  h_k_hat : F⦃≤ 2⦄[X]
 
 end Definitions
 
