@@ -25,7 +25,7 @@ noncomputable def sumcheckLens
   (InnerStmtOut :=
     Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds ×
     -- TODO potentially increase degree
-    (∀ i : Unit, Sumcheck.Spec.OracleStatement F num_vars (deg := 2) i)
+    (∀ i, Sumcheck.Spec.OracleStatementRound F num_vars (deg := 2) num_sumcheck_rounds i)
   )
   (OuterWitIn := WitnessPreSumcheck F num_vars)
   (InnerWitIn := Unit)

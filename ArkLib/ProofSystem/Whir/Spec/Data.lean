@@ -81,24 +81,24 @@ def OracleStatement
   | .CodeWord => OracleStatementPre domain num_vars .CodeWord
   | .CodeWordPolynomial => F⦃≤1⦄[X Fin num_vars]
 
--- open Polynomial in
--- @[reducible]
--- def OracleStatementMid
---   {F : Type} [Field F] [DecidableEq F]
---   {log_order : ℕ}
---   (domain : Domain.SmoothCosetFftDomain log_order F)
---   (num_vars : ℕ) -- m
---   (idx : OracleIdxMid)
--- : Type
--- := match idx with
---     -- ω_hat
---   | .WeightPolynomial => OracleStatement domain num_vars .WeightPolynomial
---     -- f
---   | .CodeWord => OracleStatement domain num_vars .CodeWord
---     -- f_hat
---   | .CodeWordPolynomial => OracleStatement domain num_vars .CodeWordPolynomial
---     -- h_k
---   | .SumcheckResult => F⦃≤ 2⦄[X] -- TODO is this the correct degree for h_k
+open Polynomial in
+@[reducible]
+def OracleStatementMid
+  {F : Type} [Field F] [DecidableEq F]
+  {log_order : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (num_vars : ℕ) -- m
+  (idx : OracleIdxMid)
+: Type
+:= match idx with
+    -- ω_hat
+  | .WeightPolynomial => OracleStatement domain num_vars .WeightPolynomial
+    -- f
+  | .CodeWord => OracleStatement domain num_vars .CodeWord
+    -- f_hat
+  | .CodeWordPolynomial => OracleStatement domain num_vars .CodeWordPolynomial
+    -- h_k
+  | .SumcheckResult => F⦃≤ 2⦄[X] -- TODO is this the correct degree for h_k
 
 open MvPolynomial in
 structure WitnessPreSumcheck
@@ -115,7 +115,7 @@ structure WitnessPostSumcheck
   (num_vars : ℕ)
 where
   f_hat : F⦃≤ 1⦄[X Fin num_vars]
-  h_k_hat : F⦃≤ 2⦄[X]
+  h_k_hat : F⦃≤ 2⦄[X] -- this is now in both?
 
 end Definitions
 
