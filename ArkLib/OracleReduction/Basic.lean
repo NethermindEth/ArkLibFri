@@ -375,6 +375,26 @@ def materializeOutputOracle
       | Sum.inl j => (output.hEq i ▸ h ▸ oStmt j : OStmtOut i)
       | Sum.inr j => (output.hEq i ▸ h ▸ messages j : OStmtOut i)
 
+/-- An embedded output oracle that `embed` sends to a prover message carries exactly that
+message. The equality is heterogeneous because `OStmtOut i` and `pSpec.Message j` are equal only
+propositionally, via `output.hEq`. -/
+theorem materializeOutputOracle_heq_messages
+    (output : OracleOutputEmbedding OStmtIn pSpec.Message OStmtOut)
+    (challenges : pSpec.Challenges) (oStmt : ∀ i, OStmtIn i) (messages : pSpec.Messages)
+    (i : ιₛₒ) (j : pSpec.MessageIdx) (hij : output.embed i = Sum.inr j) :
+    HEq (materializeOutputOracle (oSpec := oSpec) (Sum.inl output) challenges oStmt messages i)
+      (messages j) := by
+  unfold materializeOutputOracle
+  dsimp only
+  split
+  · rename_i _ h
+    rw [hij] at h
+    exact absurd h (by simp)
+  · rename_i _ h
+    rw [hij] at h
+    cases (Sum.inr.inj h).symm
+    exact eqRec_heq_iff.mpr (eqRec_heq_iff.mpr HEq.rfl)
+
 /-- Transport a query across explicit heterogeneous interface coherence. -/
 def queryAlongHEq {A B : Type} (OA : OracleInterface A) (OB : OracleInterface B)
     (hType : A = B) (h : HEq OA OB) {ι' : Type} {spec : OracleSpec ι'}

@@ -234,6 +234,39 @@ where
   verifier := preSumcheckVerifier oSpec domain num_vars
 
 
+universe v in
+/-- Heterogeneous congruence for applying heterogeneously equal functions to proof arguments.
+Both arguments are proofs, so they are automatically heterogeneously equal. -/
+theorem heq_app_prop {p q : Prop} {γ δ : Sort v} (hγδ : γ = δ)
+    {f : p → γ} {g : q → δ} (hf : HEq f g) (hp : p) (hq : q) : HEq (f hp) (g hq) := by
+  subst hγδ
+  have hpq : p = q := propext ⟨fun _ => hq, fun _ => hp⟩
+  subst hpq
+  have hfg : f = g := eq_of_heq hf
+  subst hfg
+  exact heq_of_eq (congrArg f (proof_irrel hp hq))
+
+/-- The final sum-check round, as an index into the `num_sumcheck_rounds` rounds. -/
+def lastSumcheckRound
+  {num_vars : ℕ}
+  (num_sumcheck_rounds : Fin (num_vars + 1))
+  (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
+: Fin num_sumcheck_rounds.val :=
+  ⟨num_sumcheck_rounds.val - 1, by have := Fin.lt_def.mp h_num_sumcheck_rounds; omega⟩
+
+/-- The prover message carrying `h_k`, the response polynomial of the final sum-check round.
+Since each sum-check round contributes one prover message followed by one challenge, this sits
+at flat index `2 * (num_sumcheck_rounds - 1)` of the composed sum-check protocol. -/
+def sumcheckResultIdx
+  (F : Type) [Field F]
+  {num_vars : ℕ}
+  (num_sumcheck_rounds : Fin (num_vars + 1))
+  (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
+: (Sumcheck.Spec.pSpec F (deg := 2) num_sumcheck_rounds).MessageIdx :=
+  ProtocolSpec.sigmaMessageIdxToSeqCompose
+    (lastSumcheckRound num_sumcheck_rounds h_num_sumcheck_rounds)
+    (⟨0, rfl⟩ : (Sumcheck.Spec.SingleRound.pSpec F 2).MessageIdx)
+
 noncomputable def sumcheckLens
   {F : Type} [Field F] [DecidableEq F]
   {log_order : ℕ}
@@ -290,15 +323,8 @@ where
         | .WeightPolynomial => Sum.inl .WeightPolynomial
         | .CodeWord => Sum.inl .CodeWord
         | .CodeWordPolynomial => Sum.inl .CodeWordPolynomial
-        | .SumcheckResult => Sum.inr ⟨
-          ⟨2*(num_sumcheck_rounds.val - 1), by simp [Fin.vsum_eq_univ_sum]; grind⟩,
-          by
-            set x := num_sumcheck_rounds.val - 1 with eq
-            have : num_sumcheck_rounds.val = x + 1 := by grind
-            rw! [←eq, this]
-            simp
-            sorry -- I believe this is correct
-        ⟩,
+        | .SumcheckResult =>
+            Sum.inr (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds),
       by
         simp [Function.Injective]
         intro a1 a2
@@ -306,29 +332,47 @@ where
         <;> intro h_eq
         all_goals try rfl
         all_goals exfalso; grind
-
     ⟩
     hEq := by
       intro i; fin_cases i <;> try rfl
-      simp
-      sorry -- same proof as above
+      -- The sum-check result oracle is the message at the head of the final round.
+      change OracleStatementMid domain num_vars OracleIdxMid.SumcheckResult
+        = (Sumcheck.Spec.pSpec F (deg := 2) num_sumcheck_rounds).Message
+            (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)
+      exact (Fin.vflatten_embedSum
+        (fun (_ : Fin num_sumcheck_rounds.val) => (Sumcheck.Spec.SingleRound.pSpec F 2).Type)
+        (lastSumcheckRound num_sumcheck_rounds h_num_sumcheck_rounds) 0).symm
     outputInterface_heq := by
       intro i
       fin_cases i
       all_goals try rfl
-      sorry -- fundamentally the same thing going on here
+      change HEq (OracleStatement.oracleInterfaceMid domain num_vars OracleIdxMid.SumcheckResult)
+        (ProtocolSpec.instOracleInterfaceMessageSeqCompose
+          (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
+      unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose sumcheckResultIdx
+        ProtocolSpec.sigmaMessageIdxToSeqCompose
+      dsimp only
+      rw [Fin.fflatten₂_embedSum]
+      refine HEq.symm (heq_app_prop ?_ (cast_heq _ _) _ rfl)
+      exact congrArg OracleInterface
+        (Fin.vflatten_embedSum
+          (fun (_ : Fin num_sumcheck_rounds.val) => (Sumcheck.Spec.SingleRound.pSpec F 2).Type)
+          (lastSumcheckRound num_sumcheck_rounds h_num_sumcheck_rounds) 0)
   }
 
-  materialize_eq :=
-    sorry
-    -- intro outerStatement challenges outerOracleStatement messages
-    -- simp only [OracleVerifier.materializeOutputOracle, ProtocolSpec.MessageIdx,
-    --   Function.Embedding.coeFn_mk]
-    -- simp only [sumcheckLens, OracleStatement.sumcheckExecutableLens, PFunctor.FreeM.liftBind_eq,
-    --   OracleSpec.ofPFunctor_toPFunctor, PFunctor.FreeM.bind_eq_bind, bind_pure_comp]
-    -- funext idx
-    -- fin_cases idx
-    -- all_goals rfl
+  materialize_eq := by
+    intro _outerStatement challenges outerOracleStatement messages
+    funext idx
+    fin_cases idx
+    -- The three oracles carried over from the input statement are passed through unchanged.
+    all_goals try rfl
+    -- The sum-check result oracle is the final round's prover message on both sides.
+    refine eq_of_heq (HEq.trans
+      (b := messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)) ?_ ?_)
+    · exact OracleVerifier.materializeOutputOracle_heq_messages _ _ _ _ _ _ rfl
+    · exact HEq.symm (Sumcheck.Spec.partialOracleVerifier_materializeOutput_responsePoly_last
+        F 2 _ num_vars oSpec num_sumcheck_rounds (Fin.lt_def.mp h_num_sumcheck_rounds)
+        challenges _ messages)
 
 
 

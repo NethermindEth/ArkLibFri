@@ -222,6 +222,65 @@ lemma seqCompose_succ {m : ℕ}
         (Oₛ := fun i => Oₛ (Fin.succ i)) (Oₘ := fun i => Oₘ (Fin.succ i))
           (fun i => V (Fin.succ i))) := rfl
 
+/-- Reading a round-local value out of the materialized output of a sequential composition.
+
+If every component verifier exposes, in its output oracles, the message it indexes with `msg`
+(hypothesis `hf`, phrased via the read-out `f`), then the composed verifier's materialized output
+exposes the *last* component's message. This is the fact needed to relate an output-oracle
+embedding that points at a late prover message to the composed verifier's semantics. -/
+theorem seqCompose_materializeOutput_last :
+    ∀ {m : ℕ}
+      {Stmt : Fin (m + 2) → Type}
+      {ιₛ : Fin (m + 2) → Type} {OStmt : (i : Fin (m + 2)) → ιₛ i → Type}
+      (Oₛ : ∀ i, ∀ j, OracleInterface (OStmt i j))
+      {arity : Fin (m + 1) → ℕ} {pSpec : ∀ i, ProtocolSpec (arity i)}
+      (Oₘ : ∀ i, ∀ j, OracleInterface ((pSpec i).Message j))
+      (V : (i : Fin (m + 1)) → OracleVerifier oSpec (Stmt i.castSucc) (OStmt i.castSucc)
+        (Stmt i.succ) (OStmt i.succ) (pSpec i))
+      {T : Type} (f : (i : Fin (m + 1)) → (∀ j, OStmt i.succ j) → T)
+      (msg : (i : Fin (m + 1)) → (pSpec i).MessageIdx)
+      (_hf : ∀ (i : Fin (m + 1)) ch oS ms,
+        HEq (f i ((V i).materializeOutput (Oₛᵢ := Oₛ i.castSucc) (Oₘ := Oₘ i)
+          (Oₛₒ := Oₛ i.succ) ch oS ms)) (ms (msg i)))
+      (challenges : (ProtocolSpec.seqCompose pSpec).Challenges)
+      (oStmt : ∀ j, OStmt 0 j)
+      (messages : (ProtocolSpec.seqCompose pSpec).Messages),
+      HEq (f (Fin.last m)
+            ((seqCompose (Oₛ := Oₛ) (Oₘ := Oₘ) Stmt OStmt V).materializeOutput
+              challenges oStmt messages))
+        (messages (sigmaMessageIdxToSeqCompose (Fin.last m) (msg (Fin.last m)))) := by
+  intro m
+  induction m with
+  | zero =>
+    intro Stmt ιₛ OStmt Oₛ arity pSpec Oₘ V T f msg hf challenges oStmt messages
+    have h1 : (seqCompose (Oₛ := Oₛ) (Oₘ := Oₘ) Stmt OStmt V).materializeOutput
+          challenges oStmt messages
+        = (V 0).materializeOutput (Oₛᵢ := Oₛ 0) (Oₘ := Oₘ 0) (Oₛₒ := Oₛ 1)
+            (challenges.fst : (pSpec 0).Challenges) oStmt
+            (messages.fst : (pSpec 0).Messages) := rfl
+    rw [h1]
+    exact HEq.trans (hf 0 _ _ _) (Messages.fst_heq messages (msg 0))
+  | succ m ih =>
+    intro Stmt ιₛ OStmt Oₛ arity pSpec Oₘ V T f msg hf challenges oStmt messages
+    change (pSpec 0 ++ₚ ProtocolSpec.seqCompose (fun i => pSpec i.succ)).Challenges at challenges
+    change (pSpec 0 ++ₚ ProtocolSpec.seqCompose (fun i => pSpec i.succ)).Messages at messages
+    have h1 : (seqCompose (Oₛ := Oₛ) (Oₘ := Oₘ) Stmt OStmt V).materializeOutput
+          challenges oStmt messages
+        = (seqCompose (Oₛ := fun i => Oₛ i.succ) (Oₘ := fun i => Oₘ i.succ)
+              (Stmt ∘ Fin.succ) (fun i => OStmt i.succ) (fun i => V i.succ)).materializeOutput
+            challenges.snd
+            ((V 0).materializeOutput (Oₛᵢ := Oₛ 0) (Oₘ := Oₘ 0) (Oₛₒ := Oₛ 1)
+              challenges.fst oStmt messages.fst)
+            messages.snd := rfl
+    rw [h1]
+    refine HEq.trans
+      (ih (Stmt := Stmt ∘ Fin.succ) (ιₛ := fun i => ιₛ i.succ) (OStmt := fun i => OStmt i.succ)
+        (arity := fun i => arity i.succ) (pSpec := fun i => pSpec i.succ)
+        (fun i => Oₛ i.succ) (fun i => Oₘ i.succ) (fun i => V i.succ)
+        (fun i => f i.succ) (fun i => msg i.succ)
+        (fun i ch oS ms => hf i.succ ch oS ms) _ _ _) ?_
+    exact Messages.snd_heq messages _
+
 @[simp]
 lemma seqCompose_toVerifier {m : ℕ}
     (Stmt : Fin (m + 1) → Type)

@@ -311,6 +311,18 @@ def Messages.snd (messages : (pSpec₁ ++ₚ pSpec₂).Messages) : pSpec₂.Mess
     simpa [MessageIdx.inr, ProtocolSpec.append, Fin.vappend_eq_append,
       Fin.append_right] using messages (MessageIdx.inr i)
 
+/-- `Messages.fst` transports along `MessageIdx.inl`; the two agree up to the type transport. -/
+theorem Messages.fst_heq (messages : (pSpec₁ ++ₚ pSpec₂).Messages) (i : pSpec₁.MessageIdx) :
+    HEq (Messages.fst messages i) (messages (MessageIdx.inl i)) := by
+  unfold Messages.fst
+  exact cast_heq _ _
+
+/-- `Messages.snd` transports along `MessageIdx.inr`; the two agree up to the type transport. -/
+theorem Messages.snd_heq (messages : (pSpec₁ ++ₚ pSpec₂).Messages) (i : pSpec₂.MessageIdx) :
+    HEq (Messages.snd messages i) (messages (MessageIdx.inr i)) := by
+  unfold Messages.snd
+  exact cast_heq _ _
+
 @[simps!]
 def ChallengeIdx.sumEquiv :
     ChallengeIdx pSpec₁ ⊕ ChallengeIdx pSpec₂ ≃ ChallengeIdx (pSpec₁ ++ₚ pSpec₂) where

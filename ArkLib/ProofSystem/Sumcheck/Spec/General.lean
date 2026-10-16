@@ -196,6 +196,40 @@ def partialOracleVerifier
       SingleRound.oracleVerifier R n deg D oSpec (i.castLE (by grind))
     )
 
+/-- The last response polynomial materialized by the partial sum-check oracle verifier is exactly
+the prover message sent at the head of the final round. -/
+theorem partialOracleVerifier_materializeOutput_responsePoly_last
+    (num_rounds : Fin (n + 1)) (h : 0 < num_rounds.val)
+    (challenges : (pSpec R deg num_rounds).Challenges)
+    (oStmt : ∀ j, OracleStatementRound R n deg 0 j)
+    (messages : (pSpec R deg num_rounds).Messages) :
+    HEq (((partialOracleVerifier R deg D n oSpec num_rounds).materializeOutput
+            challenges oStmt messages) OracleIdx.responsePoly
+          ⟨num_rounds.val - 1, by omega⟩)
+      (messages (sigmaMessageIdxToSeqCompose
+        (⟨num_rounds.val - 1, by omega⟩ : Fin num_rounds.val)
+        (⟨0, rfl⟩ : (SingleRound.pSpec R deg).MessageIdx))) := by
+  obtain ⟨num_rounds, hlt⟩ := num_rounds
+  cases num_rounds with
+  | zero => exact absurd h (lt_irrefl 0)
+  | succ k =>
+    exact OracleVerifier.seqCompose_materializeOutput_last
+      (Stmt := fun (i : Fin (k + 2)) => StatementRound R n (i.castLE (by omega)))
+      (ιₛ := fun _ => OracleIdx)
+      (OStmt := fun (i : Fin (k + 2)) j => OracleStatementRound R n deg (i.castLE (by omega)) j)
+      _ _
+      (V := fun (i : Fin (k + 1)) =>
+        SingleRound.oracleVerifier R n deg D oSpec (i.castLE (by omega)))
+      (T := R⦃≤ deg⦄[X])
+      (f := fun i state => state OracleIdx.responsePoly (Fin.last i.val))
+      (msg := fun _ => (⟨0, rfl⟩ : (SingleRound.pSpec R deg).MessageIdx))
+      (fun i ch oS ms => by
+        have hsnoc : (SingleRound.oracleVerifier R n deg D oSpec
+              (Fin.castLE (by omega) i)).materializeOutput ch oS ms OracleIdx.responsePoly
+            = Fin.snoc (oS OracleIdx.responsePoly) (ms ⟨0, rfl⟩) := rfl
+        rw [hsnoc, Fin.snoc_last])
+      challenges oStmt messages
+
 /-- The oracle verifier for the (full) sum-check protocol -/
 @[reducible]
 def oracleVerifier : OracleVerifier oSpec (StatementRound R n 0) (OracleStatementRound R n deg 0)
