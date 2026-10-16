@@ -724,6 +724,7 @@ where
     }
     return ((statement, oracleStatement), witness)
 
+open Polynomial MvPolynomial in
 def restVerifier
   {OSpecIdx : Type} (oSpec : OracleSpec OSpecIdx)
   {F : Type} [Field F] [DecidableEq F] [SampleableType F]
@@ -731,6 +732,7 @@ def restVerifier
   (domain : Domain.SmoothCosetFftDomain log_order F)
   (num_vars : ℕ)
   (num_sumcheck_rounds : Fin (num_vars + 1))
+  (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
   (num_queries : ℕ)
 :
   OracleVerifier
@@ -742,14 +744,78 @@ def restVerifier
     (restPSpec domain num_sumcheck_rounds num_queries)
 where
   verify statement challenges := do
-    let newTarget : F := _
+    let sumcheck_statement := statement.2
+    let alpha_k : F := sumcheck_statement.challenges ⟨num_sumcheck_rounds - 1, by grind⟩
+    let h_hat_k_of_alpha_k : F ← OracleComp.queryBind
+      (Sum.inr (Sum.inl (Sigma.mk OracleIdxMid.SumcheckResult alpha_k)))
+      (fun x => do return (.some x))
+
+    let γ : F := (challenges ⟨3, rfl⟩).2
+
+    let y0 : F ← OracleComp.queryBind
+      (Sum.inr (Sum.inr (Sigma.mk ⟨2, rfl⟩ ())))
+      (fun x => do return (.some x))
+
+    let y_one_plus : Fin num_queries → F := _ -- folds
+
+    let ys : Fin (num_queries + 1) → F := Fin.cases y0 y_one_plus
+    let gamma_y_sum : F := ∑ i, γ^(i.val+1) * (ys i)
+    let newTarget : F := h_hat_k_of_alpha_k + gamma_y_sum
     return {
       target := newTarget
     }
-  outputOracle := Sum.inl {
-    embed := _
-    hEq := _
-    outputInterface_heq := _
+  outputOracle := Sum.inr {
+    materializeOutput challenges oracles messages oracleIdx := match oracleIdx with
+      -- TODO make polynomial rather than function
+      | .WeightPolynomial => fun (args : Fin (num_vars - num_sumcheck_rounds + 1) → F) =>
+        let Z : F := args ⟨0, by grind⟩
+        let X : Fin (num_vars - num_sumcheck_rounds) → F := fun i => args i.succ
+
+        let prev : F⦃≤1⦄[X Fin (num_vars + 1)] := oracles .WeightPolynomial
+        let αs : Fin num_sumcheck_rounds → F := _ -- in the statement, not accessible here
+        let αs_append_X : Fin num_vars → F := fun idx => (Fin.append αs X) (idx.cast (by grind))
+        let prev_eval : F := MvPolynomial.eval (Fin.cases Z αs_append_X) prev
+
+        let γ : F := (challenges ⟨3, rfl⟩).2
+        let z0 : F := (challenges ⟨1, rfl⟩) -- note that these are the non-bold zs
+        let z_one_plus : Fin (num_queries) → F := ((challenges ⟨3, rfl⟩).1 ·)
+        let zs : Fin (num_queries + 1) → F := Fin.cases z0 z_one_plus
+
+        let new_num_vars : ℕ:= num_vars - num_sumcheck_rounds
+        let bold_zs : Fin (num_queries + 1) → Fin (new_num_vars) → F := fun x y =>
+          (zs x)^(2^y.val)
+        let eq := fun (b z : Fin new_num_vars → F) =>
+          ∏ (i : Fin new_num_vars), ((b i * z i) + (1 - b i)*(1 - z i))
+        let sum := ∑ (i : Fin (num_queries + 1)), γ^(i.val + 1)*eq (bold_zs i) X
+        prev_eval + Z*sum
+      | .CodeWord => messages ⟨0, rfl⟩
+    simulateOutputQuery challenges query := match query with
+      | ⟨.WeightPolynomial, args⟩ => do
+        let Z : F := args ⟨0, by grind⟩
+        let X : Fin (num_vars - num_sumcheck_rounds) → F := fun i => args i.succ
+
+        let αs : Fin num_sumcheck_rounds → F := _ -- in the statement, not accessible here
+        let αs_append_X : Fin num_vars → F := fun idx => (Fin.append αs X) (idx.cast (by grind))
+        let prev_eval : F ← OracleComp.queryBind
+          (Sum.inr (Sum.inl ⟨.WeightPolynomial, (Fin.cases Z αs_append_X)⟩))
+          (fun result => do return result)
+
+        let γ : F := (challenges ⟨3, rfl⟩).2
+        let z0 : F := (challenges ⟨1, rfl⟩) -- note that these are the non-bold zs
+        let z_one_plus : Fin (num_queries) → F := ((challenges ⟨3, rfl⟩).1 ·)
+        let zs : Fin (num_queries + 1) → F := Fin.cases z0 z_one_plus
+
+        let new_num_vars : ℕ:= num_vars - num_sumcheck_rounds
+        let bold_zs : Fin (num_queries + 1) → Fin (new_num_vars) → F := fun x y =>
+          (zs x)^(2^y.val)
+        let eq := fun (b z : Fin new_num_vars → F) =>
+          ∏ (i : Fin new_num_vars), ((b i * z i) + (1 - b i)*(1 - z i))
+        let sum := ∑ (i : Fin (num_queries + 1)), γ^(i.val + 1)*eq (bold_zs i) X
+        return prev_eval + Z*sum
+      | ⟨.CodeWord, x⟩ => OracleComp.queryBind
+        (Sum.inr (Sum.inr ⟨⟨0, rfl⟩, x⟩))
+        (fun result => do return result)
+    simulateOutputQuery_eq := _
   }
 
 def restReduction
@@ -774,7 +840,7 @@ def restReduction
     (pSpec := restPSpec domain num_sumcheck_rounds num_queries)
 where
   prover := restProver oSpec domain num_vars num_sumcheck_rounds h_num_sumcheck_rounds num_queries
-  verifier := restVerifier oSpec domain num_vars num_sumcheck_rounds num_queries
+  verifier := restVerifier oSpec domain num_vars num_sumcheck_rounds h_num_sumcheck_rounds num_queries
 
 -- instance appendInterface
 --   {n1 n2 : ℕ}
