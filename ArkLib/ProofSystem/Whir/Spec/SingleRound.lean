@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 ArkLib Contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Dom Henderson
+Authors: Dom Henderson, Julian Sutherland
 -/
 module
 
@@ -267,6 +267,81 @@ def sumcheckResultIdx
     (lastSumcheckRound num_sumcheck_rounds h_num_sumcheck_rounds)
     (⟨0, rfl⟩ : (Sumcheck.Spec.SingleRound.pSpec F 2).MessageIdx)
 
+lemma sumcheckResultMessageType
+  (F) [Field F]
+  {num_vars : ℕ}
+  (num_sumcheck_rounds : Fin (num_vars + 1))
+  (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
+: OracleInterface.Query
+    ((Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message
+      (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)) =
+  F
+:= by
+  obtain ⟨a,b⟩ := sumcheckResultIdx _ _ _
+  -- unfold Sumcheck.Spec.pSpec at b
+  have :
+    (ProtocolSpec.instOracleInterfaceMessageSeqCompose ⟨a, b⟩) =
+    @Fin.fflatten₂ Direction Type (fun dir type ↦ dir = Direction.P_to_V → OracleInterface type) (↑num_sumcheck_rounds)
+      (fun x ↦ 2)
+      (fun i' ↦
+        (fun (i : Fin 1) ↦
+            match i with
+            | 0 => Direction.P_to_V) ++ᵛ
+          fun (i : Fin 1) ↦
+          match i with
+          | 0 => Direction.V_to_P)
+      (fun i' ↦
+        (fun (i : Fin 1) ↦
+            match i with
+            | 0 => ↥(Polynomial.degreeLE F 2)) ++ᵛ
+          fun (i : Fin 1) ↦
+          match i with
+          | 0 => F)
+      (fun i' j' h' ↦ Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec F 2 ⟨j', h'⟩) a b
+  := by
+    unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose
+    dsimp
+    done
+  -- Plan is to unfold through these instances one at a time, removing the matches like that
+  -- unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec ProtocolSpec.instOracleInterfaceMessageAppend Sumcheck.Spec.SingleRound.instOI₂ ProtocolSpec.instOracleInterfaceMessageAppend Sumcheck.Spec.SingleRound.instOI₁
+  -- unfold ProtocolSpec.instOracleInterfaceMessageAppend ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionP_to_VVempty OracleInterface.instPolynomialDegreeLE
+  -- unfold ProtocolSpec.instOracleInterfaceMessageEmpty ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionV_to_PVempty
+  -- simp
+  -- rw! (castMode := .all) [
+  --   sumcheckResultIdx, ProtocolSpec.sigmaMessageIdxToSeqCompose, lastSumcheckRound,
+  --   Sumcheck.Spec.pSpec, ProtocolSpec.seqCompose
+  -- ]
+  -- dsimp
+  -- have (message) (inst) (queryType) (oc) (h: inst = {Query := queryType, toOC := oc}) : @OracleInterface.Query message inst = queryType := by rw [h]; rfl
+  -- rw [this (queryType := F)]
+  -- case oc => exact { spec := OracleSpec.ofFn fun x ↦ F,
+  --                                       impl := fun point ↦ do
+  --                                         let __do_lift ← read
+  --                                         pure (Polynomial.eval point ↑__do_lift) }
+  -- case h =>
+  --   rewrite [Fin.fflatten₂_embedSum]
+  --   simp
+  --   have :
+  --     (fun  (i : Fin 0) (h : !v[] i = Direction.P_to_V) ↦ (Fin.elim0 i : !v[] i = Direction.P_to_V → OracleInterface (!v[] i)) h) =
+  --     (fun  (i : Fin 0) (h : !v[] i = Direction.P_to_V) ↦ !h[])
+  --   := rfl
+
+  --   done
+
+  -- rw! (castMode := .all) [Fin.vflatten_embedSum]
+  -- aesop
+  -- rfl
+  -- dsimp
+
+  -- rw! [Fin.vappend_left_of_lt]
+  -- . dsimp [
+  --     OracleInterface.instPolynomialDegreeLE, sumcheckResultIdx
+  --   ]
+  --   done
+  -- . grind
+
+
+
 noncomputable def sumcheckLens
   {F : Type} [Field F] [DecidableEq F]
   {log_order : ℕ}
@@ -295,6 +370,26 @@ where
     domain num_vars num_sumcheck_rounds h_num_sumcheck_rounds
   wit := Witness.sumcheckLens
     domain num_vars num_sumcheck_rounds
+
+def sumcheckChallengeIdx
+  (F : Type) [CommSemiring F]
+  (num_sumcheck_rounds : ℕ)
+:
+  Fin num_sumcheck_rounds → (Sumcheck.Spec.pSpec F 2 num_sumcheck_rounds).ChallengeIdx
+:= fun round =>
+  ProtocolSpec.sigmaChallengeIdxToSeqCompose round ⟨1, rfl⟩
+
+def sumcheckChallenge
+  {F : Type} [CommSemiring F]
+  {num_sumcheck_rounds : ℕ}
+  (round : Fin num_sumcheck_rounds)
+  (challenges : (Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Challenges)
+:
+  F
+:=
+  cast (by {
+    aesop (add simp [sumcheckChallengeIdx, ProtocolSpec.sigmaChallengeIdxToSeqCompose])
+  }) (challenges (sumcheckChallengeIdx F num_sumcheck_rounds round))
 
 def output
   {ι : Type} (oSpec : OracleSpec ι)
@@ -364,16 +459,24 @@ where
       | .WeightPolynomial => oracleStatement .WeightPolynomial
       | .CodeWord => oracleStatement .CodeWord
       | .CodeWordPolynomial => oracleStatement .CodeWordPolynomial
-      | .SumcheckResult => messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)
-      | .SumcheckChallenges => fun round => challenges ⟨2*round + 1, sorry⟩
+      | .SumcheckResult =>
+        cast (by {
+          aesop (add simp [sumcheckResultIdx, ProtocolSpec.sigmaMessageIdxToSeqCompose]) -- TODO encapsulate
+        }) (messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
+      | .SumcheckChallenges => fun round => sumcheckChallenge round challenges
     simulateOutputQuery challenges query :=
       let ⟨queryIdx, queryData⟩ := query
       match queryIdx with
         | .WeightPolynomial => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.WeightPolynomial, queryData⟩)) (pure ·)
         | .CodeWord => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.CodeWord, queryData⟩)) (pure ·)
         | .CodeWordPolynomial => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.CodeWordPolynomial, queryData⟩)) (pure ·)
-        | .SumcheckResult => OracleComp.queryBind (Sum.inr (Sum.inr ⟨sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds, sorry⟩)) (pure ·)
-        | .SumcheckChallenges => do return challenges ⟨2*round + 1, sorry⟩
+        | .SumcheckResult => OracleComp.queryBind (Sum.inr (Sum.inr
+            ⟨sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds, cast (by {
+              -- aesop (add simp [sumcheckResultIdx, ProtocolSpec.sigmaMessageIdxToSeqCompose, lastSumcheckRound, OracleInterface.Query])
+              rfl
+            }) queryData⟩
+          )) (pure ·)
+        | .SumcheckChallenges => do return sumcheckChallenge (F := F) queryData challenges
     simulateOutputQuery_eq := _
   }
 
