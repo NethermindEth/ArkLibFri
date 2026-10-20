@@ -135,9 +135,10 @@ structure StatementRound (i : Fin (n + 1)) where
 
 abbrev OutputStatement := StatementRound R _ (.last n)
 
-abbrev OracleIdx := Fin 2
-abbrev OracleIdx.mvPoly : Fin 2 := 0
-abbrev OracleIdx.responsePoly : Fin 2 := 1
+abbrev OracleIdx := Fin 3
+abbrev OracleIdx.mvPoly : OracleIdx := 0
+abbrev OracleIdx.responsePoly : OracleIdx := 1
+abbrev OracleIdx.challenges : OracleIdx := 2
 
 /-- Oracle statement for sum-check, which is a multivariate polynomial over `n` variables of
   individual degree at most `deg`, equipped with the poly evaluation oracle interface. -/
@@ -146,6 +147,7 @@ def OracleStatementRound (round : Fin (n + 1)) (idx : OracleIdx) : Type :=
   match idx with
     | .mvPoly => R⦃≤ deg⦄[X Fin n]
     | .responsePoly => Fin round → R⦃≤ deg⦄[X]
+    | .challenges => Fin round → R
 
 instance
   (round : Fin (n + 1))
@@ -157,14 +159,19 @@ instance
   Query := match idx with
     | .mvPoly => mvPolyI.Query
     | .responsePoly => Fin round × responsePolyI.Query
+    | .challenges => Fin round
   toOC.spec := match idx with
     | .mvPoly => mvPolyI.toOC.spec
     | .responsePoly => fun x => responsePolyI.toOC.spec x.2
+    | .challenges => fun _ => R
   toOC.impl := match idx with
     | .mvPoly => mvPolyI.toOC.impl
     | .responsePoly => fun inputs => do
       let responses ← read
       return Polynomial.eval inputs.2 (responses inputs.1)
+    | .challenges => fun challengeIdx => do
+      let challenges ← read
+      return challenges challengeIdx
 }
 
 /-- The sum-check relation for the `i`-th round, for `i ≤ n` -/
@@ -371,21 +378,29 @@ def StmtOut : Type := R × R
 @[reducible, simp]
 def OStmtIn : Unit → Type := fun _ => R⦃≤ deg⦄[X]
 
-abbrev OStmtOutIdx := Fin 2
+abbrev OStmtOutIdx := Fin 3
 abbrev OStmtOutIdx.in : OStmtOutIdx := 0
 abbrev OStmtOutIdx.message : OStmtOutIdx := 1
+abbrev OStmtOutIdx.challenge : OStmtOutIdx := 2
 
 @[reducible, simp]
 def OStmtOut : OStmtOutIdx → Type := fun idx =>
   match idx with
-    | 0 => R⦃≤ deg⦄[X]
-    | 1 => R⦃≤ deg⦄[X]
+    | .in => R⦃≤ deg⦄[X]
+    | .message => R⦃≤ deg⦄[X]
+    | .challenge => R
 
 instance
   (i)
-: OracleInterface (OStmtOut R deg i) := match i with
+: OracleInterface (OStmtOut R deg i) :=
+match i with
   | .in => inferInstance
   | .message => inferInstance
+  | .challenge => {
+    Query := Unit
+    toOC.spec := fun _ => R
+    toOC.impl := fun _ => do read
+  }
 
 def inputRelation : Set ((StmtIn R × (∀ i, OStmtIn R deg i)) × Unit) :=
   { ⟨⟨target, oStmt⟩, _⟩ | ∑ x ∈ (univ.map D), (oStmt ()).1.eval x = target }
@@ -422,8 +437,9 @@ def prover : OracleProver oSpec (StmtIn R) (OStmtIn R deg) Unit (StmtOut R) (OSt
   output := fun ⟨polyLE, chal⟩ => pure (
     ((polyLE.val.eval chal, chal),
     fun idx => match idx with
-      | 0 => polyLE
-      | 1 => polyLE
+      | .in => polyLE
+      | .message => polyLE
+      | .challenge => chal
     ), ()
   )
 
@@ -445,6 +461,7 @@ def verifier : Verifier oSpec (StmtIn R × (∀ i, OStmtIn R deg i))
       fun idx => match idx with
         | .in => oStmt ()
         | .message => transcript 0
+        | .challenge => chal
     ⟩
 
 /-- The simple verifier rejects an inconsistent round sum, then computes its next statement. -/
@@ -456,6 +473,7 @@ def verifierGuardedForm : (verifier R deg D oSpec).GuardedForm where
       fun idx => match idx with
         | .in => input.2 ()
         | .message => tr 0
+        | .challenge => tr 1
     )
   verify_eq := by
     intro input tr
@@ -490,17 +508,33 @@ def oracleVerifier : OracleVerifier oSpec (StmtIn R) (OStmtIn R deg) (StmtOut R)
         OracleSpec.query (show [OStmtIn R deg]ₒ.Domain from ⟨(), chal default⟩))
       _
     pure (newTarget, chal default)
-  outputOracle := Sum.inl {
-    embed := ⟨
-      fun idx => match idx with
-        | .in => .inl ()
-        | .message => .inr ⟨0, rfl⟩,
-      by simp [Function.Injective]
-    ⟩
-    hEq idx := by
-      fin_cases idx <;> rfl
-    outputInterface_heq idx := by
-      fin_cases idx <;> rfl
+  outputOracle := Sum.inr {
+    materializeOutput challenges oracles messages oracleIdx := match oracleIdx with
+      | .in => oracles ()
+      | .message => messages ⟨0, rfl⟩
+      | .challenge => challenges ⟨1, rfl⟩
+    simulateOutputQuery challenges domain := match domain with
+        | ⟨.in, query⟩ => OracleComp.queryBind (Sum.inr (Sum.inl ⟨(), query⟩)) (pure ·)
+        | ⟨.message, query⟩ => OracleComp.queryBind (Sum.inr (Sum.inr ⟨⟨0, rfl⟩, query⟩)) (pure ·)
+        | ⟨.challenge, query⟩ => do return challenges ⟨1, rfl⟩
+    simulateOutputQuery_eq := by
+      intro challenges oStmt messages q
+      simp_all only [
+        OStmtOut, OStmtIn, MessageIdx, Nat.reduceAdd, Nat.add_zero, Fin.vcons_fin_zero,
+        Fin.vappend_zero, Message, add_apply_inr, add_apply_inl, PFunctor.FreeM.liftBind_eq,
+        ofPFunctor_toPFunctor, PFunctor.FreeM.bind_eq_bind, Fin.isValue, Challenge]
+      obtain ⟨fst, snd⟩ := q
+      simp_all only [OStmtOut, Fin.isValue]
+      split
+      next idx =>
+        simp_all only [Fin.zero_eta, Fin.isValue, simulateQ_bind]
+        rfl
+      next idx =>
+        simp_all only [Fin.mk_one, Fin.isValue, simulateQ_bind]
+        rfl
+      next idx =>
+        simp_all only [Fin.reduceFinMk, Fin.isValue]
+        rfl
   }
 
 def oracleReduction : OracleReduction oSpec (StmtIn R) (OStmtIn R deg) Unit
@@ -576,11 +610,6 @@ theorem oracleVerifier_eq_verifier :
     erw [simulateQ_bind]
     simp only [map_pure, Function.comp, simulateQ_map]
     cbv
-    congr
-    funext i
-    fin_cases i
-    · rfl
-    · rfl
   · exfalso; simp only [FullTranscript.messages, pSpec] at *; tauto
   · exfalso; simp only [FullTranscript.messages, pSpec] at *; tauto
   · rfl
@@ -785,9 +814,7 @@ theorem reduction_perfectCompleteness :
       · simp
       · simp only [StmtOut, OStmtOut, Nat.reduceAdd, Nat.add_zero, Fin.vcons_fin_zero,
         ChallengeIdx, Fin.vappend_zero, Challenge, Fin.isValue, OracleQuery.cont_query,
-        OracleQuery.input_query, id_eq, Prod.mk.injEq, true_and]
-        funext i
-        fin_cases i <;> rfl
+        OracleQuery.input_query, id_eq]
 
 
 /-- Perfect completeness for the oracle reduction -/
@@ -873,6 +900,7 @@ def oStmtLens (i : Fin n) : OracleStatement.Lens
     ⟨⟨newTarget, Fin.snoc challenges chal⟩, fun idx => match idx with
       | .mvPoly => oStmt .mvPoly
       | .responsePoly => Fin.snoc (oStmt .responsePoly) (innerOStmtOut .message) -- TODO do we want .message here?
+      | .challenges => Fin.snoc (oStmt .challenges) (innerOStmtOut .challenge)
     ⟩
 
 /-- Query the multivariate sum-check input oracle at one point. -/
@@ -966,6 +994,7 @@ def oStmtExecutableLens (i : Fin n) : OracleStatement.ExecutableLens
   materializeOutput := fun outerOStmt innerOStmtOut idx => match idx with
     | .mvPoly => outerOStmt .mvPoly
     | .responsePoly => Fin.snoc (outerOStmt .responsePoly) (innerOStmtOut .message)
+    | .challenges => Fin.snoc (outerOStmt .challenges) (innerOStmtOut .challenge)
   simulateOutput query := match h1: query.1 with
     | .mvPoly => OracleComp.queryBind (Sum.inl ⟨.mvPoly, cast (by rw [h1]) query.2⟩) (fun data => do return (cast (by {
       obtain ⟨a,b⟩ := query
@@ -990,6 +1019,26 @@ def oStmtExecutableLens (i : Fin n) : OracleStatement.ExecutableLens
       else
         OracleComp.queryBind
           (Sum.inl ⟨.responsePoly, ⟨⟨query'.1.val, by grind⟩, query'.2⟩⟩)
+          (fun data => do return (cast (by {
+            obtain ⟨a, b⟩ := query
+            simp at h1
+            rw! (castMode := .all) [h1]
+            rfl
+          }) data))
+    | .challenges =>
+      let query' : Fin (i.val + 1) := cast (by rw [h1]; rfl) query.2
+      if h2 : query'.val = i.val then
+        OracleComp.queryBind
+          (Sum.inr ⟨.challenge, ()⟩)
+          (fun data => do return (cast (by {
+            obtain ⟨a, b⟩ := query
+            simp at h1
+            rw! (castMode := .all) [h1]
+            rfl
+          }) data))
+      else
+        OracleComp.queryBind
+          (Sum.inl ⟨.challenges, ⟨query'.val, by grind⟩⟩)
           (fun data => do return (cast (by {
             obtain ⟨a, b⟩ := query
             simp at h1
@@ -1024,6 +1073,27 @@ def oStmtExecutableLens (i : Fin n) : OracleStatement.ExecutableLens
         simp [ReaderT.bind, bind, ReaderT.pure, pure]
         rw! [eq, Fin.snoc_castSucc]
         rfl
+    . simp
+      obtain ⟨round, h_lt⟩ := data
+      split_ifs with h
+      . simp at h
+        have : ⟨round, h_lt⟩ = Fin.last i := by
+          simp [Fin.last, h]
+        rw! [this, this]
+        simp [OracleInterface.answer, OracleInterface.toOC, Functor.map, ReaderT.run, read, readThe, MonadReaderOf.read, ReaderT.read, pure]
+        unfold bind ReaderT.instMonad
+        simp [ReaderT.bind, bind, ReaderT.pure, pure]
+        rfl
+      . have h_lt_i : round < i := by grind
+        have : ⟨round, h_lt⟩ = Fin.castSucc ⟨round, h_lt_i⟩ := by grind
+        rw! [this]
+        set x := Fin.castSucc ⟨round, h_lt_i⟩ with eq
+        rw! [←eq]
+        simp [OracleInterface.answer, OracleInterface.toOC, Functor.map, ReaderT.run, read, readThe, MonadReaderOf.read, ReaderT.read, pure]
+        unfold bind ReaderT.instMonad
+        simp [ReaderT.bind, bind, ReaderT.pure, pure]
+        rw! [eq, Fin.snoc_castSucc]
+        rfl
 
 
 @[simp]
@@ -1040,6 +1110,7 @@ def liftOutputSimulation {i : Fin n} {ι : Type} (oSpec : OracleSpec ι) :
   materializeOutput := fun challenges oracleStatement messages idx => match idx with
     | .mvPoly => oracleStatement .mvPoly
     | .responsePoly => Fin.snoc (oracleStatement .responsePoly) (messages ⟨0, rfl⟩)
+    | .challenges => Fin.snoc (oracleStatement .challenges) (challenges ⟨1, rfl⟩)
   simulateOutputQuery challenges domain := match h_idx : domain.1 with
     | .mvPoly => OracleComp.queryBind
       (Sum.inr (Sum.inl ⟨.mvPoly, cast (by rw [h_idx]) domain.2⟩))
@@ -1068,6 +1139,25 @@ def liftOutputSimulation {i : Fin n} {ι : Type} (oSpec : OracleSpec ι) :
           split_ifs <;> rfl
         }) data)
       )
+    | .challenges =>
+      let query : Fin (i+1) := cast (by rw [h_idx]; rfl) domain.2
+      if h : query = Fin.last _ then
+        do return (cast (by {
+          obtain ⟨a,b⟩ := domain
+          simp at h_idx
+          subst h_idx
+          rfl
+        }) (challenges ⟨1, rfl⟩))
+      else
+        OracleComp.queryBind
+          (Sum.inr (Sum.inl ⟨.challenges, ⟨query.val, by grind⟩⟩))
+          (fun data => do return (cast (by {
+            obtain ⟨a,b⟩ := domain
+            simp at h_idx
+            subst h_idx
+            rfl
+          }) data))
+
   simulateOutputQuery_eq := by
     intro challenges oracleStatement messages query
     obtain ⟨a,b⟩ := query
@@ -1097,6 +1187,35 @@ def liftOutputSimulation {i : Fin n} {ι : Type} (oSpec : OracleSpec ι) :
         set x := Fin.castSucc ⟨round, h_lt_i⟩ with eq
         rw! (castMode := .all) [←eq]
         rw! (castMode := .all) [dite_eq_right_of_eq_false (by grind)]
+        conv_rhs =>
+          unfold pure bind OracleInterface.answer
+          unfold OracleInterface.toOC instOracleInterfaceOracleStatementRound
+          simp [Functor.map, ReaderT.run, read, readThe, MonadReaderOf.read, ReaderT.read, pure]
+          simp [bind, ReaderT.bind, ReaderT.pure, pure]
+          rewrite [eq, Fin.snoc_castSucc]
+        rfl
+    · obtain ⟨round, h_lt⟩ := b
+      dsimp
+      split_ifs with h
+      · have : ⟨round, h_lt⟩ = Fin.last i := by
+          simp [Fin.last, h]
+        rw! (castMode := .all) [this, this]
+        unfold OracleInterface.answer ReaderT.run OracleInterface.toOC instOracleInterfaceOracleStatementRound
+        dsimp
+        conv_rhs =>
+          -- Pushing snoc into all the monadic functions to the point that we can reduce down which part of it we're looking at
+          unfold pure bind
+          unfold ReaderT.instMonad
+          dsimp [ReaderT.bind, bind]
+          unfold ReaderT.instApplicativeOfMonad
+          dsimp [ReaderT.pure, pure, read, readThe, MonadReaderOf.read, ReaderT.read]
+          simp
+        rfl
+      · have h_lt_i : round < i := by grind
+        have : ⟨round, h_lt⟩ = Fin.castSucc ⟨round, h_lt_i⟩ := by grind
+        rw! (castMode := .all) [this]
+        set x := Fin.castSucc ⟨round, h_lt_i⟩ with eq
+        rw! (castMode := .all) [←eq]
         conv_rhs =>
           unfold pure bind OracleInterface.answer
           unfold OracleInterface.toOC instOracleInterfaceOracleStatementRound
@@ -1322,6 +1441,7 @@ local instance
 : Inhabited (Simple.OStmtOut R deg i) := match i with
   | .in => inferInstance
   | .message => inferInstance
+  | .challenge => inferInstance
 
 /-- Round-by-round knowledge soundness theorem for single-round of sum-check, obtained by
   transporting the knowledge soundness proof for the simplified version -/
@@ -1389,7 +1509,7 @@ namespace Unfolded
 def proverState (i : Fin n) : ProverState 2 where
   PrvState
   | 0 => (StatementRound R n i.castSucc) × (∀ j, OracleStatementRound R n deg i.castSucc j)
-  | 1 => (StatementRound R n i.castSucc) × (∀ j, OracleStatementRound R n deg i.succ j)
+  | 1 => (StatementRound R n i.castSucc) × (∀ j, OracleStatementRound R n deg i.castSucc j) × (pSpec R deg).Message ⟨0, rfl⟩
   | 2 => (StatementRound R n i.succ) × (∀ j, OracleStatementRound R n deg i.succ j)
 
 /-- Prover input for the `i`-th round of the sum-check protocol, where `i < n` -/
@@ -1414,19 +1534,21 @@ def proverRound (i : Fin n) : ProverRound oSpec (pSpec R deg) where
       pure ⟨ message,
           (
             state.1,
-            fun idx => match idx with
-              | .mvPoly => oStmt .mvPoly
-              | .responsePoly => Fin.snoc (oStmt .responsePoly) message
+            (oStmt, message)
           )⟩
   | ⟨1, h⟩ => nomatch h
 
   receiveChallenge
   | ⟨0, h⟩ => nomatch h
-  | ⟨1, _⟩ => fun ⟨⟨target, challenges⟩, oStmt⟩ => pure fun chal =>
+  | ⟨1, _⟩ => fun ⟨⟨target, challenges⟩, (oStmt, message)⟩ => pure fun chal =>
     let ⟨poly, hp⟩ := oStmt 0
     letI newChallenges : Fin i.succ → R := Fin.snoc challenges chal
     letI newTarget := ∑ x ∈ (univ.map D) ^ᶠ (n - i - 1), poly ⸨newChallenges, x⸩'(by simp; omega)
-    ⟨⟨newTarget, newChallenges⟩, oStmt⟩
+    ⟨⟨newTarget, newChallenges⟩, fun idx => match idx with
+      | .mvPoly => (oStmt .mvPoly)
+      | .responsePoly => Fin.snoc (oStmt .responsePoly) message
+      | .challenges => newChallenges
+    ⟩
 
 /-- Since there is no witness, the prover's output for each round `i < n` of the sum-check protocol
   is trivial -/
@@ -1457,6 +1579,7 @@ def verifier (i : Fin n) : Verifier oSpec
     pure ⟨⟨p_i.eval r_i, Fin.snoc challenges r_i⟩, fun idx => match idx with
       | .mvPoly => oStmt .mvPoly
       | .responsePoly => Fin.snoc (oStmt .responsePoly) (transcript 0)
+      | .challenges => Fin.snoc challenges r_i
     ⟩
 
 -- /-- The oracle verifier for the `i`-th round, where `i < n + 1` -/

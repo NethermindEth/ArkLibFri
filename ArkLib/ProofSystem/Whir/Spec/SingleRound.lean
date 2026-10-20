@@ -285,7 +285,7 @@ noncomputable def sumcheckLens
     (OuterOStmtIn := OracleStatement domain num_vars)
     (InnerOStmtIn := Sumcheck.Spec.OracleStatementRound F num_vars (deg := 2) 0)
     (InnerOStmtOut := Sumcheck.Spec.OracleStatementRound F num_vars (deg := 2) num_sumcheck_rounds)
-    (OuterOStmtOut := OracleStatementMid domain num_vars)
+    (OuterOStmtOut := OracleStatementMid domain num_vars num_sumcheck_rounds)
     (OuterWitIn := WitnessPreSumcheck F num_vars)
     (InnerWitIn := Unit)
     (InnerWitOut := Unit)
@@ -317,47 +317,64 @@ def output
       num_sumcheck_rounds
   )
 where
-  outputOracle := Sum.inl {
-    embed := ⟨
-      fun idx => match idx with
-        | .WeightPolynomial => Sum.inl .WeightPolynomial
-        | .CodeWord => Sum.inl .CodeWord
-        | .CodeWordPolynomial => Sum.inl .CodeWordPolynomial
-        | .SumcheckResult =>
-            Sum.inr (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds),
-      by
-        simp [Function.Injective]
-        intro a1 a2
-        fin_cases a1 <;> fin_cases a2 <;> dsimp
-        <;> intro h_eq
-        all_goals try rfl
-        all_goals exfalso; grind
-    ⟩
-    hEq := by
-      intro i; fin_cases i <;> try rfl
-      -- The sum-check result oracle is the message at the head of the final round.
-      change OracleStatementMid domain num_vars OracleIdxMid.SumcheckResult
-        = (Sumcheck.Spec.pSpec F (deg := 2) num_sumcheck_rounds).Message
-            (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)
-      exact (Fin.vflatten_embedSum
-        (fun (_ : Fin num_sumcheck_rounds.val) => (Sumcheck.Spec.SingleRound.pSpec F 2).Type)
-        (lastSumcheckRound num_sumcheck_rounds h_num_sumcheck_rounds) 0).symm
-    outputInterface_heq := by
-      intro i
-      fin_cases i
-      all_goals try rfl
-      change HEq (OracleStatement.oracleInterfaceMid domain num_vars OracleIdxMid.SumcheckResult)
-        (ProtocolSpec.instOracleInterfaceMessageSeqCompose
-          (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
-      unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose sumcheckResultIdx
-        ProtocolSpec.sigmaMessageIdxToSeqCompose
-      dsimp only
-      rw [Fin.fflatten₂_embedSum]
-      refine HEq.symm (heq_app_prop ?_ (cast_heq _ _) _ rfl)
-      exact congrArg OracleInterface
-        (Fin.vflatten_embedSum
-          (fun (_ : Fin num_sumcheck_rounds.val) => (Sumcheck.Spec.SingleRound.pSpec F 2).Type)
-          (lastSumcheckRound num_sumcheck_rounds h_num_sumcheck_rounds) 0)
+  -- outputOracle := Sum.inl {
+  --   embed := ⟨
+  --     fun idx => match idx with
+  --       | .WeightPolynomial => Sum.inl .WeightPolynomial
+  --       | .CodeWord => Sum.inl .CodeWord
+  --       | .CodeWordPolynomial => Sum.inl .CodeWordPolynomial
+  --       | .SumcheckResult =>
+  --           Sum.inr (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds),
+  --     by
+  --       simp [Function.Injective]
+  --       intro a1 a2
+  --       fin_cases a1 <;> fin_cases a2 <;> dsimp
+  --       <;> intro h_eq
+  --       all_goals try rfl
+  --       all_goals exfalso; grind
+  --   ⟩
+  --   hEq := by
+  --     intro i; fin_cases i <;> try rfl
+  --     -- The sum-check result oracle is the message at the head of the final round.
+  --     change OracleStatementMid domain num_vars OracleIdxMid.SumcheckResult
+  --       = (Sumcheck.Spec.pSpec F (deg := 2) num_sumcheck_rounds).Message
+  --           (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)
+  --     exact (Fin.vflatten_embedSum
+  --       (fun (_ : Fin num_sumcheck_rounds.val) => (Sumcheck.Spec.SingleRound.pSpec F 2).Type)
+  --       (lastSumcheckRound num_sumcheck_rounds h_num_sumcheck_rounds) 0).symm
+  --   outputInterface_heq := by
+  --     intro i
+  --     fin_cases i
+  --     all_goals try rfl
+  --     change HEq (OracleStatement.oracleInterfaceMid domain num_vars OracleIdxMid.SumcheckResult)
+  --       (ProtocolSpec.instOracleInterfaceMessageSeqCompose
+  --         (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
+  --     unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose sumcheckResultIdx
+  --       ProtocolSpec.sigmaMessageIdxToSeqCompose
+  --     dsimp only
+  --     rw [Fin.fflatten₂_embedSum]
+  --     refine HEq.symm (heq_app_prop ?_ (cast_heq _ _) _ rfl)
+  --     exact congrArg OracleInterface
+  --       (Fin.vflatten_embedSum
+  --         (fun (_ : Fin num_sumcheck_rounds.val) => (Sumcheck.Spec.SingleRound.pSpec F 2).Type)
+  --         (lastSumcheckRound num_sumcheck_rounds h_num_sumcheck_rounds) 0)
+  -- }
+  outputOracle := Sum.inr {
+    materializeOutput challenges oracleStatement messages oracleIdx := match oracleIdx with
+      | .WeightPolynomial => oracleStatement .WeightPolynomial
+      | .CodeWord => oracleStatement .CodeWord
+      | .CodeWordPolynomial => oracleStatement .CodeWordPolynomial
+      | .SumcheckResult => messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)
+      | .SumcheckChallenges => fun round => challenges ⟨2*round + 1, sorry⟩
+    simulateOutputQuery challenges query :=
+      let ⟨queryIdx, queryData⟩ := query
+      match queryIdx with
+        | .WeightPolynomial => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.WeightPolynomial, queryData⟩)) (pure ·)
+        | .CodeWord => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.CodeWord, queryData⟩)) (pure ·)
+        | .CodeWordPolynomial => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.CodeWordPolynomial, queryData⟩)) (pure ·)
+        | .SumcheckResult => OracleComp.queryBind (Sum.inr (Sum.inr ⟨sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds, sorry⟩)) (pure ·)
+        | .SumcheckChallenges => do return challenges ⟨2*round + 1, sorry⟩
+    simulateOutputQuery_eq := _
   }
 
   materialize_eq := by
@@ -430,7 +447,7 @@ noncomputable def sumcheckReduction
     (StmtOut := (Statement domain) ×
       (Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
     )
-    (OStmtOut := OracleStatementMid domain num_vars)
+    (OStmtOut := OracleStatementMid domain num_vars num_sumcheck_rounds)
     (WitOut := WitnessPostSumcheck F num_vars)
     (Sumcheck.Spec.pSpec F (deg := 2) num_sumcheck_rounds)
 := (
@@ -587,7 +604,7 @@ def restProver
   OracleProver
     oSpec
     (Statement domain × Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
-    (OracleStatementMid domain num_vars)
+    (OracleStatementMid domain num_vars num_sumcheck_rounds)
     (WitnessPostSumcheck F num_vars)
     (Statement (Domain.CosetFftDomain.subdomain domain 1))
     (OracleStatementPre (Domain.CosetFftDomain.subdomain domain 1) (num_vars - num_sumcheck_rounds))
@@ -607,7 +624,7 @@ where
     let oracle_statement := ins.1.2
     let witness := ins.2
     {
-      α := sumcheck_statement.challenges
+      α := oracle_statement .SumcheckChallenges
       f_hat := witness.f_hat
       h_hat_k := oracle_statement .SumcheckResult --can also use the witness, it's in both currently. TODO, remove from witness?
       ω_hat := oracle_statement .WeightPolynomial
@@ -738,7 +755,7 @@ def restVerifier
   OracleVerifier
     oSpec
     (Statement domain × Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
-    (OracleStatementMid domain num_vars)
+    (OracleStatementMid domain num_vars num_sumcheck_rounds)
     (Statement (Domain.CosetFftDomain.subdomain domain 1))
     (OracleStatementPre (Domain.CosetFftDomain.subdomain domain 1) (num_vars - num_sumcheck_rounds))
     (restPSpec domain num_sumcheck_rounds num_queries)
@@ -794,7 +811,13 @@ where
         let Z : F := args ⟨0, by grind⟩
         let X : Fin (num_vars - num_sumcheck_rounds) → F := fun i => args i.succ
 
-        let αs : Fin num_sumcheck_rounds → F := _ -- in the statement, not accessible here
+        let αs : Vector F num_sumcheck_rounds ← (Vector.finRange num_sumcheck_rounds).mapM (fun idx =>
+          OracleComp.queryBind
+            (Sum.inr (Sum.inl ⟨.SumcheckChallenges, idx⟩))
+            (fun result => do return result)
+        )
+        let αs : Fin num_sumcheck_rounds → F := (αs[·])
+
         let αs_append_X : Fin num_vars → F := fun idx => (Fin.append αs X) (idx.cast (by grind))
         let prev_eval : F ← OracleComp.queryBind
           (Sum.inr (Sum.inl ⟨.WeightPolynomial, (Fin.cases Z αs_append_X)⟩))
@@ -832,7 +855,7 @@ def restReduction
     (StmtIn := (Statement domain) ×
       (Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
     )
-    (OStmtIn := (OracleStatementMid domain num_vars))
+    (OStmtIn := (OracleStatementMid domain num_vars num_sumcheck_rounds))
     (WitIn := WitnessPostSumcheck F num_vars)
     (StmtOut := (Statement (domain.subdomain 1)))
     (OStmtOut := (OracleStatementPre (domain.subdomain 1) (num_vars - num_sumcheck_rounds)))

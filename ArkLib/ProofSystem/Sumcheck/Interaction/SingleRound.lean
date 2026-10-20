@@ -154,9 +154,12 @@ theorem executeAt_honest [DecidableEq R] (p : Message R deg)
   rw [executeAt_eq, ite_eq_left h]
 
 /-- The typed honest terminal statement satisfies the existing single-round output relation. -/
-theorem honest_outputRelation (p : Message R deg) (r : R) :
-    (((p.val.eval r, r), (fun _ : Unit => p)), ()) ∈
-      Spec.SingleRound.Simple.outputRelation R deg := rfl
+theorem honest_outputRelation (p : Message R deg) (r : R) (oStmt)
+  (h_oStmt : oStmt .in = p) :
+    (((p.val.eval r, r), oStmt), ()) ∈
+      Spec.SingleRound.Simple.outputRelation R deg := by
+      aesop
+
 
 /-- The legacy input relation supplies exactly the sum condition used by this verifier. -/
 theorem legacy_input_sum {m : ℕ} (D : Fin m ↪ R)

@@ -50,11 +50,12 @@ abbrev OracleIdx.CodeWord : OracleIdx := 1
 abbrev OracleIdx.CodeWordPolynomial : OracleIdx := 2
 
 --TODO rename
-abbrev OracleIdxMid := Fin 4
+abbrev OracleIdxMid := Fin 5
 abbrev OracleIdxMid.WeightPolynomial : OracleIdxMid := 0
 abbrev OracleIdxMid.CodeWord : OracleIdxMid := 1
 abbrev OracleIdxMid.CodeWordPolynomial : OracleIdxMid := 2
 abbrev OracleIdxMid.SumcheckResult : OracleIdxMid := 3
+abbrev OracleIdxMid.SumcheckChallenges : OracleIdxMid := 4
 
 @[reducible]
 def OracleStatementPre
@@ -88,6 +89,7 @@ def OracleStatementMid
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
   (num_vars : ℕ) -- m
+  (num_sumcheck_rounds : ℕ)
   (idx : OracleIdxMid)
 : Type
 := match idx with
@@ -99,6 +101,7 @@ def OracleStatementMid
   | .CodeWordPolynomial => OracleStatement domain num_vars .CodeWordPolynomial
     -- h_k
   | .SumcheckResult => F⦃≤ 2⦄[X] -- TODO is this the correct degree for h_k
+  | .SumcheckChallenges => Fin num_sumcheck_rounds → F
 
 open MvPolynomial in
 structure WitnessPreSumcheck
