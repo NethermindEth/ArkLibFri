@@ -267,28 +267,65 @@ def sumcheckResultIdx
     (lastSumcheckRound num_sumcheck_rounds h_num_sumcheck_rounds)
     (⟨0, rfl⟩ : (Sumcheck.Spec.SingleRound.pSpec F 2).MessageIdx)
 
-#check Sigma.mk
+section
 
--- universe u v w in
--- lemma fflatten₂_rectangle
---   {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {n : Fin m → ℕ}
---   {α : (i : Fin m) → (j : Fin (n i)) → A} {β : (i : Fin m) → (j : Fin (n i)) → B}
---   (v : (i : Fin m) → (j : Fin (n i)) → F (α i j) (β i j))
---   (k : Fin (Fin.vsum n))
---   {width : ℕ}
---   (h_rectangle : ∀ row, n row = width)
--- :
---   ∃ (row : Fin m) (col : Fin width),
---   Fin.fflatten₂ v k =
---   cast (by {
+/-
+I am formatting these against my better judgement...
+-/
 
---   })
---   (v row ⟨col.val, by {
---     rw [h_rectangle]
---     exact col.2
---   }⟩)
--- := by
---   done
+universe u v w in
+lemma fflatten₂_rectangle
+  {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {n : Fin m → ℕ}
+  {α : (i : Fin m) → (j : Fin (n i)) → A} {β : (i : Fin m) → (j : Fin (n i)) → B}
+  (v : (i : Fin m) → (j : Fin (n i)) → F (α i j) (β i j))
+  (k : Fin (Fin.vsum n))
+  {width : ℕ}
+  (h_rectangle : ∀ row, n row = width)
+:
+  ∃ (row : Fin m) (col : Fin width)
+    (h : F (α row (col.cast (h_rectangle row).symm))
+           (β row (col.cast (h_rectangle row).symm))
+       = F (Fin.vflatten α k) (Fin.vflatten β k)),
+  Fin.fflatten₂ v k =
+  cast h (v row ⟨col.val, by grind⟩)
+:= by
+  sorry
+  done
+
+universe u v w in
+lemma fflatten₂_rectangle'
+  {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {n : Fin m → ℕ}
+  {α : (i : Fin m) → (j : Fin (n i)) → A} {β : (i : Fin m) → (j : Fin (n i)) → B}
+  (v : (i : Fin m) → (j : Fin (n i)) → F (α i j) (β i j))
+  (k : Fin (Fin.vsum n))
+  {width : ℕ}
+  (h_rectangle : ∀ row, n row = width)
+:
+  ∃ (row : Fin m) (col : Fin width),
+  Fin.fflatten₂ v k ≍ (v row ⟨col.val, by {rw [h_rectangle]; exact col.2}⟩)
+:= by
+  -- `rcases` critical, `obtain` totally doesn't work `( ͡° ͜ʖ ͡°)`
+  rcases fflatten₂_rectangle v k h_rectangle with ⟨row, col, h, h_eq⟩
+  exact ⟨row, col, by grind⟩
+
+def _root_.Fin.toRowColumn : {m : ℕ} → {n : Fin m → ℕ} → Fin (Fin.vsum n) → Σ (i : Fin m), Fin (n i)
+  | 0    , _, k       => Fin.elim0 k
+  | _ + 1, n, ⟨k, hk⟩ =>
+    if h : k < n 0
+    then ⟨0, ⟨k, h⟩⟩
+    else let ⟨i, j⟩ := toRowColumn (n := (n ·.succ)) ⟨k - n 0, sorry⟩
+         ⟨i.succ, j⟩
+
+universe u v w in
+theorem fflatten₂_rectangle''
+  {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {n : Fin m → ℕ}
+  {α : (i : Fin m) → (j : Fin (n i)) → A} {β : (i : Fin m) → (j : Fin (n i)) → B}
+  {v : (i : Fin m) → (j : Fin (n i)) → F (α i j) (β i j)}
+  {k : Fin (Fin.vsum n)} :
+  Fin.fflatten₂ v k =
+  cast sorry (v (k.toRowColumn).1 (k.toRowColumn).2) := by sorry
+
+end
 
 -- universe u v w in
 -- lemma fflatten₂_mod
