@@ -706,8 +706,9 @@ theorem fconcat₂_left_injective {α₁ : Fin n → A} {α₂ : Fin n → B} {�
 
 @[simp]
 theorem fappend₂_zero {α₁ : Fin m → A} {α₂ : Fin m → B} {β₁ : Fin 0 → A} {β₂ : Fin 0 → B}
+    {rhs : (i : Fin 0) → F₂ (β₁ i) (β₂ i)}
     (u : (i : Fin m) → F₂ (α₁ i) (α₂ i)) :
-    fappend₂ (F := F₂) u (!h⦃F₂⦄⟨β₁⟩⟨β₂⟩[] : (i : Fin 0) → F₂ (β₁ i) (β₂ i)) = u := rfl
+    fappend₂ (F := F₂) u rhs = u := rfl
 
 @[simp]
 theorem fappend₂_succ {α₁ : Fin m → A} {α₂ : Fin m → B}
