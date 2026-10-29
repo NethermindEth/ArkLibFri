@@ -308,224 +308,362 @@ lemma fflatten₂_rectangle'
   rcases fflatten₂_rectangle v k h_rectangle with ⟨row, col, h, h_eq⟩
   exact ⟨row, col, by grind⟩
 
-def _root_.Fin.toRowColumn : {m : ℕ} → {n : Fin m → ℕ} → Fin (Fin.vsum n) → Σ (i : Fin m), Fin (n i)
-  | 0    , _, k       => Fin.elim0 k
-  | _ + 1, n, ⟨k, hk⟩ =>
-    if h : k < n 0
-    then ⟨0, ⟨k, h⟩⟩
-    else let ⟨i, j⟩ := toRowColumn (n := (n ·.succ)) ⟨k - n 0, sorry⟩
-         ⟨i.succ, j⟩
+def _root_.Fin.toRowColumn
+  {numRows : ℕ} {numColumns : Fin numRows → ℕ}
+  (idx : Fin (Fin.vsum numColumns))
+:
+  Σ (row : Fin numRows), Fin (numColumns row)
+:= match h_rows: numRows with
+  | 0 => Fin.elim0 idx
+  | numRows_sub_one + 1 =>
+    if h_lt : idx.val < numColumns 0
+    then ⟨0, ⟨idx.val, h_lt⟩⟩
+    else
+      let ⟨i, j⟩ := toRowColumn
+        (numRows := numRows_sub_one)
+        (numColumns := (numColumns ·.succ))
+        ⟨idx.val - numColumns 0, by {
+          obtain ⟨idx_val, h_idx⟩ := idx
+          simp [Fin.vsum_eq_univ_sum] at ⊢ h_idx
+          grind
+        }⟩
+      ⟨i.succ, j⟩
+
+lemma _root_.Fin.toRowColumn_succ
+  {numRows : ℕ} {numColumns : Fin (numRows + 1) → ℕ}
+  {idx : Fin (Fin.vsum numColumns)}
+: idx.toRowColumn =
+  if h_lt : idx.val < numColumns 0
+  then ⟨0, ⟨idx.val, h_lt⟩⟩
+  else
+    let ⟨i, j⟩ := Fin.toRowColumn
+      (numRows := numRows)
+      (numColumns := (numColumns ·.succ))
+      ⟨idx.val - numColumns 0, by {
+        obtain ⟨idx_val, h_idx⟩ := idx
+        simp [Fin.vsum_eq_univ_sum] at ⊢ h_idx
+        grind
+      }⟩
+    ⟨i.succ, j⟩
+:= by
+  rfl
+
+lemma vflatten_eq_toRowColumn
+  {numRows : ℕ}
+  {numColumns : Fin numRows → ℕ}
+  {ElemT}
+  {elems : (row : Fin numRows) → Fin (numColumns row) → ElemT}
+  {idx : Fin (Fin.vsum numColumns)}
+:
+  Fin.vflatten elems idx =
+  elems idx.toRowColumn.1 idx.toRowColumn.2
+:= by
+  induction numRows
+  case zero =>
+    exact Fin.elim0 idx
+  case succ numRows ih =>
+    set rowCol := Fin.toRowColumn _ with eq
+    rewrite [Fin.toRowColumn_succ] at eq
+    split_ifs at eq with h
+    · rewrite [eq]
+      simp [
+        Fin.vappend_left_of_lt _ _ _ h
+      ]
+    · rewrite [eq]
+      specialize @ih (numColumns ·.succ) (fun row col => elems row.succ col)
+      set idx' := Fin.mk (idx.val - numColumns 0) _
+      specialize @ih idx'
+      rewrite [←eq]
+      set rowCol' := idx'.toRowColumn
+      have : rowCol.fst = rowCol'.fst.succ := by grind
+      convert ih using 1
+      · unfold Fin.vflatten Fin.dflatten
+        rewrite [Fin.dappend_right_of_not_lt _ _ _ h]
+        obtain _|_ := numRows
+        · exact Fin.elim0 idx'
+        · dsimp
+          rfl
+      · congr 1
+        grind
+
+
+-- universe u_2 in
+-- lemma dflatten_eq_toRowColumn
+--   {numRows : ℕ}
+--   {numColumns : Fin numRows → ℕ}
+--   {ElemT : Fin (Fin.vsum numColumns) → Sort u_2}
+--   {elems : (row : Fin numRows) → (col : Fin (numColumns row)) → ElemT (row.embedSum col)}
+--   {idx : Fin (Fin.vsum numColumns)}
+-- :
+--   @Fin.dflatten
+--     numRows
+--     numColumns
+--     ElemT
+--     elems
+--     idx =
+--   cast (by {
+
+--   }) (elems idx.toRowColumn.1 idx.toRowColumn.2)
+-- := by
+--   induction numRows
+--   case zero =>
+--     exact Fin.elim0 idx
+--   case succ numRows ih =>
+--     set rowCol := Fin.toRowColumn _ with eq
+--     rewrite [Fin.toRowColumn_succ] at eq
+--     split_ifs at eq with h
+--     · rewrite [eq]
+--       simp [
+--         Fin.dappend_left_of_lt _ _ _ h
+--       ]
+--     · rewrite [eq]
+--       specialize @ih (numColumns ·.succ) (fun row col => elems row.succ col)
+--       set idx' := Fin.mk (idx.val - numColumns 0) _
+--       specialize @ih idx'
+--       rewrite [←eq]
+--       set rowCol' := idx'.toRowColumn
+--       have : rowCol.fst = rowCol'.fst.succ := by grind
+--       convert ih using 1
+--       · unfold Fin.dflatten
+--         rewrite [Fin.dappend_right_of_not_lt _ _ _ h]
+--         obtain _|_ := numRows
+--         · exact Fin.elim0 idx'
+--         · dsimp
+--           rfl
+--       · congr 1
+--         grind
 
 universe u v w in
-theorem fflatten₂_rectangle''
-  {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {n : Fin m → ℕ}
-  {α : (i : Fin m) → (j : Fin (n i)) → A} {β : (i : Fin m) → (j : Fin (n i)) → B}
+theorem _root_.Fin.fflatten₂_eq_splitSum
+  {A : Sort u} {B : Sort v}
+  {F : A → B → Sort w}
+  {m : ℕ} {n : Fin m → ℕ}
+  {α : (i : Fin m) → (j : Fin (n i)) → A}
+  {β : (i : Fin m) → (j : Fin (n i)) → B}
   {v : (i : Fin m) → (j : Fin (n i)) → F (α i j) (β i j)}
-  {k : Fin (Fin.vsum n)} :
+  {k : Fin (Fin.vsum n)}
+:
   Fin.fflatten₂ v k =
-  cast sorry (v (k.toRowColumn).1 (k.toRowColumn).2) := by sorry
+  cast (by {
+    congr
+    all_goals {
+      conv_rhs=>rw! (castMode := .all) [←Fin.embedSum_splitSum k]
+      rw [Fin.vflatten_embedSum]
+    }
+  }) (v k.splitSum.fst k.splitSum.snd)
+:= by
+  conv_lhs =>
+    rw! (castMode := .all) [←Fin.embedSum_splitSum k]
+  rw [Fin.fflatten₂_embedSum]
+  grind
 
 end
 
--- universe u v w in
--- lemma fflatten₂_mod
---   {A : Sort u} {B : Sort v} {F : A → B → Sort w}
---   {width height : ℕ}
---   {α : (col : Fin width) → (row : Fin ((fun _ => height) col)) → A}
---   {β : (col : Fin width) → (row : Fin ((fun _ => height) col)) → B}
---   {elems : (col : Fin width) → (row : Fin ((fun _ => height) col)) → F (α col row) (β col row)}
---   {k : Fin (Fin.vsum fun x ↦ width)}
+-- def singleRound_message_of_seqCompose_message
+--   {pSpec}
+--   (msg : (ProtocolSpec.seqCompose pSpec).MessageIdx)
 -- :
---   let proof : k.val / height < width := by sorry
---   let col : Fin width := ⟨k.val / height, proof⟩
---   let proof : k.val % height < (fun _ => height)
---   let row : Fin ((fun _ => height) col) := ⟨⟩
---   let x : F (Fin.vflatten α k) (Fin.vflatten β k) := sorry
---   (Fin.fflatten₂
---     (n := fun _ => width)
---     elems
---     k
---     :
---     F (Fin.vflatten α k) (Fin.vflatten β k)
---   )
---   =
---   x
 
+-- lemma either
+--   {T : Fin 2 → Type} {width}
+--   {f : (i : Fin 2) → T i}
+--   {k}
+-- :
+--   (Fin.fflatten₂ (fun (_ : Fin width) => f) k = f 0) ∨
+--   (Fin.fflatten₂ (fun (_ : Fin width) => f) k = cast (sorry) (f 1))
 -- := by
 --   done
 
-lemma either
-  {T : Fin 2 → Type} {width}
-  {f : (i : Fin 2) → T i}
-  {k}
+-- lemma message_type
+--   {F} [CommSemiring F]
+--   {n}
+--   {x}
+-- :
+--   ((ProtocolSpec.seqCompose fun (x : Fin n) ↦ Sumcheck.Spec.SingleRound.pSpec F 2).Message x) =
+--   (Polynomial.degreeLE F ↑2)
+-- := by
+--   unfold ProtocolSpec.seqCompose Fin.vflatten
+--   dsimp
+
+-- universe u v w in
+-- lemma vflatten_existential
+--   {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {width : ℕ}
+--   {α : (i : Fin m) → (j : Fin ((fun _ => width) i)) → A} {β : (i : Fin m) → (j : Fin ((fun _ => width) i)) → B}
+--   (v : (i : Fin m) → (j : Fin ((fun _ => width) i)) → F (α i j) (β i j))
+--   (k : Fin (Fin.vsum (fun (_ : Fin m) => width)))
+-- :
+--   ∃ x y,
+--   Fin.vflatten α k =
+--   α x y
+-- := by
+--   by_cases h_width : width = 0
+--   · simp [Fin.vsum_eq_univ_sum, h_width] at k
+--     exact Fin.elim0 k
+--   · obtain ⟨k, hk⟩ := k
+--     have : k / width < m := by
+--       simp [Fin.vsum_eq_univ_sum] at hk
+--       rewrite [mul_comm] at hk
+--       exact Nat.div_lt_of_lt_mul hk
+--     use ⟨k / width, this⟩
+--     use ⟨k % width, by {
+--       apply Nat.mod_lt
+--       grind
+--     }⟩
+--     unfold Fin.vflatten
+--     unfold Fin.dflatten
+--     Split
+--     done
+
+-- universe u v w in
+-- lemma vflatten_existential
+--   {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {n : Fin m → ℕ}
+--   {α : (i : Fin m) → (j : Fin (n i)) → A} {β : (i : Fin m) → (j : Fin (n i)) → B}
+--   (v : (i : Fin m) → (j : Fin (n i)) → F (α i j) (β i j))
+--   (k : Fin (Fin.vsum n))
+-- :
+--   ∃ x y,
+--   Fin.vflatten α k =
+--   α x y
+-- := by
+--   unfold Fin.vflatten Fin.dflatten
+
+
+
+-- universe u v w in
+-- lemma existential
+--   {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {n : Fin m → ℕ}
+--   {α : (i : Fin m) → (j : Fin (n i)) → A} {β : (i : Fin m) → (j : Fin (n i)) → B}
+--   (v : (i : Fin m) → (j : Fin (n i)) → F (α i j) (β i j))
+--   (k : Fin (Fin.vsum n))
+-- :
+--   ∃ x y h,
+--     Fin.fflatten₂ v k =
+--     cast h (v x y)
+-- := by
+--   -- by_contra
+--   -- simp at this
+--   obtain ⟨k, hk⟩ := k
+--   set length := Fin.vsum n with eq
+--   induction' length with sum ih generalizing n
+
+--   set num := Fin.vsum n with eq
+--   done
+
+-- lemma aux
+--   {F : Type} [CommSemiring F]
+--   {num_sumcheck_rounds : ℕ}
+--   (x : (Sumcheck.Spec.pSpec F 2 num_sumcheck_rounds).MessageIdx)
+-- :
+--   ProtocolSpec.instOracleInterfaceMessageSeqCompose x = cast (by {
+--     sorry
+--   }) (OracleInterface.instPolynomialDegreeLE F 2)
+-- := by
+--   unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose
+--   have : x = ⟨x.1, x.2⟩ := rfl
+--   rewrite [this]; clear this
+--   dsimp
+--   unfold Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec
+--   unfold ProtocolSpec.instOracleInterfaceMessageAppend
+--   unfold Sumcheck.Spec.SingleRound.instOI₂
+--   unfold ProtocolSpec.instOracleInterfaceMessageAppend
+--   unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionV_to_PVempty
+--   unfold Sumcheck.Spec.SingleRound.instOI₁
+--   unfold ProtocolSpec.instOracleInterfaceMessageAppend
+--   unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionP_to_VVempty
+--   dsimp
+
+
+--   dsimp [Fin.fappend₂, Fin.fconcat₂, Fin.fcons₂, Fin.dappend, Fin.vcons, Fin.dcons, Fin.dconcat]
+--   simp [SUmcheck.Spec.pSpec] at x
+
+
+--   rewrite [this] at inner
+--   := rfl
+--   done
+
+
+-- lemma aux
+--   {F : Type} [CommSemiring F]
+--   {num_sumcheck_rounds : ℕ}
+--   (x : (Sumcheck.Spec.pSpec F 2 num_sumcheck_rounds).MessageIdx)
+-- :
+--   ProtocolSpec.instOracleInterfaceMessageSeqCompose x =
+--   let messageDirection := fun (i : Fin 1) =>
+--     match i with
+--     | 0 => Direction.P_to_V
+--   let challengeDirection := fun (i : Fin 1) =>
+--     match i with
+--     | 0 => Direction.V_to_P
+--   let singleRoundDirection := messageDirection ++ᵛ challengeDirection
+--   let messageType := fun (i : Fin 1) =>
+--     match i with
+--     | 0 => ↥(Polynomial.degreeLE F 2)
+--   let challengeType := fun (i : Fin 1) =>
+--     match i with
+--     | 0 => F
+--   let singleRoundType := messageType ++ᵛ challengeType
+--   let gap := fun i j h' => Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec F 2 ⟨j, h'⟩
+--   let proof : Fin.vflatten (fun i' ↦ singleRoundDirection) x.1 = Direction.P_to_V := by exact x.2
+--   @Fin.fflatten₂
+--     Direction
+--     Type
+--     (fun dir type ↦ dir = Direction.P_to_V → OracleInterface type)
+--     num_sumcheck_rounds
+--     (fun x ↦ 2)
+--     (fun i' ↦ singleRoundDirection)
+--     (fun i' ↦ singleRoundType)
+--     gap
+--     x.1
+--     proof
+-- := by
+--   unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose
+--   obtain ⟨a,b⟩ := x
+--   dsimp
+--   rfl
+
+-- lemma aux'
+--   {F : Type} [CommSemiring F]
+--   {num_sumcheck_rounds : ℕ}
+--   (x : (Sumcheck.Spec.SingleRound.pSpec F 2).MessageIdx)
+-- :
+--   Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec F 2 x =
+--   sorry
+-- := by
+--   unfold Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec
+--   unfold ProtocolSpec.instOracleInterfaceMessageAppend
+--   obtain ⟨a,b⟩ := x
+--   dsimp
+--   rewrite [fappend₂_]
+--   rfl
+
+theorem _root_.ProtocolSpec.seqCompose_message_eq
+  {m : ℕ}
+  {n : Fin m → ℕ}
+  {pSpec : ∀ i, ProtocolSpec (n i)}
+  (i : (ProtocolSpec.seqCompose pSpec).MessageIdx)
 :
-  (Fin.fflatten₂ (fun (_ : Fin width) => f) k = f 0) ∨
-  (Fin.fflatten₂ (fun (_ : Fin width) => f) k = cast (sorry) (f 1))
-:= by
-  done
+  (ProtocolSpec.seqCompose pSpec).Message i =
+  (pSpec (ProtocolSpec.seqComposeMessageIdxToSigma i).1).Message
+    (ProtocolSpec.seqComposeMessageIdxToSigma i).2 := by
+  unfold ProtocolSpec.Message ProtocolSpec.seqComposeMessageIdxToSigma
+  simp only [ProtocolSpec.seqCompose_type]
+  conv_lhs => rw [← Fin.embedSum_splitSum i.1]
+  rw [Fin.vflatten_embedSum]
 
-lemma message_type
-  {F} [CommSemiring F]
-  {n}
-  {x}
+lemma app_cast_fun
+  {A B C D}
+  {f : A → B}
+  {h_fun : (A → B) = (C → D)}
+  {arg : C}
+  (h_arg : C = A)
+  (h_result : B = D)
 :
-  ((ProtocolSpec.seqCompose fun (x : Fin n) ↦ Sumcheck.Spec.SingleRound.pSpec F 2).Message x) =
-  (Polynomial.degreeLE F ↑2)
+  (cast h_fun f) arg =
+  (cast h_result (f (cast h_arg arg)))
 := by
-  unfold ProtocolSpec.seqCompose Fin.vflatten
-  dsimp
+  aesop
 
-universe u v w in
-lemma vflatten_existential
-  {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {width : ℕ}
-  {α : (i : Fin m) → (j : Fin ((fun _ => width) i)) → A} {β : (i : Fin m) → (j : Fin ((fun _ => width) i)) → B}
-  (v : (i : Fin m) → (j : Fin ((fun _ => width) i)) → F (α i j) (β i j))
-  (k : Fin (Fin.vsum (fun (_ : Fin m) => width)))
-:
-  ∃ x y,
-  Fin.vflatten α k =
-  α x y
-:= by
-  by_cases h_width : width = 0
-  · simp [Fin.vsum_eq_univ_sum, h_width] at k
-    exact Fin.elim0 k
-  · obtain ⟨k, hk⟩ := k
-    have : k / width < m := by
-      simp [Fin.vsum_eq_univ_sum] at hk
-      rewrite [mul_comm] at hk
-      exact Nat.div_lt_of_lt_mul hk
-    use ⟨k / width, this⟩
-    use ⟨k % width, by {
-      apply Nat.mod_lt
-      grind
-    }⟩
-    unfold Fin.vflatten
-    unfold Fin.dflatten
-    Split
-    done
-
-universe u v w in
-lemma vflatten_existential
-  {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {n : Fin m → ℕ}
-  {α : (i : Fin m) → (j : Fin (n i)) → A} {β : (i : Fin m) → (j : Fin (n i)) → B}
-  (v : (i : Fin m) → (j : Fin (n i)) → F (α i j) (β i j))
-  (k : Fin (Fin.vsum n))
-:
-  ∃ x y,
-  Fin.vflatten α k =
-  α x y
-:= by
-  unfold Fin.vflatten Fin.dflatten
-
-
-
-universe u v w in
-lemma existential
-  {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {n : Fin m → ℕ}
-  {α : (i : Fin m) → (j : Fin (n i)) → A} {β : (i : Fin m) → (j : Fin (n i)) → B}
-  (v : (i : Fin m) → (j : Fin (n i)) → F (α i j) (β i j))
-  (k : Fin (Fin.vsum n))
-:
-  ∃ x y h,
-    Fin.fflatten₂ v k =
-    cast h (v x y)
-:= by
-  -- by_contra
-  -- simp at this
-  obtain ⟨k, hk⟩ := k
-  set length := Fin.vsum n with eq
-  induction' length with sum ih generalizing n
-
-  set num := Fin.vsum n with eq
-  done
-
-lemma aux
-  {F : Type} [CommSemiring F]
-  {num_sumcheck_rounds : ℕ}
-  (x : (Sumcheck.Spec.pSpec F 2 num_sumcheck_rounds).MessageIdx)
-:
-  ProtocolSpec.instOracleInterfaceMessageSeqCompose x = cast (by {
-    sorry
-  }) (OracleInterface.instPolynomialDegreeLE F 2)
-:= by
-  unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose
-  have : x = ⟨x.1, x.2⟩ := rfl
-  rewrite [this]; clear this
-  dsimp
-  unfold Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec
-  unfold ProtocolSpec.instOracleInterfaceMessageAppend
-  unfold Sumcheck.Spec.SingleRound.instOI₂
-  unfold ProtocolSpec.instOracleInterfaceMessageAppend
-  unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionV_to_PVempty
-  unfold Sumcheck.Spec.SingleRound.instOI₁
-  unfold ProtocolSpec.instOracleInterfaceMessageAppend
-  unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionP_to_VVempty
-  dsimp
-
-
-  dsimp [Fin.fappend₂, Fin.fconcat₂, Fin.fcons₂, Fin.dappend, Fin.vcons, Fin.dcons, Fin.dconcat]
-  simp [SUmcheck.Spec.pSpec] at x
-
-
-  rewrite [this] at inner
-  := rfl
-  done
-
-
-lemma aux
-  {F : Type} [CommSemiring F]
-  {num_sumcheck_rounds : ℕ}
-  (x : (Sumcheck.Spec.pSpec F 2 num_sumcheck_rounds).MessageIdx)
-:
-  ProtocolSpec.instOracleInterfaceMessageSeqCompose x =
-  let messageDirection := fun (i : Fin 1) =>
-    match i with
-    | 0 => Direction.P_to_V
-  let challengeDirection := fun (i : Fin 1) =>
-    match i with
-    | 0 => Direction.V_to_P
-  let singleRoundDirection := messageDirection ++ᵛ challengeDirection
-  let messageType := fun (i : Fin 1) =>
-    match i with
-    | 0 => ↥(Polynomial.degreeLE F 2)
-  let challengeType := fun (i : Fin 1) =>
-    match i with
-    | 0 => F
-  let singleRoundType := messageType ++ᵛ challengeType
-  let gap := fun i j h' => Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec F 2 ⟨j, h'⟩
-  let proof : Fin.vflatten (fun i' ↦ singleRoundDirection) x.1 = Direction.P_to_V := by exact x.2
-  @Fin.fflatten₂
-    Direction
-    Type
-    (fun dir type ↦ dir = Direction.P_to_V → OracleInterface type)
-    num_sumcheck_rounds
-    (fun x ↦ 2)
-    (fun i' ↦ singleRoundDirection)
-    (fun i' ↦ singleRoundType)
-    gap
-    x.1
-    proof
-:= by
-  unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose
-  obtain ⟨a,b⟩ := x
-  dsimp
-  rfl
-
-lemma aux'
-  {F : Type} [CommSemiring F]
-  {num_sumcheck_rounds : ℕ}
-  (x : (Sumcheck.Spec.SingleRound.pSpec F 2).MessageIdx)
-:
-  Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec F 2 x =
-  sorry
-:= by
-  unfold Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec
-  unfold ProtocolSpec.instOracleInterfaceMessageAppend
-  obtain ⟨a,b⟩ := x
-  dsimp
-  rewrite [fappend₂_]
-  rfl
-
+-- set_option pp.explicit true in
 lemma sumcheckResultMessageType
   (F) [Field F]
   {num_vars : ℕ}
@@ -536,69 +674,80 @@ lemma sumcheckResultMessageType
       (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)) =
   F
 := by
-  obtain ⟨a,b⟩ := sumcheckResultIdx _ _ _
-  -- unfold Sumcheck.Spec.pSpec at b
-  have :
-    (ProtocolSpec.instOracleInterfaceMessageSeqCompose ⟨a, b⟩) =
-    @Fin.fflatten₂ Direction Type (fun dir type ↦ dir = Direction.P_to_V → OracleInterface type) (↑num_sumcheck_rounds)
-      (fun x ↦ 2)
-      (fun i' ↦
-        (fun (i : Fin 1) ↦
-            match i with
-            | 0 => Direction.P_to_V) ++ᵛ
-          fun (i : Fin 1) ↦
-          match i with
-          | 0 => Direction.V_to_P)
-      (fun i' ↦
-        (fun (i : Fin 1) ↦
-            match i with
-            | 0 => ↥(Polynomial.degreeLE F 2)) ++ᵛ
-          fun (i : Fin 1) ↦
-          match i with
-          | 0 => F)
-      (fun i' j' h' ↦ Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec F 2 ⟨j', h'⟩) a b
-  := by
-    unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose
+  unfold Sumcheck.Spec.pSpec ProtocolSpec.instOracleInterfaceMessageSeqCompose
+  obtain ⟨idx, h_idx⟩ := sumcheckResultIdx _ _ _
+  change (
+    @OracleInterface.Query (
+      (ProtocolSpec.seqCompose fun x ↦ Sumcheck.Spec.SingleRound.pSpec F 2).Message ⟨idx, h_idx⟩
+    ) (
+      @Fin.fflatten₂
+        Direction
+        Type
+        (fun dir type ↦ dir = Direction.P_to_V → OracleInterface type)
+        (↑num_sumcheck_rounds)
+        (fun x ↦ 2)
+        (fun i' ↦ ((fun x ↦ Sumcheck.Spec.SingleRound.pSpec F 2) i').dir)
+        (fun i' ↦ ((fun x ↦ Sumcheck.Spec.SingleRound.pSpec F 2) i').Type)
+        (fun i' j' h' ↦
+          (
+            fun i ↦ Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec F 2
+          ) i' ⟨j', h'⟩) idx h_idx
+    ) = F
+  )
+  set inst := Fin.fflatten₂ _ _ with eq
+  rewrite [Fin.fflatten₂_eq_splitSum] at eq
+  have heq := heq_of_eq_cast _ eq
+  unfold Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec at heq
+  unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
+  dsimp at heq
+  unfold Sumcheck.Spec.SingleRound.instOI₂ at heq
+  unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
+  dsimp at heq
+  unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionV_to_PVempty at heq
+  dsimp at heq
+  set idx' := idx.splitSum.snd with h_idx'
+  by_cases h_idx'_zero : idx' = 0
+  · rewrite [h_idx'_zero] at heq
+    rewrite [
+      show (0: Fin 2) = (0 : Fin 1).castAdd 1 by grind,
+      Fin.fappend₂_left
+    ] at heq
+    unfold Sumcheck.Spec.SingleRound.instOI₁ at heq
+    unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
+    unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionP_to_VVempty at heq
+    dsimp at heq
+    have : inst h_idx ≍ (fun h' ↦ OracleInterface.instPolynomialDegreeLE F 2) h_idx := by
+      have : h_idx ≍ h_idx := by rfl
+      have := @heq_apply _ _ _ _ (by {
+        rewrite [←idx.embedSum_splitSum, Fin.vflatten_embedSum, ←h_idx', h_idx'_zero]
+        rfl
+      }) (by {
+        rewrite [←idx.embedSum_splitSum, Fin.vflatten_embedSum, ←h_idx', h_idx'_zero]
+        rfl
+      }) _ _ heq h_idx rfl (by grind)
+      exact this
+    have : (
+      OracleInterface.instPolynomialDegreeLE F 2
+    ).Query = F := rfl
+    conv_rhs => rewrite [←this]
+    congr
+    rewrite [ProtocolSpec.seqCompose_message_eq]
+    unfold ProtocolSpec.seqComposeMessageIdxToSigma
     dsimp
-    done
-  -- Plan is to unfold through these instances one at a time, removing the matches like that
-  -- unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec ProtocolSpec.instOracleInterfaceMessageAppend Sumcheck.Spec.SingleRound.instOI₂ ProtocolSpec.instOracleInterfaceMessageAppend Sumcheck.Spec.SingleRound.instOI₁
-  -- unfold ProtocolSpec.instOracleInterfaceMessageAppend ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionP_to_VVempty OracleInterface.instPolynomialDegreeLE
-  -- unfold ProtocolSpec.instOracleInterfaceMessageEmpty ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionV_to_PVempty
-  -- simp
-  -- rw! (castMode := .all) [
-  --   sumcheckResultIdx, ProtocolSpec.sigmaMessageIdxToSeqCompose, lastSumcheckRound,
-  --   Sumcheck.Spec.pSpec, ProtocolSpec.seqCompose
-  -- ]
-  -- dsimp
-  -- have (message) (inst) (queryType) (oc) (h: inst = {Query := queryType, toOC := oc}) : @OracleInterface.Query message inst = queryType := by rw [h]; rfl
-  -- rw [this (queryType := F)]
-  -- case oc => exact { spec := OracleSpec.ofFn fun x ↦ F,
-  --                                       impl := fun point ↦ do
-  --                                         let __do_lift ← read
-  --                                         pure (Polynomial.eval point ↑__do_lift) }
-  -- case h =>
-  --   rewrite [Fin.fflatten₂_embedSum]
-  --   simp
-  --   have :
-  --     (fun  (i : Fin 0) (h : !v[] i = Direction.P_to_V) ↦ (Fin.elim0 i : !v[] i = Direction.P_to_V → OracleInterface (!v[] i)) h) =
-  --     (fun  (i : Fin 0) (h : !v[] i = Direction.P_to_V) ↦ !h[])
-  --   := rfl
-
-  --   done
-
-  -- rw! (castMode := .all) [Fin.vflatten_embedSum]
-  -- aesop
-  -- rfl
-  -- dsimp
-
-  -- rw! [Fin.vappend_left_of_lt]
-  -- . dsimp [
-  --     OracleInterface.instPolynomialDegreeLE, sumcheckResultIdx
-  --   ]
-  --   done
-  -- . grind
-
+    rewrite [←h_idx', h_idx'_zero]
+    rfl
+  · have h_idx'_one : idx' = 1 := by grind
+    unfold Sumcheck.Spec.pSpec ProtocolSpec.seqCompose at h_idx
+    dsimp at h_idx
+    rewrite [
+      ←idx.embedSum_splitSum,
+      Fin.vflatten_embedSum,
+      ←h_idx',
+      h_idx'_one,
+      Fin.vappend_right_of_not_lt
+    ] at h_idx
+    · simp at h_idx
+    · grind
 
 
 noncomputable def sumcheckLens
@@ -671,48 +820,6 @@ def output
       num_sumcheck_rounds
   )
 where
-  -- outputOracle := Sum.inl {
-  --   embed := ⟨
-  --     fun idx => match idx with
-  --       | .WeightPolynomial => Sum.inl .WeightPolynomial
-  --       | .CodeWord => Sum.inl .CodeWord
-  --       | .CodeWordPolynomial => Sum.inl .CodeWordPolynomial
-  --       | .SumcheckResult =>
-  --           Sum.inr (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds),
-  --     by
-  --       simp [Function.Injective]
-  --       intro a1 a2
-  --       fin_cases a1 <;> fin_cases a2 <;> dsimp
-  --       <;> intro h_eq
-  --       all_goals try rfl
-  --       all_goals exfalso; grind
-  --   ⟩
-  --   hEq := by
-  --     intro i; fin_cases i <;> try rfl
-  --     -- The sum-check result oracle is the message at the head of the final round.
-  --     change OracleStatementMid domain num_vars OracleIdxMid.SumcheckResult
-  --       = (Sumcheck.Spec.pSpec F (deg := 2) num_sumcheck_rounds).Message
-  --           (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)
-  --     exact (Fin.vflatten_embedSum
-  --       (fun (_ : Fin num_sumcheck_rounds.val) => (Sumcheck.Spec.SingleRound.pSpec F 2).Type)
-  --       (lastSumcheckRound num_sumcheck_rounds h_num_sumcheck_rounds) 0).symm
-  --   outputInterface_heq := by
-  --     intro i
-  --     fin_cases i
-  --     all_goals try rfl
-  --     change HEq (OracleStatement.oracleInterfaceMid domain num_vars OracleIdxMid.SumcheckResult)
-  --       (ProtocolSpec.instOracleInterfaceMessageSeqCompose
-  --         (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
-  --     unfold ProtocolSpec.instOracleInterfaceMessageSeqCompose sumcheckResultIdx
-  --       ProtocolSpec.sigmaMessageIdxToSeqCompose
-  --     dsimp only
-  --     rw [Fin.fflatten₂_embedSum]
-  --     refine HEq.symm (heq_app_prop ?_ (cast_heq _ _) _ rfl)
-  --     exact congrArg OracleInterface
-  --       (Fin.vflatten_embedSum
-  --         (fun (_ : Fin num_sumcheck_rounds.val) => (Sumcheck.Spec.SingleRound.pSpec F 2).Type)
-  --         (lastSumcheckRound num_sumcheck_rounds h_num_sumcheck_rounds) 0)
-  -- }
   outputOracle := Sum.inr {
     materializeOutput challenges oracleStatement messages oracleIdx := match oracleIdx with
       | .WeightPolynomial => oracleStatement .WeightPolynomial
@@ -731,12 +838,88 @@ where
         | .CodeWordPolynomial => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.CodeWordPolynomial, queryData⟩)) (pure ·)
         | .SumcheckResult => OracleComp.queryBind (Sum.inr (Sum.inr
             ⟨sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds, cast (by {
-              -- aesop (add simp [sumcheckResultIdx, ProtocolSpec.sigmaMessageIdxToSeqCompose, lastSumcheckRound, OracleInterface.Query])
+              rewrite [sumcheckResultMessageType]
               rfl
             }) queryData⟩
-          )) (pure ·)
+          )) (fun data => do return (cast (by {
+            simp [OracleInterface.toOracleSpec]
+            have : (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds).val.splitSum.snd = 0 := by
+              obtain ⟨idx, h_idx⟩ := sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds
+              by_contra
+              have h_one : idx.splitSum.snd = 1 := by grind
+              simp at h_idx
+              rewrite [←idx.embedSum_splitSum, Fin.vflatten_embedSum, h_one] at h_idx
+              reduce at h_idx
+              simp at h_idx
+
+            congr
+            . simp [OracleStatementMid]
+              rewrite [
+                ←Fin.embedSum_splitSum (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds).val,
+                this,
+                Fin.vflatten_embedSum
+              ]
+              rfl
+            . simp [
+                ProtocolSpec.instOracleInterfaceMessageSeqCompose,
+                Fin.fflatten₂_eq_splitSum
+              ]
+              rw! [this]
+              simp [
+                Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec,
+                ProtocolSpec.instOracleInterfaceMessageAppend,
+                Sumcheck.Spec.SingleRound.instOI₂,
+                Fin.fconcat₂,
+                Sumcheck.Spec.SingleRound.instOI₁,
+                ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionP_to_VVempty,
+                OracleInterface.instPolynomialDegreeLE
+              ]
+              have {Y Z} (y : Y) (z : Z) : (fun x => y) z = y := rfl
+
+              rewrite [←this (OracleStatement.oracleInterfaceMid _ _ _ _) (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds).2]
+              clear this
+              set lhs_fun := fun h' ↦ {
+                Query := F
+                toOC := _
+                : OracleInterface _
+              }
+              set lhs_fun_cast := cast _ lhs_fun
+              set rhs_fun := fun x ↦ OracleStatement.oracleInterfaceMid domain _ _ _
+              apply heq_apply
+              · rfl
+              · congr
+                simp
+                rewrite [←Fin.embedSum_splitSum (sumcheckResultIdx _ _ _).val, Fin.vflatten_embedSum]
+                rewrite [this]
+                reduce
+                rfl
+              · subst lhs_fun_cast
+                apply (cast_heq_iff_heq _ _ _).mpr
+                subst lhs_fun
+                subst rhs_fun
+                apply heq_funext
+                simp
+                rewrite [←Fin.embedSum_splitSum (sumcheckResultIdx _ _ _).val, Fin.vflatten_embedSum]
+                . simp [this]
+                . rfl
+                . intro h h' heq
+                  rfl
+              · rfl
+            . apply (cast_heq_iff_heq (a := queryData) _ _).mpr
+              rfl
+          }) data))
         | .SumcheckChallenges => do return sumcheckChallenge (F := F) queryData challenges
-    simulateOutputQuery_eq := _
+    simulateOutputQuery_eq challenges oStmt messages q := by
+      obtain ⟨queryIdx, queryData⟩ := q
+      fin_cases queryIdx
+      . rfl
+      . rfl
+      . rfl
+      . cbv
+        congr
+        dsimp
+
+      . rfl
   }
 
   materialize_eq := by
