@@ -669,7 +669,8 @@ lemma sumcheckResultMessageType
   {num_vars : ℕ}
   (num_sumcheck_rounds : Fin (num_vars + 1))
   (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
-: OracleInterface.Query
+:
+  OracleInterface.Query
     ((Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message
       (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)) =
   F
@@ -799,6 +800,112 @@ def sumcheckChallenge
     aesop (add simp [sumcheckChallengeIdx, ProtocolSpec.sigmaChallengeIdxToSeqCompose])
   }) (challenges (sumcheckChallengeIdx F num_sumcheck_rounds round))
 
+lemma answer_cast
+  (F : Type) [Field F] [DecidableEq F]
+  (log_order : ℕ)
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (num_vars : ℕ)
+  (num_sumcheck_rounds : Fin (num_vars + 1))
+  (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
+  (messages : (i : (Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).MessageIdx) →
+    (Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message i)
+  (queryData : F)
+  (h : (Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds) =
+    OracleStatementMid domain num_vars (↑num_sumcheck_rounds) OracleIdxMid.SumcheckResult)
+:
+  @OracleInterface.answer
+    (OracleStatementMid domain num_vars (↑num_sumcheck_rounds) 3)
+    (OracleStatement.oracleInterfaceMid domain num_vars ↑num_sumcheck_rounds ⟨3, by trivial⟩)
+    (cast h (messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)))
+    queryData =
+  cast (by {
+    unfold cast
+    convert congr_eqRec (@OracleInterface.Response _) _ _
+    case convert_4 => rfl
+    congr
+    . unfold Sumcheck.Spec.pSpec ProtocolSpec.instOracleInterfaceMessageSeqCompose
+      obtain ⟨idx, h_idx⟩ := sumcheckResultIdx _ _ _
+      dsimp
+      set inst := Fin.fflatten₂ _ _ with eq
+      rewrite [Fin.fflatten₂_eq_splitSum] at eq
+      have heq := heq_of_eq_cast _ eq
+      unfold Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec at heq
+      unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
+      dsimp at heq
+      unfold Sumcheck.Spec.SingleRound.instOI₂ at heq
+      unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
+      dsimp at heq
+      unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionV_to_PVempty at heq
+      dsimp at heq
+      set idx' := idx.splitSum.snd with h_idx'
+      by_cases h_idx'_zero : idx' = 0
+      · rewrite [h_idx'_zero] at heq
+        rewrite [
+          show (0: Fin 2) = (0 : Fin 1).castAdd 1 by grind,
+          Fin.fappend₂_left
+        ] at heq
+        unfold Sumcheck.Spec.SingleRound.instOI₁ at heq
+        unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
+        unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionP_to_VVempty at heq
+        dsimp at heq
+        have : inst h_idx ≍ (fun h' ↦ OracleInterface.instPolynomialDegreeLE F 2) h_idx := by
+          have : h_idx ≍ h_idx := by rfl
+          have := @heq_apply _ _ _ _ (by {
+            rewrite [←idx.embedSum_splitSum, Fin.vflatten_embedSum, ←h_idx', h_idx'_zero]
+            rfl
+          }) (by {
+            rewrite [←idx.embedSum_splitSum, Fin.vflatten_embedSum, ←h_idx', h_idx'_zero]
+            rfl
+          }) _ _ heq h_idx rfl (by grind)
+          exact this
+        congr
+      · have h_idx'_one : idx' = 1 := by grind
+        unfold Sumcheck.Spec.pSpec ProtocolSpec.seqCompose at h_idx
+        dsimp at h_idx
+        rewrite [
+          ←idx.embedSum_splitSum,
+          Fin.vflatten_embedSum,
+          ←h_idx',
+          h_idx'_one,
+          Fin.vappend_right_of_not_lt
+        ] at h_idx
+        · simp at h_idx
+        · grind
+    . rw! [eqRec_heq_iff]
+      rfl
+  }) (@OracleInterface.answer
+    ((Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
+    _
+    (messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
+    (cast (by {
+      symm
+      convert sumcheckResultMessageType _ _ _
+    }) queryData)
+  ) -- (OracleInterface.answer (messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds) (cast (by sorry) queryData)))
+:= by
+  rewrite [←heq_iff_eq, heq_cast_iff_heq]
+  congr
+  . done
+  . done
+  . symm
+    rewrite [heq_cast_iff_heq]
+    rfl
+  . rewrite [heq_cast_iff_heq]
+    rfl
+
+universe u v in
+lemma pure_cast
+  (A B)
+  (a : A)
+  (h : A = B)
+  {monad : Type u → Type v}
+  [inst : Pure monad]
+:
+  @pure monad inst B (cast h a) =
+  cast (by rw [h]) (@pure monad inst A a)
+:= by
+  grind only
+
 def output
   {ι : Type} (oSpec : OracleSpec ι)
   {F : Type} [Field F] [DecidableEq F] [SampleableType F]
@@ -914,10 +1021,73 @@ where
       fin_cases queryIdx
       . rfl
       . rfl
-      . rfl
-      . cbv
-        congr
-        dsimp
+      . dsimp
+        rfl
+      .
+        simp [-bind_pure_comp]
+        rewrite [answer_cast, pure_cast]
+        cbv
+        simp
+        convert pure_cast _ _ _ _
+        . simp [cast]
+          rfl
+
+
+
+        -- unfold OracleInterface.answer
+        -- conv_lhs => unfold Functor.map
+
+        -- unfold pure
+
+        -- rewrite [←OracleInterface.answer.eq_def]
+        -- change F at queryData
+
+        -- rw! (castMode := .all) [this]
+
+        -- unfold OracleInterface.answer OracleInterface.toOC OracleStatement.oracleInterfaceMid
+        -- dsimp
+        -- simp
+
+
+
+
+
+
+
+        -- unfold OracleInterface.answer ReaderT.run OracleInterface.toOC
+        -- simp [
+        --   OracleStatement.oracleInterfaceMid
+        -- ]
+        -- conv_rhs =>
+        --   unfold Functor.map ReaderT.instMonad
+        --   dsimp [Applicative.toFunctor, ReaderT.instApplicativeOfMonad, ReaderT.instFunctorOfMonad, read, readThe, MonadReaderOf.read, ReaderT.read, Functor.map]
+        -- unfold simulateQ PFunctor.FreeM.liftM PFunctor.FreeM.lift
+        -- dsimp
+        -- unfold PFunctor.FreeM.lift
+        -- simp
+        -- unfold PFunctor.FreeM.lift
+        -- split
+        -- · exfalso
+        --   grind
+        -- next x a cont heq =>
+        --   simp only [
+        --     OracleSpec.ofPFunctor_toPFunctor, OracleSpec.add_apply_inr, PFunctor.FreeM.liftBind_eq,
+        --     PFunctor.FreeM.bind_pure, PFunctor.FreeM.bind_eq_bind, Fin.isValue, map_bind
+        --   ] at heq ⊢
+        --   unfold_projs
+        --   rewrite [
+        --     ←PFunctor.FreeM.map_bind
+        --   ]
+        --   dsimp
+        --   sorry
+        --   done
+
+
+        -- rfl
+
+        -- -- cbv
+        -- -- congr
+        -- -- dsimp
 
       . rfl
   }
