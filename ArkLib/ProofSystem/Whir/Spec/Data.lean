@@ -16,9 +16,8 @@ public section Public
 
 namespace Whir.Spec
 
---TODO please
 open MvPolynomial in
-def composePolynomials
+noncomputable def composePolynomials
   {F : Type} [Field F]
   {num_vars : ℕ}
   (f : F⦃≤ 1⦄[X Fin num_vars])
@@ -26,8 +25,102 @@ def composePolynomials
 :
   F⦃≤2⦄[X Fin num_vars]
 :=
-  --λ ..b => w(f(..b), ..b)
-  sorry
+  ⟨
+    MvPolynomial.eval₂ MvPolynomial.C (Fin.cases f.val MvPolynomial.X) w,
+    by
+      rw [mem_restrictDegree]
+      intros s h i
+      simp only [eval₂_eq', MvPolynomial.mem_support_iff, AddMonoidAlgebra.coeff_sum,
+        Finsupp.coe_finsetSum, Finset.sum_apply, coeff_C_mul, ne_eq] at h
+      have h : ∃ x ∈ w.1.support, w.1.coeff x * (∏ i, ((Fin.cases (f.1 : F[X Fin num_vars]) MvPolynomial.X i) : F[X Fin num_vars] ) ^ x i).coeff s ≠ 0 :=
+        Finset.exists_ne_zero_of_sum_ne_zero h
+      rcases h with ⟨x, ⟨x_in, h⟩⟩
+      simp only [ne_eq, mul_eq_zero, not_or] at h
+      have x_le : ∀ i, x i ≤ 1 := by
+            have bla := w.2
+            rw [mem_restrictDegree] at bla
+            exact bla x x_in
+      have : x 0 = 0 ∨ x 0 = 1 := by grind
+      rcases this with x_eq | x_eq
+      · have : ∀ i, s i = x i.succ := by
+          intros i
+          have h := h.2
+          have :
+              MvPolynomial.monomial
+                ⟨
+                  (x.1 \ {0}).image
+                    (fun n ↦
+                      ⟨n.1 - 1, by rcases num_vars <;> [(exfalso; exact Fin.elim0 i); omega]⟩
+                    ),
+                  fun (i : Fin num_vars) ↦ x i.succ,
+                  by
+                    intros a
+                    simp only [Finset.mem_image, Finset.mem_sdiff, Finsupp.mem_support_iff, ne_eq,
+                      Finset.mem_singleton]
+                    apply Iff.intro
+                    · rintro ⟨a', h'⟩
+                      rw [←h'.2]
+                      grind
+                    · intros h
+                      exists a.succ
+                      simpa using h
+                ⟩ (1 : F) = ∏ i, X i ^ x i.succ := by
+            simp [MvPolynomial.monomial_eq]
+          simp only [Fin.prod_univ_succ, Fin.cases_zero, x_eq, pow_zero, Fin.cases_succ,
+            one_mul] at h
+          rw [←this] at h
+          simp only [coeff_monomial, ite_eq_right_iff, one_ne_zero, imp_false,
+            Decidable.not_not] at h
+          rw [←h]
+          simp
+        rw [this]
+        grind
+      · have h := h.2
+        simp only [Fin.prod_univ_succ, Fin.cases_zero, x_eq, pow_one, Fin.cases_succ, MvPolynomial.coeff_mul] at h
+        have h := Finset.exists_ne_zero_of_sum_ne_zero h
+        rcases h with ⟨⟨s₀, s₁⟩, hₛ, h⟩
+        simp at hₛ
+        simp only [← hₛ, Finsupp.coe_add, Pi.add_apply, ge_iff_le]
+        simp only [ne_eq, mul_eq_zero, not_or] at h
+        have : s₀ i ≤ 1 := by
+          have bla := f.2
+          rw [mem_restrictDegree] at bla
+          specialize bla s₀
+          apply bla
+          simpa using h.1
+        have : s₁ i ≤ 1 := by
+          have : s₁ i = x i.succ := by
+            have h := h.2
+            have :
+                MvPolynomial.monomial
+                  ⟨
+                    (x.1 \ {0}).image
+                      (fun n ↦
+                        ⟨n.1 - 1, by rcases num_vars <;> [(exfalso; exact Fin.elim0 i); omega]⟩
+                      ),
+                    fun (i : Fin num_vars) ↦ x i.succ,
+                    by
+                      intros a
+                      simp only [Finset.mem_image, Finset.mem_sdiff, Finsupp.mem_support_iff, ne_eq,
+                        Finset.mem_singleton]
+                      apply Iff.intro
+                      · rintro ⟨a', h'⟩
+                        rw [←h'.2]
+                        grind
+                      · intros h
+                        exists a.succ
+                        simpa using h
+                  ⟩ (1 : F) = ∏ i, X i ^ x i.succ := by
+              simp [MvPolynomial.monomial_eq]
+            rw [←this] at h
+            simp only [coeff_monomial, ite_eq_right_iff, one_ne_zero, imp_false,
+              Decidable.not_not] at h
+            rw [←h]
+            simp
+          grind
+        linarith
+  ⟩
+#exit
 
 section Definitions
 
