@@ -103,80 +103,7 @@ instance oracleInterfaceMid
       let challenges : Fin num_sumcheck_rounds → F ← read
       return challenges idx
 
-
--- def sumcheckLens
---   {F : Type} [Field F] [DecidableEq F]
---   {log_order : ℕ}
---   (domain : Domain.SmoothCosetFftDomain log_order F)
---   (num_vars : ℕ)
---   (num_sumcheck_rounds : (Fin (num_vars + 1)))
--- : OracleStatement.Lens
---   (OuterStmtIn := Statement domain)
---   (InnerStmtIn := Sumcheck.Spec.StatementRound F num_vars 0)
---   (InnerStmtOut := Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
---   (OuterStmtOut :=
---     (Statement domain) ×
---     (Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
---   )
---   (OuterOStmtIn := OracleStatement domain num_vars)
---   (InnerOStmtIn := Sumcheck.Spec.OracleStatement F num_vars (deg := 2))
---   (InnerOStmtOut := Sumcheck.Spec.OracleStatement F num_vars (deg := 2))
---   (OuterOStmtOut := OracleStatementMid domain num_vars)
--- where
---   toFunA (x : Statement domain × (∀ idx : OracleIdx, OracleStatement domain num_vars idx)) := ⟨
---     (Statement.sumcheckLens domain num_vars num_sumcheck_rounds).proj x.1,
---     fun _ => composePolynomials (x.2 .CodeWordPolynomial) (x.2 .WeightPolynomial)
---   ⟩
-
---   toFunB x y := ⟨
---     ⟨x.1,  y.1⟩,
---     fun idx => match idx with
---       | .WeightPolynomial => x.2 .WeightPolynomial
---       | .CodeWord => x.2 .CodeWord
---       | .CodeWordPolynomial => x.2 .CodeWordPolynomial
---       | .SumcheckResult => by
---         simp [PFunctor.monomial] at x y
---         done
---   ⟩
-
--- def OStmtOut
---   {F : Type} [Field F] [DecidableEq F]
---   {log_order : ℕ}
---   (domain : Domain.SmoothCosetFftDomain log_order F)
---   (num_vars : ℕ)
---   (i : Fin 2)
--- := match i with
---   | 0 => OracleStatement domain num_vars
---   | 1 => Sumcheck.Spec.OracleStatement F (num_vars + 1) 1 ()
-
--- instance
---   {F : Type} [Field F] [DecidableEq F]
---   {log_order : ℕ}
---   (domain : Domain.SmoothCosetFftDomain log_order F)
---   (num_vars : ℕ)
---   (i : Fin 2)
--- : OracleInterface (OStmtOut domain num_vars i) := match i with
---   | 0 => inferInstanceAs (OracleInterface (OracleStatement domain))
---   | 1 => inferInstanceAs (OracleInterface (Sumcheck.Spec.OracleStatement F (num_vars + 1) 1 ()))
-
--- instance
---   {F : Type} [Field F] [DecidableEq F]
---   {log_order : ℕ}
---   (domain : Domain.SmoothCosetFftDomain log_order F)
---   (num_vars : ℕ)
---   (i : Fin 2)
--- : OracleInterface (OStmtOut domain num_vars i) where
---   Query := match i with
---     | 0 => (oracleInterface domain num_vars).Query
---     | 1 => Fin (num_vars + 1) → F
---   toOC.spec := match i with
---     | 0 => (oracleInterface domain num_vars).spec
---     | 1 => (Fin (num_vars + 1) → F) →ₒ F
---   toOC.impl := match i with
---     | 0 => (oracleInterface domain num_vars).toOC.impl
---     | 1 => fun points => do return (← read).1.eval points
-
-def sumcheckExecutableLens
+noncomputable def sumcheckExecutableLens
   {F : Type} [Field F] [DecidableEq F]
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
@@ -236,63 +163,23 @@ where
         }) weightPolyEvaluation))
       )
 
-  -- by
-  --   apply OracleComp.queryBind
-  --   case t =>
-  --     simp [OracleSpec.Domain, OracleInterface.Query]
-  --     apply Sigma.mk
-  --     case fst =>
-  --       exact OracleIdx.CodeWordPolynomial
-  --     dsimp
-  --     exact oracleIdx.2
-  --   intro codeWordEvaluation
-  --   simp [OracleSpec.Range] at codeWordEvaluation
-  --   simp [OracleInterface.toOracleSpec, OracleInterface.Response, OracleInterface.toOC] at codeWordEvaluation
-  --   set x := cast _ _
-  --   simp [OracleSpec.Domain] at x
-  --   set x_first := x.fst with eq
-  --   set x_second := x.snd
-  --   rw! (castMode := .all) [←eq] at codeWordEvaluation
-  --   have : x.fst = OracleIdx.CodeWordPolynomial := by
-  --     subst x
-  --     set h := Eq.symm _ with h_eq
-  --     set y := @Sigma.mk _ _ OracleIdx.CodeWordPolynomial _
-  --     have : y.fst = OracleIdx.CodeWordPolynomial := rfl
-  --     rewrite [←this]
-  --     congr
-  --     funext
-  --     simp [OracleInterface.Query]
-  --     exact cast_heq h y
-  --   rw! (castMode := .all) [eq, this] at codeWordEvaluation
-  --   simp [OracleSpec.ofFn] at codeWordEvaluation
-
-  --   apply OracleComp.queryBind
-  --   case t =>
-  --     apply Sigma.mk
-  --     case fst =>
-  --       exact OracleIdx.WeightPolynomial
-  --     simp [OracleInterface.Query]
-  --     apply Fin.cases
-  --     . exact codeWordEvaluation
-  --     . exact oracleIdx.2
-  --     done
-  --   intro weightPolyEvaluation
-  --   exact do return weightPolyEvaluation
-
   simulateInput_eq := by
     intro outerStmt outerOStmt query
     obtain ⟨queryIdx, queryData⟩ := query
-    simp
+    simp only [Fin.coe_ofNat_eq_mod, Nat.zero_mod, Nat.cast_ofNat]
     fin_cases queryIdx
-    · simp
+    · simp only [Fin.zero_eta, Fin.isValue, cast_eq]
       change Fin num_vars → F at queryData
-      unfold OracleInterface.answer OracleInterface.toOC Sumcheck.Spec.instOracleInterfaceOracleStatementRound
-      simp [OracleInterface.toOC, Functor.map, read, ReaderT.run, readThe, MonadReaderOf.read, ReaderT.read]
+      unfold OracleInterface.answer OracleInterface.toOC
+      unfold Sumcheck.Spec.instOracleInterfaceOracleStatementRound
+      simp only [
+        Fin.coe_ofNat_eq_mod, Nat.zero_mod, Nat.cast_ofNat, Fin.isValue, ReaderT.run,
+        OracleInterface.toOC, read, readThe, MonadReaderOf.read, ReaderT.read, bind_pure_comp,
+        Functor.map
+      ]
       conv_rhs => unfold pure Id.instMonad Applicative.toPure
-      simp
-
-      -- have : composePolynomials
-      done
+      simp [eval_composePolynomials]
+      rfl
     · exact Fin.elim0 queryData.1
     · exact Fin.elim0 queryData
 

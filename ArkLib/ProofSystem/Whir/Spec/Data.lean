@@ -132,52 +132,13 @@ lemma eval_composePolynomials
   let f_val := MvPolynomial.eval points f.val
   MvPolynomial.eval (Fin.cases f_val points) w.val
 := by
+  unfold composePolynomials
+  simp only [MvPolynomial.eval_eval₂]
+  rw [MvPolynomial.map_mvPolynomial_eq_eval₂]
   simp [
-    composePolynomials,
-    MvPolynomial.eval_eq',
-    MvPolynomial.eval₂_eq_eval_map
+    MvPolynomial.eval₂,
+    Fin.prod_univ_succ
   ]
-  rewrite [MvPolynomial.support_map_of_injective]
-  have : ∀ x ∈ w.val.support, ∀ i, x i ≤ 1 := by
-    intro x h_x i
-    have := w.2
-    rewrite [MvPolynomial.mem_restrictDegree] at this
-    exact this x h_x i
-  . congr
-    funext w_support
-    simp [MvPolynomial.coeff_map, mul_assoc]
-    rewrite [←Finset.mul_sum]
-    simp
-    set x := w.val.coeff w_support
-    have : x = 0 ∨ ¬(x = 0) := by grind
-    obtain h_x | h_x := this
-    . grind
-    . simp [h_x, Fin.prod_univ_succ]
-      have : w_support 0 ≤ 1 := by grind
-      have : w_support 0 = 0 ∨ w_support 0 = 1 := by grind
-      obtain h_w_support | h_w_support := this
-      . simp [h_w_support]
-        rewrite [MvPolynomial.prod_X_pow]
-        simp
-        grind
-      . simp [
-          h_w_support,
-          MvPolynomial.prod_X_pow
-        ]
-        rewrite [←mul_assoc, mul_comm (b := f.val), mul_assoc]
-        simp [
-          MvPolynomial.C_mul_monomial,
-          MvPolynomial.coeff_mul
-        ]
-
-
-        done
-    done
-  . apply MvPolynomial.C_injective
-  grind
-
-
-
 
 section Definitions
 
