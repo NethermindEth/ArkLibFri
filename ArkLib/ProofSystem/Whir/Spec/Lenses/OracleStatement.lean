@@ -281,9 +281,20 @@ where
 
   simulateInput_eq := by
     intro outerStmt outerOStmt query
-    -- requires composePolynomials to be defined correctly
-    sorry
-    -- rfl
+    obtain ⟨queryIdx, queryData⟩ := query
+    simp
+    fin_cases queryIdx
+    · simp
+      change Fin num_vars → F at queryData
+      unfold OracleInterface.answer OracleInterface.toOC Sumcheck.Spec.instOracleInterfaceOracleStatementRound
+      simp [OracleInterface.toOC, Functor.map, read, ReaderT.run, readThe, MonadReaderOf.read, ReaderT.read]
+      conv_rhs => unfold pure Id.instMonad Applicative.toPure
+      simp
+
+      -- have : composePolynomials
+      done
+    · exact Fin.elim0 queryData.1
+    · exact Fin.elim0 queryData
 
   liftStmt whirStatementIn sumcheckStatementOut :=
     (whirStatementIn, sumcheckStatementOut)
