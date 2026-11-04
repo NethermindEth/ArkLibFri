@@ -529,7 +529,66 @@ lemma christina
     · simp at h_idx
     · grind
 
--- set_option pp.explicit true in
+section EqualByParts
+
+variable
+  {m : ℕ}
+  {n : Fin m → ℕ}
+  {pSpec : ∀ i, ProtocolSpec (n i)}
+  [inst : ∀ i j, OracleInterface ((pSpec i).Message j)]
+  {i : Fin m}
+  {j : (pSpec i).MessageIdx}
+
+open ProtocolSpec
+
+/-
+A few notes:
+The `heq_apply` bit is just `dcongr_heq` in Mathlib (it also has a redundant `hα` hypothesis, ehh)
+
+The trick is to talk about the instance in isolation `seqCompose_message_inst`, and handwave 
+the definitional type mismatch with `heq` at an abstract level, then immediately prove it in
+`seqCompose_message_type`. The `heq` proofs don't make you want to strangle baby seals
+if they're in a small abstract context without any detail.
+-/
+
+/--
+Composition preserves oracle interfaces of messages.
+-/
+@[simp, grind =]
+theorem seqCompose_message_inst
+:
+  ProtocolSpec.instOracleInterfaceMessageSeqCompose (sigmaMessageIdxToSeqCompose i j) ≍
+  inst i j
+:= by
+  cbv
+  simp only [Fin.fflatten₂_embedSum]
+  exact dcongr_heq (by simp) (by simp) (fun _ _ => cast_heq _ _)
+
+omit inst in
+/--
+Composition preserves types of messages.
+-/
+@[simp, grind =]
+theorem seqCompose_message_type
+:
+  (seqCompose pSpec).Message (sigmaMessageIdxToSeqCompose i j) = (pSpec i).Message j
+:= by
+  simp [sigmaMessageIdxToSeqCompose]
+
+open ProtocolSpec in
+/--
+Composition preserves types of queries.
+-/
+@[simp]
+theorem seqCompose_query_eq
+:
+  OracleInterface.Query ((seqCompose pSpec).Message (sigmaMessageIdxToSeqCompose i j)) =
+  OracleInterface.Query ((pSpec i).Message j)
+:= by
+  grind
+
+end EqualByParts
+
 lemma sumcheckResultMessageType
   (F) [Field F]
   {num_vars : ℕ}
@@ -540,127 +599,8 @@ lemma sumcheckResultMessageType
     ((Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message
       (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)) =
   F
-:= by
-  unfold Sumcheck.Spec.pSpec ProtocolSpec.instOracleInterfaceMessageSeqCompose
-  obtain ⟨idx, h_idx⟩ := sumcheckResultIdx _ _ _
-  -- cbv
-  -- rewrite [←OracleInterface.Query]
-  -- simp
-  -- rw! (castMode := .all) [←idx.embedSum_splitSum, Fin.vflatten_embedSum]
-  -- set x := idx.splitSum.snd with x_eq
-  -- obtain ⟨idx_val, h_idx_val⟩ := x
-  -- rw! [←x_eq]
-  -- by_cases h_x : idx_val = 0
-  -- · subst h_x
-  --   rw! [Fin.vappend_left_of_lt]
-  --   simp
-  --   rewrite [Fin.fflatten₂_embedSum]
-  --   cbv
-  --   simp [eqRec_eq_cast]
-  --   have {A B C D E} (f : A → B) (h1 : (A → B) = (C → D)) (arg) (h2 : D = E) (h3 : C = A) (h4 : B = E) :
-  --     cast h2 ((cast h1 f) arg) =
-  --     cast h4 (f (cast h3 arg))
-  --   := by sorry
-  --   rewrite [this]
-  --   erw [cast_cast]
-  --   rewrite [congr_eqRec @OracleInterface.Query]
-  --   rw! (castMode := .all) [Fin.vflatten_embedSum, Fin.vappend_left_of_lt]
-  --   cbv
-  --   rewrite [eqRec_eq_cast, ←OracleInterface.Query]
-  --   unfold_projs
-  --   rfl
-  -- · have : idx_val = 1 := by grind
-  --   rw! [this] at h_idx
-  --   simp only [
-  --     Nat.reduceAdd, Nat.add_zero,
-  --     Fin.vcons_fin_zero, Fin.vappend_zero, Fin.mk_one,
-  --     Fin.isValue
-  --   ] at h_idx
-  --   rewrite [Fin.vappend_right_of_not_lt] at h_idx
-  --   · simp at h_idx
-  --   · grind
-  -- have := @christina F _ num_sumcheck_rounds.val idx (by {
-  --   sorry
-  -- })
-  -- conv_rhs => rw! (castMode := .all) [←this]
-
-  -- have := @heq_apply
-
-
-
-  change (
-    @OracleInterface.Query (
-      (ProtocolSpec.seqCompose fun x ↦ Sumcheck.Spec.SingleRound.pSpec F 2).Message ⟨idx, h_idx⟩
-    ) (
-      @Fin.fflatten₂
-        Direction
-        Type
-        (fun dir type ↦ dir = Direction.P_to_V → OracleInterface type)
-        (↑num_sumcheck_rounds)
-        (fun x ↦ 2)
-        (fun i' ↦ ((fun x ↦ Sumcheck.Spec.SingleRound.pSpec F 2) i').dir)
-        (fun i' ↦ ((fun x ↦ Sumcheck.Spec.SingleRound.pSpec F 2) i').Type)
-        (fun i' j' h' ↦
-          (
-            fun i ↦ Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec F 2
-          ) i' ⟨j', h'⟩) idx h_idx
-    ) = F
-  )
-  set inst := Fin.fflatten₂ _ _ with eq
-  rewrite [Fin.fflatten₂_eq_splitSum] at eq
-  have heq := heq_of_eq_cast _ eq
-  unfold Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec at heq
-  unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
-  dsimp at heq
-  unfold Sumcheck.Spec.SingleRound.instOI₂ at heq
-  unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
-  dsimp at heq
-  unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionV_to_PVempty at heq
-  dsimp at heq
-  set idx' := idx.splitSum.snd with h_idx'
-  by_cases h_idx'_zero : idx' = 0
-  · rewrite [h_idx'_zero] at heq
-    rewrite [
-      show (0: Fin 2) = (0 : Fin 1).castAdd 1 by grind,
-      Fin.fappend₂_left
-    ] at heq
-    unfold Sumcheck.Spec.SingleRound.instOI₁ at heq
-    unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
-    unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionP_to_VVempty at heq
-    dsimp at heq
-    have : inst h_idx ≍ (fun h' ↦ OracleInterface.instPolynomialDegreeLE F 2) h_idx := by
-      have : h_idx ≍ h_idx := by rfl
-      have := @heq_apply _ _ _ _ (by {
-        rewrite [←idx.embedSum_splitSum, Fin.vflatten_embedSum, ←h_idx', h_idx'_zero]
-        rfl
-      }) (by {
-        rewrite [←idx.embedSum_splitSum, Fin.vflatten_embedSum, ←h_idx', h_idx'_zero]
-        rfl
-      }) _ _ heq h_idx rfl (by grind)
-      exact this
-    have : (
-      OracleInterface.instPolynomialDegreeLE F 2
-    ).Query = F := rfl
-    conv_rhs => rewrite [←this]
-    congr
-    rewrite [ProtocolSpec.seqCompose_message_eq]
-    unfold ProtocolSpec.seqComposeMessageIdxToSigma
-    dsimp
-    rewrite [←h_idx', h_idx'_zero]
-    rfl
-  · have h_idx'_one : idx' = 1 := by grind
-    unfold Sumcheck.Spec.pSpec ProtocolSpec.seqCompose at h_idx
-    dsimp at h_idx
-    rewrite [
-      ←idx.embedSum_splitSum,
-      Fin.vflatten_embedSum,
-      ←h_idx',
-      h_idx'_one,
-      Fin.vappend_right_of_not_lt
-    ] at h_idx
-    · simp at h_idx
-    · grind
-
+:=
+  seqCompose_query_eq
 
 noncomputable def sumcheckLens
   {F : Type} [Field F] [DecidableEq F]
@@ -711,6 +651,42 @@ def sumcheckChallenge
     aesop (add simp [sumcheckChallengeIdx, ProtocolSpec.sigmaChallengeIdxToSeqCompose])
   }) (challenges (sumcheckChallengeIdx F num_sumcheck_rounds round))
 
+section ByPartsAgain
+
+/-
+A few notes:
+
+Once again, don't deal with `heq` 'concretely', wrap in lemmas a'la the old `heq_apply` but not bad.
+
+I still dislike 'this' indentation, just so you know.
+-/
+
+variable {α β : Type}
+         {Oracle₁ : OracleInterface α} {Oracle₂ : OracleInterface β}
+         {query₁ : Oracle₁.Query} {query₂ : Oracle₂.Query}
+         {message₁ : α} {message₂ : β}
+
+/--
+Response congruence.
+-/
+@[grind .]
+theorem responose_congr (h₁ : α = β) (h₂ : Oracle₁ ≍ Oracle₂) (h₃ : query₁ ≍ query₂)
+:
+  Oracle₁.Response query₁ = Oracle₂.Response query₂
+:= by grind
+
+/--
+Answer congruence.
+-/
+@[grind .]
+theorem answer_congr (h₁ : α = β) (h₂ : Oracle₁ ≍ Oracle₂)
+                     (h₃ : message₁ ≍ message₂) (h₄ : query₁ ≍ query₂)
+:
+  Oracle₁.answer message₁ query₁ ≍ Oracle₂.answer message₂ query₂
+:= by grind
+
+end ByPartsAgain
+
 lemma answer_cast
   (F : Type) [Field F] [DecidableEq F]
   (log_order : ℕ)
@@ -729,62 +705,9 @@ lemma answer_cast
     (OracleStatement.oracleInterfaceMid domain num_vars ↑num_sumcheck_rounds ⟨3, by trivial⟩)
     (cast h (messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)))
     queryData =
-  cast (by {
-    unfold cast
-    convert congr_eqRec (@OracleInterface.Response _) _ _
-    case convert_4 => rfl
-    congr
-    . unfold Sumcheck.Spec.pSpec ProtocolSpec.instOracleInterfaceMessageSeqCompose
-      obtain ⟨idx, h_idx⟩ := sumcheckResultIdx _ _ _
-      dsimp
-      set inst := Fin.fflatten₂ _ _ with eq
-      rewrite [Fin.fflatten₂_eq_splitSum] at eq
-      have heq := heq_of_eq_cast _ eq
-      unfold Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec at heq
-      unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
-      dsimp at heq
-      unfold Sumcheck.Spec.SingleRound.instOI₂ at heq
-      unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
-      dsimp at heq
-      unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionV_to_PVempty at heq
-      dsimp at heq
-      set idx' := idx.splitSum.snd with h_idx'
-      by_cases h_idx'_zero : idx' = 0
-      · rewrite [h_idx'_zero] at heq
-        rewrite [
-          show (0: Fin 2) = (0 : Fin 1).castAdd 1 by grind,
-          Fin.fappend₂_left
-        ] at heq
-        unfold Sumcheck.Spec.SingleRound.instOI₁ at heq
-        unfold ProtocolSpec.instOracleInterfaceMessageAppend at heq
-        unfold ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionP_to_VVempty at heq
-        dsimp at heq
-        have : inst h_idx ≍ (fun h' ↦ OracleInterface.instPolynomialDegreeLE F 2) h_idx := by
-          have : h_idx ≍ h_idx := by rfl
-          have := @heq_apply _ _ _ _ (by {
-            rewrite [←idx.embedSum_splitSum, Fin.vflatten_embedSum, ←h_idx', h_idx'_zero]
-            rfl
-          }) (by {
-            rewrite [←idx.embedSum_splitSum, Fin.vflatten_embedSum, ←h_idx', h_idx'_zero]
-            rfl
-          }) _ _ heq h_idx rfl (by grind)
-          exact this
-        congr
-      · have h_idx'_one : idx' = 1 := by grind
-        unfold Sumcheck.Spec.pSpec ProtocolSpec.seqCompose at h_idx
-        dsimp at h_idx
-        rewrite [
-          ←idx.embedSum_splitSum,
-          Fin.vflatten_embedSum,
-          ←h_idx',
-          h_idx'_one,
-          Fin.vappend_right_of_not_lt
-        ] at h_idx
-        · simp at h_idx
-        · grind
-    . rw! [eqRec_heq_iff]
-      rfl
-  }) (@OracleInterface.answer
+  cast
+    (by exact responose_congr h seqCompose_message_inst (cast_heq _ _)) -- `by exact` is on purpose
+    (@OracleInterface.answer
     ((Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
     _
     (messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
@@ -795,14 +718,7 @@ lemma answer_cast
   ) -- (OracleInterface.answer (messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds) (cast (by sorry) queryData)))
 := by
   rewrite [←heq_iff_eq, heq_cast_iff_heq]
-  congr
-  . done
-  . done
-  . symm
-    rewrite [heq_cast_iff_heq]
-    rfl
-  . rewrite [heq_cast_iff_heq]
-    rfl
+  exact (answer_congr h seqCompose_message_inst (by grind) (by grind)).symm
 
 universe u v in
 lemma pure_cast
