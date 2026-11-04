@@ -269,170 +269,6 @@ def sumcheckResultIdx
 
 section
 
-/-
-I am formatting these against my better judgement...
--/
-
--- universe u v w in
--- lemma fflatten₂_rectangle
---   {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {n : Fin m → ℕ}
---   {α : (i : Fin m) → (j : Fin (n i)) → A} {β : (i : Fin m) → (j : Fin (n i)) → B}
---   (v : (i : Fin m) → (j : Fin (n i)) → F (α i j) (β i j))
---   (k : Fin (Fin.vsum n))
---   {width : ℕ}
---   (h_rectangle : ∀ row, n row = width)
--- :
---   ∃ (row : Fin m) (col : Fin width)
---     (h : F (α row (col.cast (h_rectangle row).symm))
---            (β row (col.cast (h_rectangle row).symm))
---        = F (Fin.vflatten α k) (Fin.vflatten β k)),
---   Fin.fflatten₂ v k =
---   cast h (v row ⟨col.val, by grind⟩)
--- := by
---   sorry
---   done
-
--- universe u v w in
--- lemma fflatten₂_rectangle'
---   {A : Sort u} {B : Sort v} {F : A → B → Sort w} {m : ℕ} {n : Fin m → ℕ}
---   {α : (i : Fin m) → (j : Fin (n i)) → A} {β : (i : Fin m) → (j : Fin (n i)) → B}
---   (v : (i : Fin m) → (j : Fin (n i)) → F (α i j) (β i j))
---   (k : Fin (Fin.vsum n))
---   {width : ℕ}
---   (h_rectangle : ∀ row, n row = width)
--- :
---   ∃ (row : Fin m) (col : Fin width),
---   Fin.fflatten₂ v k ≍ (v row ⟨col.val, by {rw [h_rectangle]; exact col.2}⟩)
--- := by
---   -- `rcases` critical, `obtain` totally doesn't work `( ͡° ͜ʖ ͡°)`
---   rcases fflatten₂_rectangle v k h_rectangle with ⟨row, col, h, h_eq⟩
---   exact ⟨row, col, by grind⟩
-
--- def _root_.Fin.toRowColumn
---   {numRows : ℕ} {numColumns : Fin numRows → ℕ}
---   (idx : Fin (Fin.vsum numColumns))
--- :
---   Σ (row : Fin numRows), Fin (numColumns row)
--- := match h_rows: numRows with
---   | 0 => Fin.elim0 idx
---   | numRows_sub_one + 1 =>
---     if h_lt : idx.val < numColumns 0
---     then ⟨0, ⟨idx.val, h_lt⟩⟩
---     else
---       let ⟨i, j⟩ := toRowColumn
---         (numRows := numRows_sub_one)
---         (numColumns := (numColumns ·.succ))
---         ⟨idx.val - numColumns 0, by {
---           obtain ⟨idx_val, h_idx⟩ := idx
---           simp [Fin.vsum_eq_univ_sum] at ⊢ h_idx
---           grind
---         }⟩
---       ⟨i.succ, j⟩
-
--- lemma _root_.Fin.toRowColumn_succ
---   {numRows : ℕ} {numColumns : Fin (numRows + 1) → ℕ}
---   {idx : Fin (Fin.vsum numColumns)}
--- : idx.toRowColumn =
---   if h_lt : idx.val < numColumns 0
---   then ⟨0, ⟨idx.val, h_lt⟩⟩
---   else
---     let ⟨i, j⟩ := Fin.toRowColumn
---       (numRows := numRows)
---       (numColumns := (numColumns ·.succ))
---       ⟨idx.val - numColumns 0, by {
---         obtain ⟨idx_val, h_idx⟩ := idx
---         simp [Fin.vsum_eq_univ_sum] at ⊢ h_idx
---         grind
---       }⟩
---     ⟨i.succ, j⟩
--- := by
---   rfl
-
--- lemma vflatten_eq_toRowColumn
---   {numRows : ℕ}
---   {numColumns : Fin numRows → ℕ}
---   {ElemT}
---   {elems : (row : Fin numRows) → Fin (numColumns row) → ElemT}
---   {idx : Fin (Fin.vsum numColumns)}
--- :
---   Fin.vflatten elems idx =
---   elems idx.toRowColumn.1 idx.toRowColumn.2
--- := by
---   induction numRows
---   case zero =>
---     exact Fin.elim0 idx
---   case succ numRows ih =>
---     set rowCol := Fin.toRowColumn _ with eq
---     rewrite [Fin.toRowColumn_succ] at eq
---     split_ifs at eq with h
---     · rewrite [eq]
---       simp [
---         Fin.vappend_left_of_lt _ _ _ h
---       ]
---     · rewrite [eq]
---       specialize @ih (numColumns ·.succ) (fun row col => elems row.succ col)
---       set idx' := Fin.mk (idx.val - numColumns 0) _
---       specialize @ih idx'
---       rewrite [←eq]
---       set rowCol' := idx'.toRowColumn
---       have : rowCol.fst = rowCol'.fst.succ := by grind
---       convert ih using 1
---       · unfold Fin.vflatten Fin.dflatten
---         rewrite [Fin.dappend_right_of_not_lt _ _ _ h]
---         obtain _|_ := numRows
---         · exact Fin.elim0 idx'
---         · dsimp
---           rfl
---       · congr 1
---         grind
-
-
--- universe u_2 in
--- lemma dflatten_eq_toRowColumn
---   {numRows : ℕ}
---   {numColumns : Fin numRows → ℕ}
---   {ElemT : Fin (Fin.vsum numColumns) → Sort u_2}
---   {elems : (row : Fin numRows) → (col : Fin (numColumns row)) → ElemT (row.embedSum col)}
---   {idx : Fin (Fin.vsum numColumns)}
--- :
---   @Fin.dflatten
---     numRows
---     numColumns
---     ElemT
---     elems
---     idx =
---   cast (by {
-
---   }) (elems idx.toRowColumn.1 idx.toRowColumn.2)
--- := by
---   induction numRows
---   case zero =>
---     exact Fin.elim0 idx
---   case succ numRows ih =>
---     set rowCol := Fin.toRowColumn _ with eq
---     rewrite [Fin.toRowColumn_succ] at eq
---     split_ifs at eq with h
---     · rewrite [eq]
---       simp [
---         Fin.dappend_left_of_lt _ _ _ h
---       ]
---     · rewrite [eq]
---       specialize @ih (numColumns ·.succ) (fun row col => elems row.succ col)
---       set idx' := Fin.mk (idx.val - numColumns 0) _
---       specialize @ih idx'
---       rewrite [←eq]
---       set rowCol' := idx'.toRowColumn
---       have : rowCol.fst = rowCol'.fst.succ := by grind
---       convert ih using 1
---       · unfold Fin.dflatten
---         rewrite [Fin.dappend_right_of_not_lt _ _ _ h]
---         obtain _|_ := numRows
---         · exact Fin.elim0 idx'
---         · dsimp
---           rfl
---       · congr 1
---         grind
-
 universe u v w in
 theorem _root_.Fin.fflatten₂_eq_splitSum
   {A : Sort u} {B : Sort v}
@@ -545,7 +381,7 @@ open ProtocolSpec
 A few notes:
 The `heq_apply` bit is just `dcongr_heq` in Mathlib (it also has a redundant `hα` hypothesis, ehh)
 
-The trick is to talk about the instance in isolation `seqCompose_message_inst`, and handwave 
+The trick is to talk about the instance in isolation `seqCompose_message_inst`, and handwave
 the definitional type mismatch with `heq` at an abstract level, then immediately prove it in
 `seqCompose_message_type`. The `heq` proofs don't make you want to strangle baby seals
 if they're in a small abstract context without any detail.
@@ -651,6 +487,19 @@ def sumcheckChallenge
     aesop (add simp [sumcheckChallengeIdx, ProtocolSpec.sigmaChallengeIdxToSeqCompose])
   }) (challenges (sumcheckChallengeIdx F num_sumcheck_rounds round))
 
+-- lemma sumcheckChallenge_eq
+--   {F : Type} [CommSemiring F]
+--   {num_sumcheck_rounds : ℕ}
+--   (round : Fin num_sumcheck_rounds)
+--   (challenges : (Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Challenges)
+-- :
+--   sumcheckChallenge round challenges =
+--   sorry
+-- := by
+--   simp [Sumcheck.Spec.pSpec] at challenges
+--   simp [sumcheckChallenge]
+--   done
+
 section ByPartsAgain
 
 /-
@@ -732,6 +581,105 @@ lemma pure_cast
   cast (by rw [h]) (@pure monad inst A a)
 := by
   grind only
+
+-- example
+--   {OSpecIdx : Type}
+--   {oSpec : OracleSpec OSpecIdx}
+--   {num_verifiers : ℕ}
+--   {OStmtIdx : Fin (num_verifiers + 1) → Type}
+--   {Stmt : Fin (num_verifiers + 1) → Type}
+--   {OStmt : (i : Fin (num_verifiers + 1)) → OStmtIdx i → Type}
+--   [(i : Fin (num_verifiers + 1)) → (j : OStmtIdx i) → OracleInterface (OStmt i j)]
+--   {pSpec_lengths : Fin num_verifiers → ℕ}
+--   {pSpec : (i : Fin num_verifiers) → ProtocolSpec (pSpec_lengths i)}
+--   [(i : Fin (num_verifiers)) → (i_1 : (pSpec i).MessageIdx) → OracleInterface ((pSpec i).Message i_1)]
+--   {verifiers :
+--     (i : Fin num_verifiers) →
+--     OracleVerifier
+--       oSpec
+--       (Stmt i.castSucc)
+--       (OStmt i.castSucc)
+--       (Stmt i.succ)
+--       (OStmt i.succ)
+--       (pSpec i)
+--   }
+-- :
+--   (OracleVerifier.seqCompose Stmt OStmt verifiers).outputOracle =
+--   sorry
+-- := by
+--   unfold OracleVerifier.seqCompose OracleVerifier.seqCompose'
+--   split
+--   · done
+--   · unfold OracleVerifier.append appendOutputSimulation
+--     dsimp
+--     done
+
+--   done
+
+-- example
+--   {OSpecIdx : Type}
+--   {oSpec : OracleSpec OSpecIdx}
+--   {num_verifiers : ℕ}
+--   {OStmtIdx : Fin (num_verifiers + 1) → Type}
+--   {Stmt : Fin (num_verifiers + 1) → Type}
+--   {OStmt : (i : Fin (num_verifiers + 1)) → OStmtIdx i → Type}
+--   [(i : Fin (num_verifiers + 1)) → (j : OStmtIdx i) → OracleInterface (OStmt i j)]
+--   {pSpec_lengths : Fin num_verifiers → ℕ}
+--   {pSpec : (i : Fin num_verifiers) → ProtocolSpec (pSpec_lengths i)}
+--   [(i : Fin (num_verifiers)) → (i_1 : (pSpec i).MessageIdx) → OracleInterface ((pSpec i).Message i_1)]
+--   {verifiers :
+--     (i : Fin num_verifiers) →
+--     OracleVerifier
+--       oSpec
+--       (Stmt i.castSucc)
+--       (OStmt i.castSucc)
+--       (Stmt i.succ)
+--       (OStmt i.succ)
+--       (pSpec i)
+--   }
+-- :
+--   (OracleVerifier.seqCompose Stmt OStmt verifiers).materializeOutput =
+--   fun challenges oStmt messages => sorry
+-- := by
+--   unfold OracleVerifier.materializeOutput
+--   funext challenges oStmt messages
+--   unfold OracleVerifier.materializeOutputOracle
+
+--   done
+
+@[simp, grind =]
+lemma OracleVerifier.append_materializeOutput
+  {OSpecIdx1}
+  {oSpec1 : OracleSpec OSpecIdx1}
+  {StmtIn1 : Type}
+  {OStmtInIdx1 : Type}
+  {OStmtIn1 : OStmtInIdx1 → Type}
+  {StmtOut1 : Type}
+  {OStmtOutIdx1 : Type}
+  {OStmtOut1 : OStmtOutIdx1 → Type}
+  {pSpecLength1}
+  {pSpec1 : ProtocolSpec pSpecLength1}
+  [(i : OStmtInIdx1) → OracleInterface (OStmtIn1 i)]
+  [(i : OStmtOutIdx1) → OracleInterface (OStmtOut1 i)]
+  [(i : pSpec1.MessageIdx) → OracleInterface (pSpec1.Message i)]
+  {StmtOut2 : Type}
+  {OStmtOutIdx2 : Type}
+  {OStmtOut2 : OStmtOutIdx2 → Type}
+  {pSpecLength2}
+  {pSpec2 : ProtocolSpec pSpecLength2}
+  [(i : OStmtOutIdx2) → OracleInterface (OStmtOut2 i)]
+  [(i : pSpec2.MessageIdx) → OracleInterface (pSpec2.Message i)]
+  (verifier1 : OracleVerifier oSpec1 StmtIn1 OStmtIn1 StmtOut1 OStmtOut1 pSpec1)
+  (verifier2 : OracleVerifier oSpec1 StmtOut1 OStmtOut1 StmtOut2 OStmtOut2 pSpec2)
+  {challenges oStmt messages i}
+:
+  (OracleVerifier.append verifier1 verifier2).materializeOutput challenges oStmt messages i =
+  verifier2.materializeOutput
+    challenges.snd
+    (verifier1.materializeOutput challenges.fst oStmt messages.fst)
+    messages.snd
+    i
+:= rfl
 
 def output
   {ι : Type} (oSpec : OracleSpec ι)
@@ -923,6 +871,81 @@ where
     intro _outerStatement challenges outerOracleStatement messages
     funext idx
     fin_cases idx
+    · rfl
+    · rfl
+    · rfl
+    · have := Sumcheck.Spec.partialOracleVerifier_materializeOutput_responsePoly_last
+      apply eq_of_heq
+      apply HEq.trans _ (this _ _ _ _ _ _ _ _ _ _).symm
+      · grind
+      · simp [OracleVerifier.materializeOutputOracle]
+        rfl
+    · simp [
+        OracleVerifier.materializeOutputOracle,
+        sumcheckLens,
+        OracleStatement.sumcheckExecutableLens,
+        Sumcheck.Spec.partialOracleVerifier,
+        Sumcheck.Spec.OracleIdx.challenges
+      ]
+      funext round
+      obtain ⟨num_sumcheck_rounds, h_num_sumcheck_rounds⟩ := num_sumcheck_rounds
+      induction num_sumcheck_rounds
+      · exfalso
+        grind
+      case succ num_sumcheck_rounds ih h_num_sumcheck_rounds' =>
+        simp
+        set verifier1 := Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 _ _ _
+        set verifier2 := OracleVerifier.seqCompose
+          ((fun i ↦ Sumcheck.Spec.StatementRound F num_vars (Fin.castLE _ i)) ∘ Fin.succ)
+          (fun i j ↦ Sumcheck.Spec.OracleStatementRound F num_vars 2 (Fin.castLE _ i.succ) j)
+          (fun (i : Fin num_sumcheck_rounds) ↦
+            Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 _ oSpec (Fin.castLE _ i.succ)
+          )
+        symm
+        set oStmt := fun (idx : Sumcheck.Spec.OracleIdx) ↦ _ with eq
+        rewrite [←eq]
+        have := OracleVerifier.append_materializeOutput
+          verifier1
+          verifier2
+          (i := 2)
+          (messages := messages)
+          (oStmt := oStmt)
+          (challenges := challenges)
+        have that {C T} (a b : C → T) (c : C) : a = b → a c = b c := by grind
+        apply that _ _ round at this
+        convert this
+        · rfl
+        · subst verifier1 verifier2
+
+          done
+        done
+      have : num_sumcheck_rounds.val ≠ 0 := by grind
+
+
+
+
+
+
+
+
+      simp [sumcheckChallenge, sumcheckChallengeIdx]
+      simp [Sumcheck.Spec.pSpec] at challenges
+      apply cast_eq_iff_heq.mpr
+      obtain ⟨round, h_round⟩ := round
+      induction round
+      · simp [OracleVerifier.seqCompose]
+        unfold OracleVerifier.seqCompose'
+        have : num_sumcheck_rounds = (num_sumcheck_rounds.pred (by grind)).succ := by grind
+        rw! (castMode := .all) [this]
+        simp [
+          OracleVerifier.materializeOutput,
+          OracleVerifier.materializeOutputOracle,
+          OracleVerifier.append,
+          appendOutputSimulation
+        ]
+        rfl
+      have := OracleVerifier.seqCompose_materializeOutput_last
+      rfl
     -- The three oracles carried over from the input statement are passed through unchanged.
     all_goals try rfl
     -- The sum-check result oracle is the final round's prover message on both sides.
@@ -932,6 +955,7 @@ where
     · exact HEq.symm (Sumcheck.Spec.partialOracleVerifier_materializeOutput_responsePoly_last
         F 2 _ num_vars oSpec num_sumcheck_rounds (Fin.lt_def.mp h_num_sumcheck_rounds)
         challenges _ messages)
+
 
 
 
