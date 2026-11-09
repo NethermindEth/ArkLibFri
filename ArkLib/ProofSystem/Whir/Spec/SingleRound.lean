@@ -14,6 +14,8 @@ public import ArkLib.ProofSystem.Whir.Spec.Lenses.Statement
 public import ArkLib.ProofSystem.Whir.Spec.Lenses.OracleStatement
 public import ArkLib.ProofSystem.Whir.Spec.Lenses.Witness
 
+public import Mathlib.Tactic
+
 @[expose]
 public section
 
@@ -681,6 +683,95 @@ lemma OracleVerifier.append_materializeOutput
     i
 := rfl
 
+lemma materializeOutput_append
+  {OSpecIdx : Type} {oSpec : OracleSpec OSpecIdx}
+  {m : ℕ}
+  {Stmt : Fin (m + 2) → Type}
+  {ιₛ : Fin (m + 2) → Type} {OStmt : (i : Fin (m + 2)) → ιₛ i → Type}
+  (Oₛ : ∀ i, ∀ j, OracleInterface (OStmt i j))
+  {arity : Fin (m + 1) → ℕ} {pSpec : ∀ i, ProtocolSpec (arity i)}
+  (Oₘ : ∀ i, ∀ j, OracleInterface ((pSpec i).Message j))
+  (V : (i : Fin (m + 1)) → OracleVerifier oSpec (Stmt i.castSucc) (OStmt i.castSucc)
+    (Stmt i.succ) (OStmt i.succ) (pSpec i))
+  (challenges : (pSpec 0 ++ₚ ProtocolSpec.seqCompose (fun i => pSpec i.succ)).Challenges)
+  (oStmt : ∀ j, OStmt 0 j)
+  (messages : (pSpec 0 ++ₚ ProtocolSpec.seqCompose (fun i => pSpec i.succ)).Messages)
+:
+  (OracleVerifier.append
+    (V 0)
+    (OracleVerifier.seqCompose
+      (Stmt ∘ Fin.succ)
+      (fun i => OStmt (Fin.succ i))
+      (Oₛ := fun i => Oₛ (Fin.succ i))
+      (Oₘ := fun i => Oₘ (Fin.succ i))
+      (fun i => V (Fin.succ i))
+    )
+  ).materializeOutput
+    challenges
+    oStmt
+    messages =
+  (OracleVerifier.seqCompose
+    (Oₛ := fun i => Oₛ i.succ)
+    (Oₘ := fun i => Oₘ i.succ)
+    (Stmt ∘ Fin.succ)
+    (fun i => OStmt i.succ)
+    (fun i => V i.succ)
+  ).materializeOutput
+    challenges.snd
+    ((V 0).materializeOutput (Oₛᵢ := Oₛ 0) (Oₘ := Oₘ 0) (Oₛₒ := Oₛ 1)
+      challenges.fst oStmt messages.fst)
+  messages.snd
+:= rfl
+
+lemma materializeOutput_append_fixed
+  {OSpecIdx : Type} {oSpec : OracleSpec OSpecIdx}
+  {num_rounds : ℕ}
+  {Stmt : Fin (num_rounds + 2) → Type}
+  {OStmtIdx : Fin (num_rounds + 2) → Type}
+  {OStmt : (round : Fin (num_rounds + 2)) → OStmtIdx round → Type}
+  (OStmtInterface : ∀ round, ∀ idx, OracleInterface (OStmt round idx))
+  {pSpecLength : ℕ}
+  {pSpec : ProtocolSpec pSpecLength}
+  (msgInterface : ∀ j, OracleInterface (pSpec.Message j))
+  (V :
+    (round : Fin (num_rounds + 1)) →
+    OracleVerifier
+      oSpec
+      (Stmt round.castSucc)
+      (OStmt round.castSucc)
+      (Stmt round.succ)
+      (OStmt round.succ)
+      pSpec)
+  (challenges : (pSpec ++ₚ ProtocolSpec.seqCompose (fun _ => pSpec)).Challenges)
+  (oStmt : ∀ idx, OStmt 0 idx)
+  (messages : (pSpec ++ₚ ProtocolSpec.seqCompose (fun _ => pSpec)).Messages)
+:
+  (OracleVerifier.append
+    (V 0)
+    (OracleVerifier.seqCompose
+      (Stmt ∘ Fin.succ)
+      (fun i => OStmt (Fin.succ i))
+      (Oₛ := fun i => OStmtInterface (Fin.succ i))
+      (Oₘ := fun _ => msgInterface)
+      (fun i => V (Fin.succ i))
+    )
+  ).materializeOutput
+    challenges
+    oStmt
+    messages =
+  (OracleVerifier.seqCompose
+    (Oₛ := fun i => OStmtInterface i.succ)
+    (Oₘ := fun _ => msgInterface)
+    (Stmt ∘ Fin.succ)
+    (fun i => OStmt i.succ)
+    (fun i => V i.succ)
+  ).materializeOutput
+    challenges.snd
+    ((V 0).materializeOutput (Oₛᵢ := OStmtInterface 0) (Oₘ := msgInterface) (Oₛₒ := OStmtInterface 1)
+      challenges.fst oStmt messages.fst)
+  messages.snd
+:= rfl
+
 def output
   {ι : Type} (oSpec : OracleSpec ι)
   {F : Type} [Field F] [DecidableEq F] [SampleableType F]
@@ -894,32 +985,109 @@ where
         grind
       case succ num_sumcheck_rounds ih h_num_sumcheck_rounds' =>
         simp
-        set verifier1 := Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 _ _ _
-        set verifier2 := OracleVerifier.seqCompose
-          ((fun i ↦ Sumcheck.Spec.StatementRound F num_vars (Fin.castLE _ i)) ∘ Fin.succ)
-          (fun i j ↦ Sumcheck.Spec.OracleStatementRound F num_vars 2 (Fin.castLE _ i.succ) j)
-          (fun (i : Fin num_sumcheck_rounds) ↦
-            Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 _ oSpec (Fin.castLE _ i.succ)
-          )
-        symm
-        set oStmt := fun (idx : Sumcheck.Spec.OracleIdx) ↦ _ with eq
-        rewrite [←eq]
-        have := OracleVerifier.append_materializeOutput
-          verifier1
-          verifier2
-          (i := 2)
-          (messages := messages)
-          (oStmt := oStmt)
+        generalize_proofs
+        have := @materializeOutput_append_fixed
+          (OSpecIdx := ι)
+          (oSpec := oSpec)
+          (num_rounds := num_sumcheck_rounds)
+          (Stmt := fun round => Sumcheck.Spec.StatementRound F num_vars (round.castLE (by assumption)))
+          (OStmtIdx := fun round => Sumcheck.Spec.OracleIdx)
+          (OStmt := fun round => Sumcheck.Spec.OracleStatementRound F num_vars 2 (round.castLE (by assumption)))
+          (OStmtInterface := inferInstance)
+          (pSpecLength := 2)
+          (pSpec := Sumcheck.Spec.SingleRound.pSpec F 2)
+          (msgInterface := inferInstance)
+          (V := fun round ↦ Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 { toFun := ⇑domain, inj' := by assumption} oSpec (round.castLE (by assumption)))
           (challenges := challenges)
-        have that {C T} (a b : C → T) (c : C) : a = b → a c = b c := by grind
-        apply that _ _ round at this
-        convert this
-        · rfl
-        · subst verifier1 verifier2
+          (oStmt := fun idx => match idx with
+            | ⟨0, _⟩ => composePolynomials
+              (outerOracleStatement OracleIdx.CodeWordPolynomial)
+              (outerOracleStatement OracleIdx.WeightPolynomial)
+            | ⟨1, _⟩ => fun x => x.elim0
+            | ⟨2, _⟩ => fun x => x.elim0
+          )
+          (messages := messages)
+        rewrite [this]
+        ((Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 { toFun := ⇑domain, inj' := pf✝³ } oSpec
+            (Fin.castLE pf✝² 0)).append
+        (OracleVerifier.seqCompose ((fun i ↦ Sumcheck.Spec.StatementRound F num_vars (Fin.castLE pf✝⁸ i)) ∘ Fin.succ)
+          (fun i j ↦ Sumcheck.Spec.OracleStatementRound F num_vars 2 (Fin.castLE pf✝⁸ i.succ) j) fun i ↦
+          Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 { toFun := ⇑domain, inj' := pf✝³ } oSpec
+            (Fin.castLE pf✝² i.succ))).materializeOutput
+    challenges
+    (fun idx ↦
+      match idx with
+      | ⟨0, ⋯⟩ =>
+        composePolynomials (outerOracleStatement OracleIdx.CodeWordPolynomial)
+          (outerOracleStatement OracleIdx.WeightPolynomial)
+      | ⟨1, ⋯⟩ => fun x ↦ x.elim0
+      | ⟨2, ⋯⟩ => fun x ↦ x.elim0)
+        -- convert (materializeOutput_append_fixed
+        --   _
+        --   _
+        --   _
+        --   challenges
+        --   _
+        --   messages
+        -- ).symm
+        -- case convert_1 => exact ι
+        -- case convert_2 => exact oSpec
+
+
+
+        rw! (castMode := .all) [Fin.castLE_zero]
+        rw! (castMode := .all) (transparency := .default) [Fin.castLE_zero]
+        set x := Fin.castLE (m := num_vars) (n := num_sumcheck_rounds + 1) _ 0
+        conv =>
+          enter [2, 1, 1]
+          simp [Fin.castLE]
+        have h_num_vars: 0 < num_vars := by grind
+        have : OfNat (Fin num_vars) 0 := by
+          constructor
+          exact Fin.mk 0 h_num_vars
+        have : Fin.mk 0 h_num_vars = (0 : Fin num_vars) := by
+          obtain _ | num_vars := num_vars
+          · grind
+          · unfold_projs
+            ext
+            aesop
+            rewrite [←Fin.val_castLE]
+
+            subst this
+        rewrite [this]
+        rewrite [materializeOutput_append]
+
+        by_cases h_round : round = 0
+        · subst h_round
 
           done
-        done
-      have : num_sumcheck_rounds.val ≠ 0 := by grind
+        · done
+      --   set verifier1 := Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 _ _ _
+      --   set verifier2 := OracleVerifier.seqCompose
+      --     ((fun i ↦ Sumcheck.Spec.StatementRound F num_vars (Fin.castLE _ i)) ∘ Fin.succ)
+      --     (fun i j ↦ Sumcheck.Spec.OracleStatementRound F num_vars 2 (Fin.castLE _ i.succ) j)
+      --     (fun (i : Fin num_sumcheck_rounds) ↦
+      --       Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 _ oSpec (Fin.castLE _ i.succ)
+      --     )
+      --   symm
+      --   set oStmt := fun (idx : Sumcheck.Spec.OracleIdx) ↦ _ with eq
+      --   rewrite [←eq]
+      --   have := OracleVerifier.append_materializeOutput
+      --     verifier1
+      --     verifier2
+      --     (i := 2)
+      --     (messages := messages)
+      --     (oStmt := oStmt)
+      --     (challenges := challenges)
+      --   have that {C T} (a b : C → T) (c : C) : a = b → a c = b c := by grind
+      --   apply that _ _ round at this
+      --   convert this
+      --   · rfl
+      --   · subst verifier1 verifier2
+
+      --     done
+      --   done
+      -- have : num_sumcheck_rounds.val ≠ 0 := by grind
 
 
 
@@ -928,33 +1096,33 @@ where
 
 
 
-      simp [sumcheckChallenge, sumcheckChallengeIdx]
-      simp [Sumcheck.Spec.pSpec] at challenges
-      apply cast_eq_iff_heq.mpr
-      obtain ⟨round, h_round⟩ := round
-      induction round
-      · simp [OracleVerifier.seqCompose]
-        unfold OracleVerifier.seqCompose'
-        have : num_sumcheck_rounds = (num_sumcheck_rounds.pred (by grind)).succ := by grind
-        rw! (castMode := .all) [this]
-        simp [
-          OracleVerifier.materializeOutput,
-          OracleVerifier.materializeOutputOracle,
-          OracleVerifier.append,
-          appendOutputSimulation
-        ]
-        rfl
-      have := OracleVerifier.seqCompose_materializeOutput_last
-      rfl
-    -- The three oracles carried over from the input statement are passed through unchanged.
-    all_goals try rfl
-    -- The sum-check result oracle is the final round's prover message on both sides.
-    refine eq_of_heq (HEq.trans
-      (b := messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)) ?_ ?_)
-    · exact OracleVerifier.materializeOutputOracle_heq_messages _ _ _ _ _ _ rfl
-    · exact HEq.symm (Sumcheck.Spec.partialOracleVerifier_materializeOutput_responsePoly_last
-        F 2 _ num_vars oSpec num_sumcheck_rounds (Fin.lt_def.mp h_num_sumcheck_rounds)
-        challenges _ messages)
+    --   simp [sumcheckChallenge, sumcheckChallengeIdx]
+    --   simp [Sumcheck.Spec.pSpec] at challenges
+    --   apply cast_eq_iff_heq.mpr
+    --   obtain ⟨round, h_round⟩ := round
+    --   induction round
+    --   · simp [OracleVerifier.seqCompose]
+    --     unfold OracleVerifier.seqCompose'
+    --     have : num_sumcheck_rounds = (num_sumcheck_rounds.pred (by grind)).succ := by grind
+    --     rw! (castMode := .all) [this]
+    --     simp [
+    --       OracleVerifier.materializeOutput,
+    --       OracleVerifier.materializeOutputOracle,
+    --       OracleVerifier.append,
+    --       appendOutputSimulation
+    --     ]
+    --     rfl
+    --   have := OracleVerifier.seqCompose_materializeOutput_last
+    --   rfl
+    -- -- The three oracles carried over from the input statement are passed through unchanged.
+    -- all_goals try rfl
+    -- -- The sum-check result oracle is the final round's prover message on both sides.
+    -- refine eq_of_heq (HEq.trans
+    --   (b := messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds)) ?_ ?_)
+    -- · exact OracleVerifier.materializeOutputOracle_heq_messages _ _ _ _ _ _ rfl
+    -- · exact HEq.symm (Sumcheck.Spec.partialOracleVerifier_materializeOutput_responsePoly_last
+    --     F 2 _ num_vars oSpec num_sumcheck_rounds (Fin.lt_def.mp h_num_sumcheck_rounds)
+    --     challenges _ messages)
 
 
 
