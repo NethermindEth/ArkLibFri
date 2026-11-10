@@ -936,7 +936,7 @@ lemma MultiRoundData.appendedChallenges_left {r : Fin (round.val + m)}
 lemma MultiRoundData.appendedChallenges_right {r : Fin (round + m)}
   (h : round.val ≤ r.val)
 :
-  data.appendedChallenges r = sumcheckChallenge ⟨↑r - ↑round, by grind⟩ data.challenges 
+  data.appendedChallenges r = sumcheckChallenge ⟨↑r - ↑round, by grind⟩ data.challenges
 := by
   unfold appendedChallenges
   rw [Fin.vappend_right_of_not_lt]
@@ -1091,7 +1091,18 @@ lemma materializeChallenges_seqCompose
 := by
   induction' m with m ih
   · rfl
-  · funext r
+  · specialize @ih
+      (fun r => round r.succ)
+      (fun s => Stmt s.succ)
+      (fun i => verifiers i.succ)
+      (data.tail (verifiers 0))
+      (fun i => h i.succ)
+
+
+
+
+
+    funext r
     let lhsLength := (round 0).val -- The ones already in end here
     by_cases eq : r.val < lhsLength
     · simp
@@ -1107,7 +1118,42 @@ lemma materializeChallenges_seqCompose
       rw [MultiRoundData.appendedChallenges_right (by grind)]
       erw [materializeChallenges_append, ih (by grind)]
       simp
-      rw [MultiRoundData.appendedChallenges_left sorry]
+      -- unfold MultiRoundData.tail MultiRoundData.appendedChallenges
+      by_cases eq': r.val = lhsLength
+      · subst lhsLength
+        simp [eq']
+        rw [MultiRoundData.appendedChallenges_left (by {
+          obtain ⟨a,b⟩ := h 0
+          simp at a
+          grind
+        })]
+        simp [MultiRoundData.tail]
+        obtain ⟨a,b⟩ := h 0
+        specialize b data.head
+        simp [OracleVerifier.materializeChallenges] at b
+        apply congrFun at b
+        erw [b]
+        unfold MultiRoundData.appendedChallenges
+        simp [MultiRoundData.head]
+        set previous := data.oracleState OracleIdx.challenges
+        unfold OracleStatementRound at previous
+        simp at previous
+        rewrite [Fin.vappend_right_of_not_lt]
+        · done
+        . simp [←eq', Fin.cast]
+
+          done
+      · rw [MultiRoundData.appendedChallenges_right (by {
+          obtain ⟨a,b⟩ := h 0
+          simp at a
+          grind
+        })]
+        obtain ⟨a,b⟩ := h 0
+        simp at a
+        simp [a]
+        done
+
+
 
 
       -- specialize @ih (fun n ↦ round ⟨n.succ, _⟩)
