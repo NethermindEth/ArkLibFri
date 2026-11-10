@@ -481,13 +481,85 @@ def sumcheckChallenge
   {F : Type} [CommSemiring F]
   {num_sumcheck_rounds : ℕ}
   (round : Fin num_sumcheck_rounds)
-  (challenges : (Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Challenges)
+  (challenges : (Sumcheck.Spec.pSpec F 2 num_sumcheck_rounds).Challenges)
 :
   F
 :=
   cast (by {
     aesop (add simp [sumcheckChallengeIdx, ProtocolSpec.sigmaChallengeIdxToSeqCompose])
   }) (challenges (sumcheckChallengeIdx F num_sumcheck_rounds round))
+
+lemma snd_heq_inr
+  {pSpecLength1 pSpecLength2}
+  {pSpec1 : ProtocolSpec pSpecLength1}
+  {pSpec2 : ProtocolSpec pSpecLength2}
+  (challenges : (pSpec1 ++ₚ pSpec2).Challenges)
+  (idx)
+:
+  challenges.snd idx ≍
+  challenges (ProtocolSpec.ChallengeIdx.inr idx)
+:= by
+  apply heq_of_eq_cast
+  rfl
+
+lemma snd_eq_cast_inr
+  {pSpecLength1 pSpecLength2}
+  {pSpec1 : ProtocolSpec pSpecLength1}
+  {pSpec2 : ProtocolSpec pSpecLength2}
+  (challenges : (pSpec1 ++ₚ pSpec2).Challenges)
+  (idx)
+:
+  challenges.snd idx =
+  cast (ProtocolSpec.challenge_append_inr idx) (challenges (ProtocolSpec.ChallengeIdx.inr idx))
+:= by
+  rfl
+
+-- example
+--   {pSpecLength1 pSpecLength2}
+--   {pSpec1 : ProtocolSpec pSpecLength1}
+--   {pSpec2 : ProtocolSpec pSpecLength2}
+--   {idx : ProtocolSpec.ChallengeIdx pSpec2}
+--   {inr_round}
+--   (h)
+-- :
+--   (ProtocolSpec.sigmaChallengeIdxToSeqCompose inr_round idx).inr =
+--   sorry
+-- := by
+--   ext
+--   exact h
+
+
+lemma sumcheckChallenge_succ
+  {F : Type} [CommSemiring F]
+  {num_sumcheck_rounds : ℕ}
+  (round : Fin (num_sumcheck_rounds + 1))
+  (challenges :
+    (Sumcheck.Spec.SingleRound.pSpec F 2 ++ₚ
+     Sumcheck.Spec.pSpec F 2 num_sumcheck_rounds).Challenges)
+:
+  sumcheckChallenge round challenges =
+  letI chal : F := challenges.fst ⟨1, rfl⟩
+  ((fun (_ : Fin 1) ↦ chal) ++ᵛ (sumcheckChallenge · challenges.snd)) (round.cast (by grind))
+:= by
+  obtain _ | round := round
+  · rewrite [Fin.vappend_left_of_lt]
+    · rfl
+    · grind
+  · rewrite [Fin.vappend_right_of_not_lt]
+    · simp only [
+        sumcheckChallenge, Fin.vsum_succ, sumcheckChallengeIdx, Nat.reduceAdd, Nat.add_zero,
+        Fin.vcons_fin_zero, Nat.cast_ofNat, Fin.vappend_zero, Fin.isValue, ProtocolSpec.Challenge,
+        Fin.cast_mk, Nat.add_one_sub_one
+      ]
+      rewrite [snd_eq_cast_inr]
+      apply cast_eq_iff_heq.mpr
+      · symm
+        apply (cast_heq_iff_heq _ _ _).mpr
+        · apply (cast_heq_iff_heq _ _ _).mpr
+          · congr
+          · grind
+
+
 
 -- lemma sumcheckChallenge_eq
 --   {F : Type} [CommSemiring F]
@@ -978,15 +1050,34 @@ where
         Sumcheck.Spec.partialOracleVerifier,
         Sumcheck.Spec.OracleIdx.challenges
       ]
-      funext round
-      obtain ⟨num_sumcheck_rounds, h_num_sumcheck_rounds⟩ := num_sumcheck_rounds
-      induction num_sumcheck_rounds
+      obtain ⟨num_sumcheck_rounds, h_num_sumcheck_rounds'⟩ := num_sumcheck_rounds
+      set f := fun (idx : Sumcheck.Spec.OracleIdx) ↦ _
+      have :
+        (fun round ↦ sumcheckChallenge round challenges) =
+        (fun round : Fin (Fin.mk num_sumcheck_rounds h_num_sumcheck_rounds').val ↦ (
+          (f 2) ++ᵛ
+          (fun round ↦ sumcheckChallenge round challenges)
+        ) (round.cast (by grind)))
+      := by
+        subst f
+        simp
+        rfl
+      rewrite [this]
+      -- PICK UP
+      -- the idea is to generalize f to be for any round
+      -- prove that the verifier materialize output (for this verifier specifically)
+      -- appends on to f, leaving anything handled by it
+      -- this will likely require another induction
+      -- then when doing this induction, we can wrap the SingleRound materializeOutput as f in the induction hypothesis
+      -- and use sumcheckChallenge_succ to split off the first round, and move it onto the other side of the append
+      clear_value f
+      induction num_sumcheck_rounds generalizing f
       · exfalso
         grind
-      case succ num_sumcheck_rounds ih h_num_sumcheck_rounds' =>
+      case succ num_sumcheck_rounds ih =>
         simp
         generalize_proofs
-        have := @materializeOutput_append_fixed
+        have materializeOutput_append_fixed := @materializeOutput_append_fixed
           (OSpecIdx := ι)
           (oSpec := oSpec)
           (num_rounds := num_sumcheck_rounds)
@@ -997,31 +1088,40 @@ where
           (pSpecLength := 2)
           (pSpec := Sumcheck.Spec.SingleRound.pSpec F 2)
           (msgInterface := inferInstance)
-          (V := fun round ↦ Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 { toFun := ⇑domain, inj' := by assumption} oSpec (round.castLE (by assumption)))
+          (V := fun round ↦ Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 { toFun := ⇑domain, inj' := by assumption} oSpec (round.castLE (m := num_vars) (by assumption)))
           (challenges := challenges)
-          (oStmt := fun idx => match idx with
-            | ⟨0, _⟩ => composePolynomials
-              (outerOracleStatement OracleIdx.CodeWordPolynomial)
-              (outerOracleStatement OracleIdx.WeightPolynomial)
-            | ⟨1, _⟩ => fun x => x.elim0
-            | ⟨2, _⟩ => fun x => x.elim0
-          )
+          (oStmt := f)
           (messages := messages)
-        rewrite [this]
-        ((Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 { toFun := ⇑domain, inj' := pf✝³ } oSpec
-            (Fin.castLE pf✝² 0)).append
-        (OracleVerifier.seqCompose ((fun i ↦ Sumcheck.Spec.StatementRound F num_vars (Fin.castLE pf✝⁸ i)) ∘ Fin.succ)
-          (fun i j ↦ Sumcheck.Spec.OracleStatementRound F num_vars 2 (Fin.castLE pf✝⁸ i.succ) j) fun i ↦
-          Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 { toFun := ⇑domain, inj' := pf✝³ } oSpec
-            (Fin.castLE pf✝² i.succ))).materializeOutput
-    challenges
-    (fun idx ↦
-      match idx with
-      | ⟨0, ⋯⟩ =>
-        composePolynomials (outerOracleStatement OracleIdx.CodeWordPolynomial)
-          (outerOracleStatement OracleIdx.WeightPolynomial)
-      | ⟨1, ⋯⟩ => fun x ↦ x.elim0
-      | ⟨2, ⋯⟩ => fun x ↦ x.elim0)
+        symm at materializeOutput_append_fixed
+        have that {C T} (a b : C → T) (c : C) : a = b → a c = b c := by grind
+        apply congrFun at materializeOutput_append_fixed
+        specialize materializeOutput_append_fixed 2
+        apply Eq.trans _ materializeOutput_append_fixed
+        by_cases h_num_sumcheck_rounds_zero : num_sumcheck_rounds = 0
+        ·
+          done
+        · specialize ih (by grind) (by grind) challenges.snd messages.snd f
+          funext round
+          rewrite [sumcheckChallenge_succ round challenges, ←ih]
+          done
+
+        simp_rw [←ih] at this
+        simp_rw [this]
+    --     ((Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 { toFun := ⇑domain, inj' := pf✝³ } oSpec
+    --         (Fin.castLE pf✝² 0)).append
+    --     (OracleVerifier.seqCompose ((fun i ↦ Sumcheck.Spec.StatementRound F num_vars (Fin.castLE pf✝⁶ i)) ∘ Fin.succ)
+    --       (fun i ↦ Sumcheck.Spec.OracleStatementRound F num_vars 2 (Fin.castLE pf✝⁶ i.succ)) fun i ↦
+    --       Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2 { toFun := ⇑domain, inj' := pf✝³ } oSpec
+    --         (Fin.castLE pf✝² i.succ))).materializeOutput
+    -- challenges
+    -- (fun idx ↦
+    --   match idx with
+    --   | ⟨0, isLt⟩ =>
+    --     composePolynomials (outerOracleStatement OracleIdx.CodeWordPolynomial)
+    --       (outerOracleStatement OracleIdx.WeightPolynomial)
+    --   | ⟨1, isLt⟩ => fun x ↦ x.elim0
+    --   | ⟨2, isLt⟩ => fun x ↦ x.elim0)
+    -- messages
         -- convert (materializeOutput_append_fixed
         --   _
         --   _
