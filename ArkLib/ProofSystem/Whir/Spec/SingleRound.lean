@@ -1023,19 +1023,7 @@ lemma materializeChallenges_left
   rw [head]
   grind
 
-@[grind =]
-lemma materializeChallenges_right
-  {verifier : SumcheckVerifier oSpec F n StmtIn roundIn StmtOut roundOut}
-  (h₁ : verifier.AppendsChallengesSingleRound)
-  {data : SingleRoundData _ _ roundIn}
-  {r : Fin roundOut.val}
-  (h₂ : r.val ≥ roundIn.val)
-:
-  verifier.materializeChallenges data r = sorry
-:= by
-  rcases data with ⟨state, challenges, messages⟩
-  cbv
-  sorry
+-- I don't want to look at it (spelling is hard)
 
 variable [DecidableEq F] [SampleableType F]
 
@@ -1091,18 +1079,7 @@ lemma materializeChallenges_seqCompose
 := by
   induction' m with m ih
   · rfl
-  · specialize @ih
-      (fun r => round r.succ)
-      (fun s => Stmt s.succ)
-      (fun i => verifiers i.succ)
-      (data.tail (verifiers 0))
-      (fun i => h i.succ)
-
-
-
-
-
-    funext r
+  · funext r
     let lhsLength := (round 0).val -- The ones already in end here
     by_cases eq : r.val < lhsLength
     · simp
@@ -1139,9 +1116,13 @@ lemma materializeChallenges_seqCompose
         unfold OracleStatementRound at previous
         simp at previous
         rewrite [Fin.vappend_right_of_not_lt]
-        · done
+        · have : ∀ x : Fin 1, x = 1337 := by grind
+          simp_rw [this]
+          unfold sumcheckChallenge ProtocolSpec.Challenges.fst
+          simp
+          congr
+          done
         . simp [←eq', Fin.cast]
-
           done
       · rw [MultiRoundData.appendedChallenges_right (by {
           obtain ⟨a,b⟩ := h 0
@@ -1151,14 +1132,14 @@ lemma materializeChallenges_seqCompose
         obtain ⟨a,b⟩ := h 0
         simp at a
         simp [a]
-        done
-
-
-
-
-      -- specialize @ih (fun n ↦ round ⟨n.succ, _⟩)
-
-      done
+        unfold MultiRoundData.tail
+        simp only
+        erw [sumcheckChallenge_succ]
+        rw [Fin.vappend_right_of_not_lt]; swap; grind
+        rfl -- tada
+      done -- if true then big
+      -- this one is actually not half-bad
+      -- I just wanted to generalise over the _type_ as well as the value
 
 end
 
@@ -1677,7 +1658,10 @@ where
       let alpha := state.α -- Fin num_sumcheck_rounds → F
                          -- challenges from sumcheck
       let f_hat := state.f_hat
-      let g_hat := sorry -- g_hat(x) = f_hat(...alpha,x)
+      let g_hat := sorry -- g_hat(x) = f_hat(...alpha,x) maffffs (Julian said he had some for us - forgot to push (math!))
+      -- sounds like a good idea, imma head off as well
+      -- good job <3
+      -- with the key lemma (genius-level lemma)
       let g : domain.subdomain 1 → F := fun x => sorry -- g_hat.eval x
       let msg := g
       let newState := {
