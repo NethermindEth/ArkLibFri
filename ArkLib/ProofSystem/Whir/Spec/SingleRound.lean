@@ -914,11 +914,21 @@ lemma MultiRoundData.appendedChallenges_natAdd {r : Fin m}
 := Fin.vappend_right _ _ r
 
 @[grind =]
-lemma MultiRoundData.appendedChallenges_of_lt {r : Fin (round.val + m)}
+lemma MultiRoundData.appendedChallenges_left {r : Fin (round.val + m)}
   (h : r.val < round.val)
 :
   data.appendedChallenges r = data.oracleState .challenges ⟨r.val, h⟩
 := Fin.vappend_left_of_lt _ _ r h
+
+@[grind =]
+lemma MultiRoundData.appendedChallenges_right {r : Fin (round + m)}
+  (h : round.val ≤ r.val)
+:
+  data.appendedChallenges r = sumcheckChallenge ⟨↑r - ↑round, by grind⟩ data.challenges 
+:= by
+  unfold appendedChallenges
+  rw [Fin.vappend_right_of_not_lt]
+  grind
 
 @[grind =]
 lemma SingleRoundData.appendedChallenges_eq_snoc :
@@ -988,7 +998,7 @@ lemma materializeChallenges_append
 end
 
 @[grind =]
-lemma materializeChallenges_of_lt
+lemma materializeChallenges_left
   {verifier : SumcheckVerifier oSpec F n StmtIn roundIn StmtOut roundOut}
   (h₁ : verifier.AppendsChallengesSingleRound)
   {data : SingleRoundData _ _ roundIn}
@@ -1000,6 +1010,21 @@ lemma materializeChallenges_of_lt
   rcases h₁ with ⟨_, head⟩; specialize head data
   rw [head]
   grind
+
+@[grind =]
+lemma materializeChallenges_right
+  {verifier : SumcheckVerifier oSpec F n StmtIn roundIn StmtOut roundOut}
+  (h₁ : verifier.AppendsChallengesSingleRound)
+  {data : SingleRoundData _ _ roundIn}
+  {r : Fin roundOut.val}
+  (h₂ : r.val ≥ roundIn.val)
+:
+  verifier.materializeChallenges data r = sorry
+:= by
+  unfold OracleVerifier.materializeChallenges OracleVerifier.materializeOutput
+         OracleVerifier.materializeOutputOracle
+  
+
 
 variable [DecidableEq F] [SampleableType F]
 
@@ -1059,12 +1084,24 @@ lemma materializeChallenges_seqCompose
     let lhsLength := (round 0).val -- The ones already in end here
     by_cases eq : r.val < lhsLength
     · simp
-      rw [MultiRoundData.appendedChallenges_of_lt (by grind)]
+      rw [MultiRoundData.appendedChallenges_left (by grind)]
       erw [materializeChallenges_append, ih (by grind)]
       simp
-      rw [MultiRoundData.appendedChallenges_of_lt sorry]
-      apply materializeChallenges_of_lt (h 0)      
-    · sorry
+      rw [MultiRoundData.appendedChallenges_left (by
+        have := (h 0).1
+        simp at *
+        grind)]
+      apply materializeChallenges_of_lt (h 0)
+    · simp
+      rw [MultiRoundData.appendedChallenges_right (by grind)]
+      erw [materializeChallenges_append, ih (by grind)]
+      simp
+      rw [MultiRoundData.appendedChallenges_left sorry]
+
+
+      -- specialize @ih (fun n ↦ round ⟨n.succ, _⟩)
+
+      done
 
 end
 
