@@ -854,6 +854,18 @@ section
 
 open Sumcheck.Spec
 
+/-
+`k` is the number of remaining rounds
+`n` is the number of rounds already done
+
+structure MultiRoundData (F : Type) [CommSemiring F] (n k : ℕ) where
+  oracleState : ∀ (round : Fin (n + 1)) j, OracleStatementRound F n 2 round j
+  challenges  : (Sumcheck.Spec.pSpec F 2 k).Challenges
+  messages    : (Sumcheck.Spec.pSpec F 2 k).Messages
+
+Maybe restate this.
+-/
+
 structure MultiRoundData (F : Type) [CommSemiring F] (n k : ℕ) (round : Fin (n + 1)) where
   oracleState : ∀ j, OracleStatementRound F n 2 round j
   challenges  : (Sumcheck.Spec.pSpec F 2 k).Challenges
@@ -1021,10 +1033,9 @@ lemma materializeChallenges_right
 :
   verifier.materializeChallenges data r = sorry
 := by
-  unfold OracleVerifier.materializeChallenges OracleVerifier.materializeOutput
-         OracleVerifier.materializeOutputOracle
-  
-
+  rcases data with ⟨state, challenges, messages⟩
+  cbv
+  sorry
 
 variable [DecidableEq F] [SampleableType F]
 
@@ -1091,7 +1102,7 @@ lemma materializeChallenges_seqCompose
         have := (h 0).1
         simp at *
         grind)]
-      apply materializeChallenges_of_lt (h 0)
+      apply materializeChallenges_left (h 0)
     · simp
       rw [MultiRoundData.appendedChallenges_right (by grind)]
       erw [materializeChallenges_append, ih (by grind)]
