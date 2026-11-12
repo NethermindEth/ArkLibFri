@@ -592,7 +592,8 @@ lemma answer_cast
   (messages : (i : (Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).MessageIdx) →
     (Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message i)
   (queryData : F)
-  (h : (Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds) =
+  (h : (Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message
+      (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds) =
     OracleStatementMid domain num_vars (↑num_sumcheck_rounds) OracleIdxMid.SumcheckResult)
 :
   @OracleInterface.answer
@@ -603,7 +604,8 @@ lemma answer_cast
   cast
     (by exact responose_congr h seqCompose_message_inst (cast_heq _ _)) -- `by exact` is on purpose
     (@OracleInterface.answer
-    ((Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
+    ((Sumcheck.Spec.pSpec F 2 ↑num_sumcheck_rounds).Message
+      (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
     _
     (messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
     (cast (by {
@@ -746,7 +748,8 @@ lemma materializeOutput_append_fixed
     (fun i => V i.succ)
   ).materializeOutput
     challenges.snd
-    ((V 0).materializeOutput (Oₛᵢ := OStmtInterface 0) (Oₘ := msgInterface) (Oₛₒ := OStmtInterface 1)
+    ((V 0).materializeOutput (Oₛᵢ := OStmtInterface 0) (Oₘ := msgInterface)
+        (Oₛₒ := OStmtInterface 1)
       challenges.fst oStmt messages.fst)
   messages.snd
 := rfl
@@ -984,41 +987,48 @@ lemma materializeChallenges_seqCompose
     (fun i j ↦ OracleStatementRound F n 2 (round i) j) verifiers).materializeChallenges data =
   data.appendedChallenges ∘ Fin.cast (sizeAgrees h)
 := by
-  induction' m with m ih
-  · rfl
-  · funext r
+  induction m with
+  | zero => rfl
+  | succ m ih =>
+    funext r
     let lhsLength := (round 0).val -- The ones already in end here
     by_cases eq : r.val < lhsLength
-    · simp
+    · simp only [OracleVerifier.seqCompose_succ, Fin.castSucc_zero, Fin.succ_zero_eq_one,
+          Function.comp_apply, Fin.succ_last, Nat.succ_eq_add_one]
       rw [MultiRoundData.appendedChallenges_left (by grind)]
       erw [materializeChallenges_append, ih (by grind)]
-      simp
+      simp only [Fin.succ_last, Nat.succ_eq_add_one, Fin.succ_zero_eq_one, Function.comp_apply,
+          Fin.val_cast]
       rw [MultiRoundData.appendedChallenges_left (by
         have := (h 0).1
         simp at *
         grind)]
       apply materializeChallenges_left (h 0)
-    · simp
+    · simp only [OracleVerifier.seqCompose_succ, Fin.castSucc_zero, Fin.succ_zero_eq_one,
+          Function.comp_apply, Fin.succ_last, Nat.succ_eq_add_one]
       rw [MultiRoundData.appendedChallenges_right (by grind)]
       erw [materializeChallenges_append, ih (by grind)]
-      simp
+      simp only [Fin.succ_last, Nat.succ_eq_add_one, Fin.succ_zero_eq_one, Function.comp_apply,
+          Fin.val_cast]
       -- unfold MultiRoundData.tail MultiRoundData.appendedChallenges
       by_cases eq': r.val = lhsLength
       · subst lhsLength
-        simp [eq']
+        simp only [eq', tsub_self, Fin.zero_eta]
         rw [MultiRoundData.appendedChallenges_left (by {
           obtain ⟨a,b⟩ := h 0
           simp at a
           grind
         })]
-        simp [MultiRoundData.tail]
+        simp only [MultiRoundData.tail]
         obtain ⟨a,b⟩ := h 0
         specialize b data.head
-        simp [OracleVerifier.materializeChallenges] at b
+        simp only [Fin.succ_zero_eq_one, OracleVerifier.materializeChallenges, Fin.castSucc_zero,
+            Fin.vsum_succ, Nat.reduceAdd, Fin.vsum_zero, Nat.add_zero] at b
         apply congrFun at b
         erw [b]
         unfold MultiRoundData.appendedChallenges
-        simp [MultiRoundData.head]
+        simp only [MultiRoundData.head, Fin.vsum_succ, Nat.reduceAdd, Fin.vsum_zero, Nat.add_zero,
+            Function.comp_apply]
         set previous := data.oracleState OracleIdx.challenges
         unfold OracleStatementRound at previous
         simp at previous
@@ -1028,7 +1038,7 @@ lemma materializeChallenges_seqCompose
           unfold sumcheckChallenge ProtocolSpec.Challenges.fst
           simp
           congr
-        . simp [←eq', Fin.cast]
+        · simp [←eq', Fin.cast]
       · rw [MultiRoundData.appendedChallenges_right (by {
           obtain ⟨a,b⟩ := h 0
           simp at a
@@ -1036,11 +1046,13 @@ lemma materializeChallenges_seqCompose
         })]
         obtain ⟨a,b⟩ := h 0
         simp at a
-        simp [a]
+        simp only [a]
         unfold MultiRoundData.tail
         simp only
         erw [sumcheckChallenge_succ]
-        rw [Fin.vappend_right_of_not_lt]; swap; grind
+        rw [Fin.vappend_right_of_not_lt]
+        swap
+        · grind
         rfl
 
 end
@@ -1075,56 +1087,62 @@ where
       | .CodeWordPolynomial => oracleStatement .CodeWordPolynomial
       | .SumcheckResult =>
         cast (by {
-          aesop (add simp [sumcheckResultIdx, ProtocolSpec.sigmaMessageIdxToSeqCompose]) -- TODO encapsulate
+          -- TODO encapsulate
+          aesop (add simp [sumcheckResultIdx, ProtocolSpec.sigmaMessageIdxToSeqCompose])
         }) (messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
       | .SumcheckChallenges => fun round => sumcheckChallenge round challenges
     simulateOutputQuery challenges query :=
       let ⟨queryIdx, queryData⟩ := query
       match queryIdx with
-        | .WeightPolynomial => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.WeightPolynomial, queryData⟩)) (pure ·)
+        | .WeightPolynomial =>
+          OracleComp.queryBind (Sum.inr (Sum.inl ⟨.WeightPolynomial, queryData⟩)) (pure ·)
         | .CodeWord => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.CodeWord, queryData⟩)) (pure ·)
-        | .CodeWordPolynomial => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.CodeWordPolynomial, queryData⟩)) (pure ·)
+        | .CodeWordPolynomial =>
+          OracleComp.queryBind (Sum.inr (Sum.inl ⟨.CodeWordPolynomial, queryData⟩)) (pure ·)
         | .SumcheckResult => OracleComp.queryBind (Sum.inr (Sum.inr
             ⟨sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds, cast (by {
               rewrite [sumcheckResultMessageType]
               rfl
             }) queryData⟩
           )) (fun data => do return (cast (by {
-            simp [OracleInterface.toOracleSpec]
-            have : (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds).val.splitSum.snd = 0 := by
+            simp only [ProtocolSpec.MessageIdx, ProtocolSpec.Message, OracleSpec.add_apply_inr,
+                OracleInterface.toOracleSpec]
+            have :
+                (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds).val.splitSum.snd
+                  = 0 := by
               obtain ⟨idx, h_idx⟩ := sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds
               by_contra
               have h_one : idx.splitSum.snd = 1 := by grind
-              simp at h_idx
+              simp only [ProtocolSpec.seqCompose_dir, Nat.reduceAdd, Nat.add_zero,
+                  Fin.vcons_fin_zero, Fin.vappend_zero] at h_idx
               rewrite [←idx.embedSum_splitSum, Fin.vflatten_embedSum, h_one] at h_idx
               reduce at h_idx
               simp at h_idx
-
             congr
-            . simp [OracleStatementMid]
+            · simp only [ProtocolSpec.seqCompose_type, Nat.reduceAdd, Nat.add_zero, Nat.cast_ofNat,
+                  Fin.vcons_fin_zero, Fin.vappend_zero, OracleStatementMid]
               rewrite [
-                ←Fin.embedSum_splitSum (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds).val,
+                ←Fin.embedSum_splitSum
+                  (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds).val,
                 this,
                 Fin.vflatten_embedSum
               ]
               rfl
-            . simp [
-                ProtocolSpec.instOracleInterfaceMessageSeqCompose,
-                Fin.fflatten₂_eq_splitSum
-              ]
+            · simp only [ProtocolSpec.instOracleInterfaceMessageSeqCompose, Nat.reduceAdd,
+                  Nat.add_zero, Fin.vcons_fin_zero, Nat.cast_ofNat, Fin.vappend_zero,
+                  Fin.fflatten₂_eq_splitSum]
               rw! [this]
-              simp [
-                Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec,
-                ProtocolSpec.instOracleInterfaceMessageAppend,
-                Sumcheck.Spec.SingleRound.instOI₂,
-                Fin.fconcat₂,
-                Sumcheck.Spec.SingleRound.instOI₁,
-                ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionP_to_VVempty,
-                OracleInterface.instPolynomialDegreeLE
-              ]
+              simp only [Fin.isValue, Sumcheck.Spec.SingleRound.instOracleInterfaceMessagePSpec,
+                  ProtocolSpec.instOracleInterfaceMessageAppend, Nat.reduceAdd, Nat.add_zero,
+                  Fin.vcons_fin_zero, Nat.cast_ofNat, Fin.vappend_zero,
+                  Sumcheck.Spec.SingleRound.instOI₂, Sumcheck.Spec.SingleRound.instOI₁,
+                  ProtocolSpec.instOracleInterfaceMessageMkVconsDirectionP_to_VVempty,
+                  ProtocolSpec.MessageIdx, ProtocolSpec.Message,
+                  OracleInterface.instPolynomialDegreeLE, bind_pure_comp, Fin.fappend₂_zero,
+                  Fin.fappend₂_succ, Fin.fconcat₂, Fin.reduceLast, Fin.fcons₂_zero, cast_eq]
               have {Y Z} (y : Y) (z : Z) : (fun x => y) z = y := rfl
-
-              rewrite [←this (OracleStatement.oracleInterfaceMid _ _ _ _) (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds).2]
+              rewrite [←this (OracleStatement.oracleInterfaceMid _ _ _ _)
+                (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds).2]
               clear this
               set lhs_fun := fun h' ↦ {
                 Query := F
@@ -1136,8 +1154,10 @@ where
               apply heq_apply
               · rfl
               · congr
-                simp
-                rewrite [←Fin.embedSum_splitSum (sumcheckResultIdx _ _ _).val, Fin.vflatten_embedSum]
+                simp only [ProtocolSpec.seqCompose_type, Nat.reduceAdd, Nat.add_zero,
+                    Nat.cast_ofNat, Fin.vcons_fin_zero, Fin.vappend_zero]
+                rewrite [←Fin.embedSum_splitSum (sumcheckResultIdx _ _ _).val,
+                  Fin.vflatten_embedSum]
                 rewrite [this]
                 reduce
                 rfl
@@ -1146,35 +1166,37 @@ where
                 subst lhs_fun
                 subst rhs_fun
                 apply heq_funext
-                simp
-                rewrite [←Fin.embedSum_splitSum (sumcheckResultIdx _ _ _).val, Fin.vflatten_embedSum]
-                . simp [this]
-                . rfl
-                . intro h h' heq
+                · simp only [Fin.isValue, ProtocolSpec.seqCompose_dir, Nat.reduceAdd, Nat.add_zero,
+                    Fin.vcons_fin_zero, Fin.vappend_zero, eq_iff_iff]
+                  rewrite [←Fin.embedSum_splitSum (sumcheckResultIdx _ _ _).val,
+                    Fin.vflatten_embedSum]
+                  simp [this]
+                · rfl
+                · intro h h' heq
                   rfl
               · rfl
-            . apply (cast_heq_iff_heq (a := queryData) _ _).mpr
+            · apply (cast_heq_iff_heq (a := queryData) _ _).mpr
               rfl
           }) data))
         | .SumcheckChallenges => do return sumcheckChallenge (F := F) queryData challenges
     simulateOutputQuery_eq challenges oStmt messages q := by
       obtain ⟨queryIdx, queryData⟩ := q
       fin_cases queryIdx
-      . rfl
-      . rfl
-      . dsimp
+      · rfl
+      · rfl
+      · dsimp
         rfl
-      .
-        simp only [Fin.reduceFinMk, Fin.isValue, ProtocolSpec.MessageIdx, ProtocolSpec.Message,
+      · simp only [Fin.reduceFinMk, Fin.isValue, ProtocolSpec.MessageIdx, ProtocolSpec.Message,
           OracleSpec.add_apply_inr, PFunctor.FreeM.liftBind_eq, OracleSpec.ofPFunctor_toPFunctor,
           PFunctor.FreeM.bind_eq_bind, bind_pure_comp, simulateQ_map]
         rewrite [answer_cast, pure_cast]
         cbv
-        simp
+        simp only [Fin.isValue, Nat.reduceAdd, Nat.add_zero, Fin.vcons_fin_zero, Nat.cast_ofNat,
+            Fin.vappend_zero, PFunctor.FreeM.pure_eq_pure]
         convert pure_cast _ _ _ _
-        . simp [cast]
+        · simp [cast]
           rfl
-      . rfl
+      · rfl
   }
 
   materialize_eq := by
@@ -1190,13 +1212,11 @@ where
       · grind
       · simp [OracleVerifier.materializeOutputOracle]
         rfl
-    · simp [
-        OracleVerifier.materializeOutputOracle,
-        sumcheckLens,
-        OracleStatement.sumcheckExecutableLens,
-        Sumcheck.Spec.partialOracleVerifier,
-        Sumcheck.Spec.OracleIdx.challenges
-      ]
+    · simp only [Fin.reduceFinMk, Fin.isValue, OracleVerifier.materializeOutputOracle, sumcheckLens,
+          OracleStatement.sumcheckExecutableLens, Fin.coe_ofNat_eq_mod, Nat.zero_mod,
+          Nat.cast_ofNat, Sumcheck.Spec.OracleIdx.challenges, PFunctor.FreeM.liftBind_eq,
+          OracleSpec.ofPFunctor_toPFunctor, PFunctor.FreeM.bind_eq_bind, bind_pure_comp,
+          Sumcheck.Spec.partialOracleVerifier]
       obtain ⟨num_sumcheck_rounds, h_num_sumcheck_rounds'⟩ := num_sumcheck_rounds
       set f := fun (idx : Sumcheck.Spec.OracleIdx) ↦ _
       have :
@@ -1215,8 +1235,9 @@ where
       -- prove that the verifier materialize output (for this verifier specifically)
       -- appends on to f, leaving anything handled by it
       -- this will likely require another induction
-      -- then when doing this induction, we can wrap the SingleRound materializeOutput as f in the induction hypothesis
-      -- and use sumcheckChallenge_succ to split off the first round, and move it onto the other side of the append
+      -- then when doing this induction, we can wrap the SingleRound materializeOutput as f in the
+      -- induction hypothesis and use sumcheckChallenge_succ to split off the first round, and move
+      -- it onto the other side of the append
       have :=
         materializeChallenges_seqCompose
           (m := num_sumcheck_rounds)
@@ -1426,6 +1447,141 @@ where
   zs : Fin (num_queries + 1) → Fin (num_vars - num_sumcheck_rounds) → F
 
 
+section WeightPolynomialDegree
+
+open MvPolynomial
+
+/-- A product of polynomials of degree at most one in `v`, at most one of which involves `v`,
+has degree at most one in `v`. -/
+private theorem degreeOf_prod_le_one_of_unique {σ ι F : Type} [CommRing F]
+    (v : σ) (s : Finset ι) (f : ι → MvPolynomial σ F)
+    (hf : ∀ i ∈ s, degreeOf v (f i) ≤ 1)
+    (huniq : ∀ i ∈ s, ∀ j ∈ s, degreeOf v (f i) ≠ 0 → degreeOf v (f j) ≠ 0 → i = j) :
+    degreeOf v (∏ i ∈ s, f i) ≤ 1 := by
+  refine (degreeOf_prod_le v s f).trans ?_
+  by_cases h : ∃ i ∈ s, degreeOf v (f i) ≠ 0
+  · obtain ⟨i, hi, hne⟩ := h
+    rw [Finset.sum_eq_single_of_mem i hi fun j hj hji => by
+      by_contra hj'
+      exact hji (huniq j hj i hi hj' hne)]
+    exact hf i hi
+  · push Not at h
+    simp [Finset.sum_eq_zero h]
+
+/-- Substituting polynomials of degree at most one in each variable, no two of which share a
+variable, into a polynomial of degree at most one in each variable gives a polynomial of degree
+at most one in each variable. -/
+private theorem eval₂_C_mem_restrictDegree_one {σ τ F : Type} [CommRing F]
+    (p : MvPolynomial σ F) (hp : p ∈ restrictDegree σ F 1)
+    (φ : σ → MvPolynomial τ F)
+    (hφ : ∀ i v, degreeOf v (φ i) ≤ 1)
+    (huniq : ∀ v i j, degreeOf v (φ i) ≠ 0 → degreeOf v (φ j) ≠ 0 → i = j) :
+    eval₂ C φ p ∈ restrictDegree τ F 1 := by
+  rw [mem_restrictDegree_iff_degreeOf_le]
+  intro v
+  rw [eval₂_eq]
+  refine (degreeOf_sum_le v _ _).trans (Finset.sup_le fun d hd => ?_)
+  refine (degreeOf_C_mul_le _ v _).trans ?_
+  have hd1 : ∀ i, d i ≤ 1 := (mem_restrictDegree _ _ _).mp hp d hd
+  have hpow : ∀ i, degreeOf v (φ i ^ d i) ≤ d i * degreeOf v (φ i) :=
+    fun i => degreeOf_pow_le v (φ i) (d i)
+  refine degreeOf_prod_le_one_of_unique v _ _ (fun i _ => ?_) (fun i _ j _ hi hj => ?_)
+  · exact (hpow i).trans (by nlinarith [hd1 i, hφ i v])
+  · refine huniq v i j (fun h => hi ?_) (fun h => hj ?_)
+    · exact Nat.le_zero.mp (by simpa [h] using hpow i)
+    · exact Nat.le_zero.mp (by simpa [h] using hpow j)
+
+private theorem degreeOf_eqFactor_le {n : ℕ} {F : Type} [Field F]
+    (b : F) (a v : Fin n) :
+    degreeOf v (C b * X a + (1 - C b) * (1 - X a) : MvPolynomial (Fin n) F) ≤
+      if v = a then 1 else 0 := by
+  have : (C b * X a + (1 - C b) * (1 - X a) : MvPolynomial (Fin n) F) =
+      C (2 * b - 1) * X a + C (1 - b) := by
+    simp only [map_sub, map_mul, map_one, map_ofNat]
+    ring
+  rw [this]
+  refine (degreeOf_add_le v _ _).trans ?_
+  rw [degreeOf_C, max_eq_left (Nat.zero_le _)]
+  refine (degreeOf_C_mul_le _ v _).trans ?_
+  rw [degreeOf_X]
+
+/-- The weight polynomial produced by the WHIR prover,
+`ŵ(Z, α, X) + Z · ∑ᵢ γ^(i+1) · eq(zᵢ, X)`, is multilinear. -/
+theorem whirWeightPolynomial_mem_restrictDegree_one {F : Type} [Field F]
+    {n k q : ℕ}
+    (ω : MvPolynomial (Fin (n + 1)) F) (hω : ω ∈ restrictDegree (Fin (n + 1)) F 1)
+    (α : Fin k → F) (zs : Fin (q + 1) → Fin (n - k) → F) (γ : F) :
+    eval₂ C
+        (Fin.cases (X 0) (fun (x : Fin n) => if h : x.val < k
+          then C (α ⟨x.val, h⟩)
+          else X (Fin.mk (x.val - k + 1) (by omega))) :
+          Fin (n + 1) → MvPolynomial (Fin (n - k + 1)) F) ω +
+      X 0 * ∑ i : Fin (q + 1), C γ ^ (i.val + 1) *
+        ∏ j : Fin (n - k), (C (zs i j) * X j.succ + (1 - C (zs i j)) * (1 - X j.succ))
+      ∈ restrictDegree (Fin (n - k + 1)) F 1 := by
+  refine Submodule.add_mem _ ?_ ?_
+  · refine eval₂_C_mem_restrictDegree_one ω hω _ ?_ ?_
+    · intro i v
+      refine Fin.cases ?_ (fun x => ?_) i
+      · simp only [Fin.cases_zero, degreeOf_X]; split <;> omega
+      · simp only [Fin.cases_succ]
+        split
+        · simp [degreeOf_C]
+        · rw [degreeOf_X]; split <;> omega
+    · -- A variable `v` occurs in the `i`-th substituted polynomial only if `v = i - k`, and
+      -- then `i = 0` or `k < i`; this pins down `i`.
+      have key : ∀ (i : Fin (n + 1)) (v : Fin (n - k + 1)),
+          degreeOf v ((Fin.cases (X 0) (fun (x : Fin n) => if h : x.val < k
+            then C (α ⟨x.val, h⟩)
+            else X (Fin.mk (x.val - k + 1) (by omega))) :
+            Fin (n + 1) → MvPolynomial (Fin (n - k + 1)) F) i) ≠ 0 →
+          v.val = i.val - k ∧ (i.val = 0 ∨ k < i.val) := by
+        intro i v
+        refine Fin.cases ?_ (fun x => ?_) i
+        · simp only [Fin.cases_zero, degreeOf_X]
+          split_ifs with h <;> simp [h]
+        · simp only [Fin.cases_succ]
+          split_ifs with h
+          · simp [degreeOf_C]
+          · rw [degreeOf_X]
+            split_ifs with h''
+            · intro; subst h''; simp; omega
+            · simp
+      intro v i j hi hj
+      obtain ⟨hi1, hi2⟩ := key i v hi
+      obtain ⟨hj1, hj2⟩ := key j v hj
+      ext; omega
+  · rw [mem_restrictDegree_iff_degreeOf_le]
+    intro v
+    -- Each `eq` term has degree at most one in every variable, and does not involve `Z = X 0`.
+    have heq : ∀ i, degreeOf v (∏ j : Fin (n - k),
+        (C (zs i j) * X j.succ + (1 - C (zs i j)) * (1 - X j.succ) :
+          MvPolynomial (Fin (n - k + 1)) F)) ≤ if v = 0 then 0 else 1 := by
+      intro i
+      split_ifs with hv
+      · refine (degreeOf_prod_le v _ _).trans (le_of_eq (Finset.sum_eq_zero fun j _ => ?_))
+        have := degreeOf_eqFactor_le (zs i j) j.succ v
+        have hne : v ≠ j.succ := by rw [hv]; exact (Fin.succ_ne_zero j).symm
+        simp only [hne, ↓reduceIte] at this
+        omega
+      · refine degreeOf_prod_le_one_of_unique v _ _ (fun j _ => ?_) (fun j _ j' _ h h' => ?_)
+        · exact (degreeOf_eqFactor_le _ _ v).trans (by split <;> omega)
+        · have a := degreeOf_eqFactor_le (zs i j) j.succ v
+          have b := degreeOf_eqFactor_le (zs i j') j'.succ v
+          split_ifs at a b with ha hb <;> try omega
+          exact Fin.succ_injective _ (ha.symm.trans hb)
+    have hsum : degreeOf v (∑ i : Fin (q + 1), C γ ^ (i.val + 1) *
+        ∏ j : Fin (n - k), (C (zs i j) * X j.succ + (1 - C (zs i j)) * (1 - X j.succ) :
+          MvPolynomial (Fin (n - k + 1)) F)) ≤ if v = 0 then 0 else 1 := by
+      refine (degreeOf_sum_le v _ _).trans (Finset.sup_le fun i _ => ?_)
+      rw [← C_pow]
+      exact (degreeOf_C_mul_le _ v _).trans (heq i)
+    refine (degreeOf_mul_le v _ _).trans ?_
+    rw [degreeOf_X]
+    split_ifs at hsum ⊢ <;> omega
+
+end WeightPolynomialDegree
+
 open MvPolynomial in
 noncomputable def restProver
   {ι : Type} (oSpec : OracleSpec ι)
@@ -1462,7 +1618,8 @@ where
     {
       α := oracle_statement .SumcheckChallenges
       f_hat := witness.f_hat
-      h_hat_k := oracle_statement .SumcheckResult --can also use the witness, it's in both currently. TODO, remove from witness?
+      -- can also use the witness, it's in both currently. TODO, remove from witness?
+      h_hat_k := oracle_statement .SumcheckResult
       ω_hat := oracle_statement .WeightPolynomial
     }
 
@@ -1612,7 +1769,8 @@ where
       )
 
   output state := do
-          -- Fold(f, α)(z) = ĝ(pow(z, m - k)), see `ProximityGap.iteratedFoldWord_eq_evalOnPoints_powAlgHom`
+    -- Fold(f, α)(z) = ĝ(pow(z, m - k)), see
+    -- `ProximityGap.iteratedFoldWord_eq_evalOnPoints_powAlgHom` (Claim 4.15 of [ACFY24])
     let ys : Vector F (num_queries + 1) := Vector.cast (by grind) (
       #v[state.y] ++
       Vector.ofFn (fun j : Fin num_queries => MvPolynomial.eval (state.zs j.succ) state.g_hat.val)
@@ -1620,13 +1778,11 @@ where
     let γ : F := state.γ
     let α_k : F := state.α ⟨num_sumcheck_rounds.val - 1, by grind⟩
     let h_hat_k := state.h_hat_k.val
-
     let sum := (ys.mapIdx (fun idx y =>
       let pow := (List.replicate (idx + 1) γ).prod
       pow * y
     )).sum
     let newTarget := Polynomial.eval α_k h_hat_k + sum
-
     let zs := state.zs
     let αs_poly : Fin num_sumcheck_rounds → F[X Fin (num_vars - num_sumcheck_rounds + 1)] :=
       fun i => MvPolynomial.C (state.α i)
@@ -1648,9 +1804,9 @@ where
       )
     let sum : F[X Fin (num_vars - num_sumcheck_rounds + 1)] :=
       MvPolynomial.X 0 * ∑ (i : Fin (num_queries + 1)), γ_poly ^ (i.val + 1) * eq i
-
     let newWeightPolynomial : F⦃≤1⦄[X Fin (num_vars - num_sumcheck_rounds + 1)] :=
-      ⟨specialisedWeightPolynomial + sum, sorry⟩
+      ⟨specialisedWeightPolynomial + sum,
+        whirWeightPolynomial_mem_restrictDegree_one _ state.ω_hat.2 state.α zs γ⟩
     let newCodeWord := state.g
     let newCodeWordPolynomial := state.g_hat
     let statement := {
@@ -1664,28 +1820,104 @@ where
     }
     return ((statement, oracleStatement), witness)
 
-open MvPolynomial in
-example
-  {F : Type} [Field F]
-  {deg : ℕ}
-  {num_vars1 num_vars2 : ℕ}
-  {poly : F⦃≤ deg⦄[X Fin num_vars1]}
-  {varIdx : Fin num_vars2}
-  {vars : Fin num_vars1 → F⦃≤ 1⦄[X Fin num_vars2]}
-:
-  degreeOf varIdx (MvPolynomial.eval₂ MvPolynomial.C (fun x => (vars x).val) poly.val) ≤ 1
-:= by
-  obtain ⟨poly, h_poly⟩ := poly
-  simp [eval₂, Finsupp.sum]
-  induction num_vars1
-  . simp
-    apply le_trans (MvPolynomial.degreeOf_sum_le _ _ _)
-    simp
-  case succ num_vars1 ih =>
+section WeightPolynomialEval
 
-    done
+open MvPolynomial
 
+/-- Evaluating the WHIR weight polynomial `ŵ(Z, α, X) + Z · ∑ᵢ γ^(i+1) · eq(zᵢ, X)` at a point
+`(Z, X)` agrees with evaluating `ŵ` at `(Z, α, X)` and the `eq` terms at `X` separately. -/
+theorem whirWeightPolynomial_eval {F : Type} [Field F] {n k q : ℕ} (hk : k ≤ n)
+    (ω : MvPolynomial (Fin (n + 1)) F) (α : Fin k → F) (zs : Fin (q + 1) → Fin (n - k) → F)
+    (γ : F) (args : Fin (n - k + 1) → F) :
+    eval args
+      (eval₂ C
+        (Fin.cases (X 0) (fun (x : Fin n) => if h : x.val < k
+          then C (α ⟨x.val, h⟩)
+          else X (Fin.mk (x.val - k + 1) (by omega))) :
+          Fin (n + 1) → MvPolynomial (Fin (n - k + 1)) F) ω +
+      X 0 * ∑ i : Fin (q + 1), C γ ^ (i.val + 1) *
+        ∏ j : Fin (n - k), (C (zs i j) * X j.succ + (1 - C (zs i j)) * (1 - X j.succ))) =
+    eval (fun i => Fin.cases (args 0)
+        (fun idx => Fin.append α (fun j => args j.succ) (Fin.cast (by omega) idx)) i) ω +
+      args 0 * ∑ i : Fin (q + 1), γ ^ (i.val + 1) *
+        ∏ j : Fin (n - k), (zs i j * args j.succ + (1 - zs i j) * (1 - args j.succ)) := by
+  have heval : ∀ (φ : Fin (n + 1) → MvPolynomial (Fin (n - k + 1)) F) (p : MvPolynomial _ F),
+      eval args (eval₂ C φ p) = eval (fun i => eval args (φ i)) p := by
+    intro φ p
+    induction p using MvPolynomial.induction_on with
+    | C a => simp
+    | add p q hp hq => simp [hp, hq]
+    | mul_X p i hp => simp [hp]
+  rw [eval_add, heval]
+  congr 2
+  · congr 1
+    funext i
+    refine Fin.cases ?_ (fun x => ?_) i
+    · simp
+    · simp only [Fin.cases_succ]
+      split_ifs with h
+      · rw [eval_C]
+        exact (Fin.append_left α _ ⟨x.val, h⟩).symm
+      · rw [eval_X]
+        have := Fin.append_right α (fun j => args j.succ) ⟨x.val - k, by omega⟩
+        rw [show (Fin.cast (by omega) x : Fin (k + (n - k))) = Fin.natAdd k ⟨x.val - k, by omega⟩
+          from Fin.ext (by simp; omega), this]
+        rfl
+  · simp
 
+end WeightPolynomialEval
+
+section SimOracle2
+
+open OracleSpec OracleComp
+
+variable {ι : Type} {oSpec : OracleSpec ι}
+  {ι₁ : Type} {T₁ : ι₁ → Type} [∀ i, OracleInterface (T₁ i)]
+  {ι₂ : Type} {T₂ : ι₂ → Type} [∀ i, OracleInterface (T₂ i)]
+
+/-- Simulating a query to a statement oracle with `simOracle2` answers it from that oracle. -/
+theorem simulateQ_simOracle2_queryBind_stmt (t₁ : ∀ i, T₁ i) (t₂ : ∀ i, T₂ i) {α : Type}
+    (i : ι₁) (q : OracleInterface.Query (T₁ i))
+    (k : _ → OracleComp (oSpec + ([T₁]ₒ + [T₂]ₒ)) α) :
+    simulateQ (OracleInterface.simOracle2 oSpec t₁ t₂)
+        (OracleComp.queryBind (Sum.inr (Sum.inl ⟨i, q⟩)) k) =
+      simulateQ (OracleInterface.simOracle2 oSpec t₁ t₂)
+        (k (OracleInterface.answer (t₁ i) q)) := by
+  rw [show OracleComp.queryBind (Sum.inr (Sum.inl ⟨i, q⟩)) k =
+      liftM ((oSpec + ([T₁]ₒ + [T₂]ₒ)).query (Sum.inr (Sum.inl ⟨i, q⟩))) >>= k from rfl,
+    simulateQ_bind, simulateQ_spec_query]
+  simp only [OracleInterface.simOracle2, QueryImpl.addLift_def, QueryImpl.add_apply_inr,
+    QueryImpl.liftTarget_apply]
+  exact pure_bind _ _
+
+/-- Simulating a query to a message oracle with `simOracle2` answers it from that message. -/
+theorem simulateQ_simOracle2_queryBind_msg (t₁ : ∀ i, T₁ i) (t₂ : ∀ i, T₂ i) {α : Type}
+    (i : ι₂) (q : OracleInterface.Query (T₂ i))
+    (k : _ → OracleComp (oSpec + ([T₁]ₒ + [T₂]ₒ)) α) :
+    simulateQ (OracleInterface.simOracle2 oSpec t₁ t₂)
+        (OracleComp.queryBind (Sum.inr (Sum.inr ⟨i, q⟩)) k) =
+      simulateQ (OracleInterface.simOracle2 oSpec t₁ t₂)
+        (k (OracleInterface.answer (t₂ i) q)) := by
+  rw [show OracleComp.queryBind (Sum.inr (Sum.inr ⟨i, q⟩)) k =
+      liftM ((oSpec + ([T₁]ₒ + [T₂]ₒ)).query (Sum.inr (Sum.inr ⟨i, q⟩))) >>= k from rfl,
+    simulateQ_bind, simulateQ_spec_query]
+  simp only [OracleInterface.simOracle2, QueryImpl.addLift_def, QueryImpl.add_apply_inr,
+    QueryImpl.liftTarget_apply]
+  exact pure_bind _ _
+
+end SimOracle2
+
+/-- `simulateQ` of a `Vector.mapM` whose every step simulates to a pure value is pure. -/
+theorem simulateQ_vector_mapM_of_pure {ι : Type} {spec : OracleSpec ι} {r : Type → Type}
+    [Monad r] [LawfulMonad r] (impl : QueryImpl spec r) {α β : Type} {n : ℕ}
+    (f : α → OracleComp spec β) (g : α → β) (hf : ∀ a, simulateQ impl (f a) = pure (g a))
+    (xs : Vector α n) :
+    simulateQ impl (xs.mapM f) = pure (xs.map g) := by
+  apply Vector.map_toArray_inj.mp
+  rw [← simulateQ_map, Vector.toArray_mapM, Array.mapM_eq_mapM_toList, simulateQ_map,
+    simulateQ_list_mapM]
+  simp only [hf, List.mapM_pure, map_pure, Vector.toArray_map]
+  exact congrArg pure (Array.ext' (by simp))
 
 open Polynomial MvPolynomial in
 def restVerifier
@@ -1731,15 +1963,17 @@ where
     materializeOutput challenges oracles messages oracleIdx := match oracleIdx with
       | .WeightPolynomial =>
         let num_x := num_vars - num_sumcheck_rounds
-        let αs : Fin num_sumcheck_rounds → F := _
-        let αs_poly : Fin num_sumcheck_rounds → F[X Fin (num_vars - num_sumcheck_rounds + 1)] := _
+        let αs : Fin num_sumcheck_rounds → F := oracles .SumcheckChallenges
+        let αs_poly : Fin num_sumcheck_rounds → F[X Fin (num_vars - num_sumcheck_rounds + 1)] :=
+          fun i => MvPolynomial.C (αs i)
         let w_hat_vars : Fin (num_vars + 1) → _ := Fin.cases
           (MvPolynomial.X 0)
           (fun (x : Fin num_vars) => if h: x.val < num_sumcheck_rounds
             then αs_poly ⟨x.val, h⟩
             else  MvPolynomial.X (Fin.mk (x.val - num_sumcheck_rounds + 1) (by grind))
           )
-        let w_hat : F[X Fin (num_vars - num_sumcheck_rounds + 1)] := MvPolynomial.eval₂ MvPolynomial.C w_hat_vars (oracles .WeightPolynomial).val
+        let w_hat : F[X Fin (num_vars - num_sumcheck_rounds + 1)] :=
+          MvPolynomial.eval₂ MvPolynomial.C w_hat_vars (oracles .WeightPolynomial).val
         let z0 := challenges restPSpec.outOfDomainSample
         let ⟨zs, γ⟩ := challenges restPSpec.shiftQueriesAndCombinationRandomness
         let zs : Fin (num_queries + 1) → F := Fin.cases z0 (zs ·)
@@ -1759,19 +1993,8 @@ where
         let w_hat' : F[X Fin (num_vars - num_sumcheck_rounds + 1)] := w_hat + MvPolynomial.X 0 * sum
         ⟨
           w_hat',
-          by {
-            simp [MvPolynomial.mem_restrictDegree_iff_degreeOf_le]
-            intro varIdx
-            subst w_hat'
-            have : degreeOf varIdx w_hat ≤ 1 := by
-              subst w_hat
-              have ⟨w_hat, h_w_hat⟩ := (oracles .WeightPolynomial)
-
-              done
-            have : degreeOf varIdx (MvPolynomial.X 0 * sum) ≤ 1 := sorry
-            apply le_trans (MvPolynomial.degreeOf_add_le _ _ _)
-            grind
-          }
+          whirWeightPolynomial_mem_restrictDegree_one _ (oracles .WeightPolynomial).2 αs
+            (fun i j => zs i ^ 2 ^ j.val) γ
         ⟩
 
         -- fun (args : Fin (num_vars - num_sumcheck_rounds + 1) → F) =>
@@ -1801,7 +2024,8 @@ where
         let Z : F := args ⟨0, by grind⟩
         let X : Fin (num_vars - num_sumcheck_rounds) → F := fun i => args i.succ
 
-        let αs : Vector F num_sumcheck_rounds ← (Vector.finRange num_sumcheck_rounds).mapM (fun idx =>
+        let αs : Vector F num_sumcheck_rounds ←
+          (Vector.finRange num_sumcheck_rounds).mapM (fun idx =>
           OracleComp.queryBind
             (Sum.inr (Sum.inl ⟨.SumcheckChallenges, idx⟩))
             (fun result => do return result)
@@ -1828,7 +2052,38 @@ where
       | ⟨.CodeWord, x⟩ => OracleComp.queryBind
         (Sum.inr (Sum.inr ⟨⟨0, rfl⟩, x⟩))
         (fun result => do return result)
-    simulateOutputQuery_eq := _
+    simulateOutputQuery_eq := by
+      intro challenges oStmt messages q
+      rcases q with ⟨⟨_ | _ | n, hn⟩, args⟩
+      · dsimp only
+        refine (simulateQ_bind _ _ _).trans ?_
+        erw [simulateQ_vector_mapM_of_pure _ _
+          (fun idx => oStmt .SumcheckChallenges idx)
+          (fun idx => (simulateQ_simOracle2_queryBind_stmt _ _ _ _ _).trans (simulateQ_pure _ _))]
+        refine (pure_bind _ _).trans ?_
+        refine (simulateQ_bind _ _ _).trans ?_
+        erw [simulateQ_simOracle2_queryBind_stmt, simulateQ_pure, pure_bind, simulateQ_pure]
+        congr 1
+        refine Eq.trans ?_ ((whirWeightPolynomial_eval
+          (Nat.lt_succ_iff.mp num_sumcheck_rounds.isLt)
+          (oStmt .WeightPolynomial : F⦃≤1⦄[X Fin (num_vars + 1)]).1 (oStmt .SumcheckChallenges)
+          (fun i j => Fin.cases (challenges restPSpec.outOfDomainSample)
+            (fun x => ↑((challenges restPSpec.shiftQueriesAndCombinationRandomness).1 x)) i ^
+              2 ^ j.val)
+          (challenges restPSpec.shiftQueriesAndCombinationRandomness).2 args).symm.trans ?_)
+        · have hans : ∀ q, OracleInterface.answer (oStmt .WeightPolynomial) q =
+              MvPolynomial.eval q (oStmt .WeightPolynomial : F⦃≤1⦄[X Fin (num_vars + 1)]).1 :=
+            fun _ => rfl
+          have key : (fun x : Fin num_sumcheck_rounds =>
+              (Vector.map (fun idx => oStmt .SumcheckChallenges idx)
+                (Vector.finRange num_sumcheck_rounds))[x]) = oStmt .SumcheckChallenges :=
+            funext fun x => by simp
+          erw [hans]
+          erw [key]
+          rfl
+        · rfl
+      · exact (simulateQ_simOracle2_queryBind_msg _ _ _ _ _).trans (simulateQ_pure _ _)
+      · omega
   }
 
 noncomputable def restReduction
@@ -1853,7 +2108,8 @@ noncomputable def restReduction
     (pSpec := restPSpec domain num_sumcheck_rounds num_queries)
 where
   prover := restProver oSpec domain num_vars num_sumcheck_rounds h_num_sumcheck_rounds num_queries
-  verifier := restVerifier oSpec domain num_vars num_sumcheck_rounds h_num_sumcheck_rounds num_queries
+  verifier :=
+    restVerifier oSpec domain num_vars num_sumcheck_rounds h_num_sumcheck_rounds num_queries
 
 -- TODO why does this need declaring manually?
 instance
