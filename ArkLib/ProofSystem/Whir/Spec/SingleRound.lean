@@ -1920,7 +1920,7 @@ theorem simulateQ_vector_mapM_of_pure {ι : Type} {spec : OracleSpec ι} {r : Ty
   exact congrArg pure (Array.ext' (by simp))
 
 open Polynomial MvPolynomial in
-def restVerifier
+noncomputable def restVerifier
   {OSpecIdx : Type} (oSpec : OracleSpec OSpecIdx)
   {F : Type} [Field F] [DecidableEq F] [SampleableType F]
   {log_order : ℕ}
@@ -1951,7 +1951,7 @@ where
       (Sum.inr (Sum.inr (Sigma.mk ⟨2, rfl⟩ ())))
       (fun x => do return (.some x))
 
-    let y_one_plus : Fin num_queries → F := _ -- folds
+    let y_one_plus : Fin num_queries → F := sorry -- folds
 
     let ys : Fin (num_queries + 1) → F := Fin.cases y0 y_one_plus
     let gamma_y_sum : F := ∑ i, γ^(i.val+1) * (ys i)

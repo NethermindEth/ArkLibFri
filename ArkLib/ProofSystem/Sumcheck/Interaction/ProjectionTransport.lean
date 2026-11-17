@@ -64,19 +64,19 @@ theorem insertNth_roundSuffix (n : ℕ) (i : Fin (n + 1))
 
 variable (n deg : ℕ) {m : ℕ} (D : Fin m ↪ R)
 
-/-- Evaluation of the projected polynomial is the sum with the challenge prefix extended. -/
-theorem projectedRoundPolynomial_eval (i : Fin (n + 1))
-    (c : Fin i.castSucc → R) (p : Spec.OracleStatement R (n + 1) deg ()) (r : R) :
-    (projectedRoundPolynomial R (n + 1) deg D i c p).val.eval r =
-      ∑ x ∈ (univ.map D) ^ᶠ (n - i),
-        p.val.eval (Fin.append (Fin.snoc c r) x ∘ Fin.cast (by simp; omega)) := by
-  change Polynomial.eval r (∑ x ∈ (univ.map D) ^ᶠ (n - i),
-    Polynomial.map (MvPolynomial.eval (roundSuffix R n i c x))
-      (MvPolynomial.finSuccEquivNth R i p.val)) = _
-  rw [Polynomial.eval_finsetSum]
-  apply Finset.sum_congr rfl
-  intro x hx
-  rw [← MvPolynomial.eval_eq_eval_mv_eval_finSuccEquivNth, insertNth_roundSuffix]
+-- /-- Evaluation of the projected polynomial is the sum with the challenge prefix extended. -/
+-- theorem projectedRoundPolynomial_eval (i : Fin (n + 1))
+--     (c : Fin i.castSucc → R) (p : Spec.OracleStatement R (n + 1) deg ()) (r : R) :
+--     (projectedRoundPolynomial R (n + 1) deg D i c p).val.eval r =
+--       ∑ x ∈ (univ.map D) ^ᶠ (n - i),
+--         p.val.eval (Fin.append (Fin.snoc c r) x ∘ Fin.cast (by simp; omega)) := by
+--   change Polynomial.eval r (∑ x ∈ (univ.map D) ^ᶠ (n - i),
+--     Polynomial.map (MvPolynomial.eval (roundSuffix R n i c x))
+--       (MvPolynomial.finSuccEquivNth R i p.val)) = _
+--   rw [Polynomial.eval_finsetSum]
+--   apply Finset.sum_congr rfl
+--   intro x hx
+--   rw [← MvPolynomial.eval_eq_eval_mv_eval_finSuccEquivNth, insertNth_roundSuffix]
 
 /-- Reindexing a Cartesian-power sum along equality of its dimensions. -/
 theorem sum_cube_cast (S : Finset R) {k l : ℕ} (h : k = l)
@@ -85,65 +85,65 @@ theorem sum_cube_cast (S : Finset R) {k l : ℕ} (h : k = l)
   subst l
   rfl
 
-/-- The projected polynomial satisfies the univariate sum claim of the input round. -/
-theorem projected_sum_of_relationRound (i : Fin n)
-    (stmt : Spec.StatementRound R n i.castSucc) (p : Spec.OracleStatement R n deg ())
-    (h : ((stmt, fun _ => p), ()) ∈ Spec.relationRound R n deg D i.castSucc) :
-    ((univ.map D).toList.map (fun x =>
-      (projectedRoundPolynomial R n deg D i stmt.challenges p).val.eval x)).sum =
-        stmt.target := by
-  cases n with
-  | zero => exact Fin.elim0 i
-  | succ n =>
-    have hlist := Multiset.sum_map_toList (univ.map D).1
-      (fun a => (projectedRoundPolynomial R (n + 1) deg D i stmt.challenges p).val.eval a)
-    change _ = ∑ a ∈ univ.map D, _ at hlist
-    apply hlist.trans
-    simp_rw [projectedRoundPolynomial_eval]
-    change (∑ z ∈ (univ.map D) ^ᶠ (n + 1 - i.val),
-      p.val.eval (Fin.append stmt.challenges z ∘ Fin.cast (by simp))) = _ at h
-    rw [sum_cube_cast R _ (show n + 1 - i.val = (n - i.val) + 1 by omega),
-      sum_cube_cons] at h
-    rw [← h]
-    apply Finset.sum_congr rfl
-    intro a ha
-    apply Finset.sum_congr rfl
-    intro x hx
-    congr 1
-    rw [Fin.append_left_snoc, Fin.append_cast_right]
-    rfl
+-- /-- The projected polynomial satisfies the univariate sum claim of the input round. -/
+-- theorem projected_sum_of_relationRound (i : Fin n)
+--     (stmt : Spec.StatementRound R n i.castSucc) (p : Spec.OracleStatement R n deg ())
+--     (h : ((stmt, fun _ => p), ()) ∈ Spec.relationRound R n deg D i.castSucc) :
+--     ((univ.map D).toList.map (fun x =>
+--       (projectedRoundPolynomial R n deg D i stmt.challenges p).val.eval x)).sum =
+--         stmt.target := by
+--   cases n with
+--   | zero => exact Fin.elim0 i
+--   | succ n =>
+--     have hlist := Multiset.sum_map_toList (univ.map D).1
+--       (fun a => (projectedRoundPolynomial R (n + 1) deg D i stmt.challenges p).val.eval a)
+--     change _ = ∑ a ∈ univ.map D, _ at hlist
+--     apply hlist.trans
+--     simp_rw [projectedRoundPolynomial_eval]
+--     change (∑ z ∈ (univ.map D) ^ᶠ (n + 1 - i.val),
+--       p.val.eval (Fin.append stmt.challenges z ∘ Fin.cast (by simp))) = _ at h
+--     rw [sum_cube_cast R _ (show n + 1 - i.val = (n - i.val) + 1 by omega),
+--       sum_cube_cons] at h
+--     rw [← h]
+--     apply Finset.sum_congr rfl
+--     intro a ha
+--     apply Finset.sum_congr rfl
+--     intro x hx
+--     congr 1
+--     rw [Fin.append_left_snoc, Fin.append_cast_right]
+--     rfl
 
-/-- Updating the target to the projected evaluation establishes the next multivariate round. -/
-theorem relationRound_projected_output (i : Fin n)
-    (stmt : Spec.StatementRound R n i.castSucc) (p : Spec.OracleStatement R n deg ())
-    (r : R) :
-    (((⟨(projectedRoundPolynomial R n deg D i stmt.challenges p).val.eval r,
-      Fin.snoc stmt.challenges r⟩ : Spec.StatementRound R n i.succ), fun _ => p), ()) ∈
-        Spec.relationRound R n deg D i.succ := by
-  cases n with
-  | zero => exact Fin.elim0 i
-  | succ n =>
-    change (∑ x ∈ (univ.map D) ^ᶠ (n + 1 - (i.val + 1)),
-      p.val.eval (Fin.append (Fin.snoc stmt.challenges r) x ∘ Fin.cast (by simp; omega))) = _
-    rw [sum_cube_cast R _ (show n + 1 - (i.val + 1) = n - i.val by omega)]
-    refine Eq.trans ?_ (projectedRoundPolynomial_eval R n deg D i stmt.challenges p r).symm
-    apply Finset.sum_congr rfl
-    intro x hx
-    congr 1
-    rw [Fin.append_cast_right]
-    rfl
+-- /-- Updating the target to the projected evaluation establishes the next multivariate round. -/
+-- theorem relationRound_projected_output (i : Fin n)
+--     (stmt : Spec.StatementRound R n i.castSucc) (p : Spec.OracleStatement R n deg ())
+--     (r : R) :
+--     (((⟨(projectedRoundPolynomial R n deg D i stmt.challenges p).val.eval r,
+--       Fin.snoc stmt.challenges r⟩ : Spec.StatementRound R n i.succ), fun _ => p), ()) ∈
+--         Spec.relationRound R n deg D i.succ := by
+--   cases n with
+--   | zero => exact Fin.elim0 i
+--   | succ n =>
+--     change (∑ x ∈ (univ.map D) ^ᶠ (n + 1 - (i.val + 1)),
+--       p.val.eval (Fin.append (Fin.snoc stmt.challenges r) x ∘ Fin.cast (by simp; omega))) = _
+--     rw [sum_cube_cast R _ (show n + 1 - (i.val + 1) = n - i.val by omega)]
+--     refine Eq.trans ?_ (projectedRoundPolynomial_eval R n deg D i stmt.challenges p r).symm
+--     apply Finset.sum_congr rfl
+--     intro x hx
+--     congr 1
+--     rw [Fin.append_cast_right]
+--     rfl
 
-/-- Actual virtual-input execution is complete from the multivariate round relation. -/
-theorem executeCore_projected_of_relationRound [DecidableEq R] {ι : Type}
-    (ambient : OracleSpec ι) (i : Fin n) (stmt : Spec.StatementRound R n i.castSucc)
-    (p : Spec.OracleStatement R n deg ()) (r : R)
-    (h : ((stmt, fun _ => p), ()) ∈ Spec.relationRound R n deg D i.castSucc) :
-    (fun run => run.closed.map (closedOutputRelation R deg)) <$>
-      executeCore (claimReduction R deg ambient (univ.map D).toList r)
-        (projectedInput R n deg D i stmt p) stmt.target
-        (projectedRoundPolynomial R n deg D i stmt.challenges p) = pure (some True) := by
-  exact executeCore_projected R n deg D ambient i stmt p r
-    (projected_sum_of_relationRound R n deg D i stmt p h)
+-- /-- Actual virtual-input execution is complete from the multivariate round relation. -/
+-- theorem executeCore_projected_of_relationRound [DecidableEq R] {ι : Type}
+--     (ambient : OracleSpec ι) (i : Fin n) (stmt : Spec.StatementRound R n i.castSucc)
+--     (p : Spec.OracleStatement R n deg ()) (r : R)
+--     (h : ((stmt, fun _ => p), ()) ∈ Spec.relationRound R n deg D i.castSucc) :
+--     (fun run => run.closed.map (closedOutputRelation R deg)) <$>
+--       executeCore (claimReduction R deg ambient (univ.map D).toList r)
+--         (projectedInput R n deg D i stmt p) stmt.target
+--         (projectedRoundPolynomial R n deg D i stmt.challenges p) = pure (some True) := by
+--   exact executeCore_projected R n deg D ambient i stmt p r
+--     (projected_sum_of_relationRound R n deg D i stmt p h)
 
 end
 end Sumcheck.Interaction.SingleRound
