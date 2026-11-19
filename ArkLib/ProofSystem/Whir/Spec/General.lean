@@ -331,6 +331,8 @@ noncomputable def ReductionRound
     happens to also align with what follows from what `oracleReduction` happens to need.
 
     And then the leftovers will somehow follow `NOTE, need to plan for the last round,` per WisDom.
+    Actually... kinda breaks for `num_vars % num_sumcheck_rounds > 0` I guess?
+    What am I doing.
   -/
   (round : Fin (num_vars / num_sumcheck_rounds))
 : OracleReduction
