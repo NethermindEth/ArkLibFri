@@ -95,9 +95,15 @@ protected lemma subdomain_embed_add (i : ℕ) (a b : Fin (2 ^ (n - i))) :
       Nat.sub_add_cancel (by omega)]
 
 /-- The subdomain embedding sends `0` to `0`. -/
-protected lemma subdomain_embed_zero (i : ℕ) :
+@[simp, grind =]
+protected lemma subdomain_embed_zero {i : ℕ} :
     CosetFftDomainClass.subdomain_embed i 0 = (0 : Fin (2 ^ n)) := by
   aesop (add simp [CosetFftDomainClass.subdomain_embed])
+
+@[grind =]
+protected lemma subdomain_embed_of_le_index {i : ℕ} {k : Fin (2 ^ (n - i))} (hi : n ≤ i) :
+  CosetFftDomainClass.subdomain_embed i k = 0 := by
+  simp [CosetFftDomainClass.subdomain_embed, hi]
 
 /-- The subdomain embedding is injective. -/
 protected lemma subdomain_embed_injective (i : ℕ) :
@@ -152,13 +158,14 @@ lemma subdomain_subgroupUnit (i : ℕ) (k : Fin (2 ^ (n - i))) :
       mkSubgroupUnit ω (CosetFftDomainClass.subdomain_embed i k) := rfl
 
 /-- Evaluation of a subdomain in terms of the ambient domain. -/
-lemma subdomain_apply (i : ℕ) (k : Fin (2 ^ (n - i))) :
+@[grind =]
+lemma subdomain_apply {i : ℕ} {k : Fin (2 ^ (n - i))} :
     subdomain ω i k =
       ω 0 ^ 2 ^ i * mkSubgroupUnit ω (CosetFftDomainClass.subdomain_embed i k) := by
   rw [CosetFftDomain.eval_coset_fft_domain_eq_eval_generator_mul_domain,
     subdomain_generator_pow_generator, subdomain_subgroupUnit]
 
-lemma subdomain_0_apply (i : Fin (2 ^ n)) :
+lemma subdomain_0_apply {i : Fin (2 ^ n)} :
     no_index (subdomain ω 0 i) = ω i := by
   rw [subdomain_apply]
   by_cases hn : n = 0
@@ -559,14 +566,56 @@ lemma subdomain_zero_eq_self {n : ℕ} {ω : SmoothCosetFftDomain n F} :
     ω.subdomain 0 = ω := by
   apply DFunLike.coe_injective
   funext i
-  exact CosetFftDomainClass.subdomain_0_apply i
+  exact CosetFftDomainClass.subdomain_0_apply
+
+section WisDom
+
+-- Honestly, it's _so hard_ to work on ArkLib 'by hand'... why do _I_ have to tag this?
+attribute [local grind ext] Domain.CosetFftDomainClass.ext
 
 omit [DecidableEq F] in
-lemma subdomain_subdomain_one {n k : ℕ} (hkn : k < n)
-    {ω : SmoothCosetFftDomain n F} :
-    (ω.subdomain k).subdomain 1 = ω.subdomain (k + 1) := by
-  ext ⟨i, hi⟩
-  rw [CosetFftDomainClass.subdomain_comp (i := ⟨i, by omega⟩)] <;> grind
+lemma heq_of_apply_eq {m m' : ℕ} {ω : SmoothCosetFftDomain m F} {ω' : SmoothCosetFftDomain m' F}
+  (h₁ : m = m')
+  (h₂ : ∀ (a : Fin (2 ^ m)) (b : Fin (2 ^ m')), a.val = b.val → ω a = ω' b) : ω ≍ ω' := by
+  subst h₁
+  grind
+
+omit [DecidableEq F] in
+@[simp, grind =]
+lemma mkSubgroupUnit_zero {n : ℕ} {ω : SmoothCosetFftDomain n F} :
+  CosetFftDomainClass.mkSubgroupUnit ω 0 = 1 :=
+  Units.ext (by simp [CosetFftDomainClass.mkSubgroupUnit, CosetFftDomainClass.ne_zero])
+
+omit [DecidableEq F] in
+/--
+WisDom #0:
+  take a look whether a general addition version can be proven without the less than hypothesis
+-/
+@[grind _=_]
+lemma subdomain_subdomain {n k j : ℕ} {ω : SmoothCosetFftDomain n F} :
+  (ω.subdomain k).subdomain j ≍ ω.subdomain (k + j) := by
+  apply heq_of_apply_eq (by grind)
+  intro a b h
+  by_cases eq : k + j ≤ n
+  · exact CosetFftDomainClass.subdomain_comp eq h
+  · simp only [CosetFftDomainClass.subdomain_apply,
+      CosetFftDomainClass.subdomain_embed_of_le_index (show n - k ≤ j by omega),
+      CosetFftDomainClass.subdomain_embed_of_le_index (show n ≤ k + j by omega),
+      CosetFftDomainClass.subdomain_embed_zero, mkSubgroupUnit_zero]
+    simp [pow_add, pow_mul]
+
+omit [DecidableEq F] in
+/--
+WisDom #1:
+  take a look whether subdomain_subdomain_one can be proven without the less than hypothesis
+
+- Don't need `k < n`
+-/
+@[simp, grind _=_]
+lemma subdomain_subdomain_one {n k : ℕ} {ω : SmoothCosetFftDomain n F} :
+  (ω.subdomain k).subdomain 1 = ω.subdomain (k + 1) := eq_of_heq subdomain_subdomain
+
+end WisDom
 
 /-- Search through a smooth coset FFT domain for an element whose `2 ^ i`th power is `x`,
   using `fuel` as the remaining search bound. -/

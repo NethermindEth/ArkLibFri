@@ -67,7 +67,9 @@ lemma folding_contracts_block_distance [FoldingContextMiddle k n]
       (by aesop (add safe (by grind))) <| fun i hi ↦ by
       rw [foldWord_k_1, foldWord_k_1]
       extract_lets y j j'
-      have : 2 ^ k = 2 * 2 ^ (k - 1) := by grind [←pow_succ']
+      have : 2 ^ k = 2 * 2 ^ (k - 1) := by
+        rw [Nat.pow_sub_one (by grind) (by grind), Nat.mul_div_cancel']
+        grind
       have hj : j ∈ blockIdx ω k x := by
         aesop
           (add simp [mem_blockIdx_iff_mem_block, pow_mul])
@@ -586,7 +588,7 @@ private theorem iterated_folding_reflects_balls_aux [Fintype F] (k : ℕ) :
       set δ' : I := ⟨δ, δ.coe_nonneg, by exact_mod_cast hδ1⟩ with hδ'
       have hk1n : k + 1 ≤ n := by omega
       have hsub : (ω.subdomain k).subdomain 1 = ω.subdomain (k + 1) :=
-        subdomain_subdomain_one (by omega)
+        subdomain_subdomain_one
       -- the per-round bound for the last round, on the `k`-th subdomain
       have hlast : ∀ w : Word F (Fin (2 ^ (n - k))),
           Pr_{ let x ←$ᵖ F }[

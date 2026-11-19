@@ -108,7 +108,6 @@ lemma subdomain_toFftDomain_comm {i : ℕ} :
   unfold FftDomainClass.subdomain
   rw [eval_toFftDomain_eq_mkSubgroupUnit, eval_toFftDomain_eq_mkSubgroupUnit]
   simp [mkSubgroupUnit, subdomain_apply, eval_toFftDomain]
-  field_simp
 
 /-- Multiplying an element of a coset subdomain by an element of
   a deeper FFT subdomain of the normalized domain stays in the original coset subdomain. -/
