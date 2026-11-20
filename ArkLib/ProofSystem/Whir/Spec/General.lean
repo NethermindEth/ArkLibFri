@@ -209,58 +209,6 @@ lemma num_sumcheck_rounds_lt_remaining
   have h := round_succ_mul_le (round := round) h_num_sumcheck_rounds
   grind
 
--- Either borked or the `oracleReduction` is being mis-called, I can't tell.
-noncomputable def ReductionRoundIThinkBorked
-  {OSpecIdx : Type}
-  (oSpec : OracleSpec OSpecIdx)
-  {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
-  {log_order : ℕ}
-  (domain : Domain.SmoothCosetFftDomain log_order F)
-  (num_vars : ℕ)
-  (num_sumcheck_rounds : Fin (num_vars + 1))
-  (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
-  (num_queries : ℕ)
-  {num_rounds : ℕ}
-  /-
-    Alright, I have no idea what I am doing, _but_ -
-    Looking at Dom's signature, we have `round : Fin num_rounds`.
-    We're building this with `oracleReduction`, which wants
-    `(num_sumcheck_rounds : Fin (num_vars + 1))`, and we have:
-    - `num_sumcheck_rounds.val`
-    - `numvars := num_vars - round.val * num_sumcheck_rounds`
-    and thus `num_sumcheck_rounds.val < num_vars - round.val * num_sumcheck_rounds.val + 1`.
-    This is false in general, see `*the proof`.
-  -/
-  (round : Fin num_rounds)
-: OracleReduction
-    (oSpec := oSpec)
-    (StmtIn := StatementRound domain round.castSucc)
-    (OStmtIn := OracleStatementRound domain num_vars (fun _ ↦ num_sumcheck_rounds) round.castSucc)
-    (WitIn := WitnessRound F num_vars (fun _ ↦ num_sumcheck_rounds) round.castSucc)
-    (StmtOut := StatementRound domain round.succ)
-    (OStmtOut := OracleStatementRound domain num_vars (fun _ ↦ num_sumcheck_rounds) round.succ)
-    (WitOut := WitnessRound F num_vars (fun _ ↦ num_sumcheck_rounds) round.succ)
-    (pSpec :=
-      preSumcheckPSpec F (num_vars - round * num_sumcheck_rounds) ++ₚ
-      Sumcheck.Spec.pSpec F (deg := 2) num_sumcheck_rounds ++ₚ
-      restPSpec (domain.subdomain round) num_sumcheck_rounds num_queries
-    )
-    (Oₘ := sorry)
-:= by convert (oracleReduction
-  oSpec
-  (domain.subdomain round.val)
-  (num_vars - round.val * num_sumcheck_rounds)
-  ⟨num_sumcheck_rounds.val, by
-    -- `*the proof`
-    by_cases h : (round.val + 1) * num_sumcheck_rounds.val ≤ num_vars
-    · grind
-    · have nope :
-        ¬num_sumcheck_rounds.val < num_vars - round.val * num_sumcheck_rounds.val + 1 := by grind
-      sorry⟩
-  h_num_sumcheck_rounds
-  num_queries) using 1 -- TODO remove the convert
-      all_goals sorry
-
 section RecSpec
 
 variable {F : Type} [Field F] [DecidableEq F]
@@ -354,6 +302,50 @@ noncomputable def ReductionRound
     (by simpa [Fin.lt_def] using params.num_sumcheck_rounds_pos round round.isLt)
     num_queries
 
+-- I think we just want the second part of this.
+-- /-- The final folding round of the FRI protocol begins with the verifier sending a random field
+--   element as the challenge to the prover, then in contrast to the previous folding rounds simply
+--   sends the folded polynomial to the verifier. -/
+-- @[reducible]
+-- def pSpec (F : Type) [Semiring F] [BEq F] [LawfulBEq F] : ProtocolSpec 2 :=
+--   ⟨!v[.V_to_P, .P_to_V], !v[F, CompPoly.CPolynomial F]⟩
+
+-- open MvPolynomial in
+-- def preSumcheckPSpec
+--   (F : Type) [CommSemiring F]
+--   (num_vars : ℕ)
+-- : ProtocolSpec 1 := ⟨
+--   !v[.P_to_V],
+--   !v[F⦃≤1⦄[X Fin num_vars]]
+-- ⟩
+
+open MvPolynomial in
+/--
+p. 33 - 3. + 4.
+-/
+abbrev pSpecFinal
+         (F : Type) [Field F] [DecidableEq F]
+         (num_vars : ℕ)
+         (repetition_param log_order : ℕ)
+         (final_folding_parameter : ℕ)
+         (domain : Domain.SmoothCosetFftDomain log_order F) : ProtocolSpec 2 :=
+  ⟨
+    !v[.P_to_V, .V_to_P],
+    !v[
+      F⦃≤1⦄[X Fin num_vars],
+      Fin repetition_param → domain.subdomain final_folding_parameter
+    ]
+  ⟩
+
+instance {F} [Field F] [DecidableEq F] {num_vars} {repetition_param log_order : ℕ}
+         {final_folding_parameter : ℕ}
+         {domain : Domain.SmoothCosetFftDomain log_order F} :
+  ∀ j,
+    OracleInterface (
+      (pSpecFinal F num_vars repetition_param log_order
+                  final_folding_parameter domain).Message j)
+  | _ => OracleInterface.instDefault
+
 noncomputable def reduction
   {OSpecIdx : Type}
   (oSpec : OracleSpec OSpecIdx)
@@ -368,6 +360,108 @@ noncomputable def reduction
     (OStmt := OracleStatementRound domain num_vars params.num_sumcheck_rounds)
     (Wit   := WitnessRound F num_vars params.num_sumcheck_rounds)
     (R     := ReductionRound oSpec domain params num_queries)
+
+noncomputable def proverFinal
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
+  {OSpecIdx : Type}
+  {log_order : ℕ}
+  {num_vars : ℕ}
+  (oSpec : OracleSpec OSpecIdx)
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (params : FoldingParams num_vars)
+  (num_queries : ℕ)
+  (repetition_param : ℕ) :
+  OracleProver
+    (oSpec    := oSpec)
+    (StmtIn   := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
+    (OStmtIn  := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩))
+    (WitIn    := WitnessRound (num_rounds := params.num_whir_rounds) F num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩))
+    (StmtOut  := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
+    (OStmtOut := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds ⟨params.num_whir_rounds - 1, sorry⟩)
+    (WitOut   := WitnessRound (num_rounds := params.num_whir_rounds) F num_vars params.num_sumcheck_rounds ⟨params.num_whir_rounds - 1, sorry⟩)
+    (pSpec    := pSpecFinal F num_vars repetition_param log_order
+                            (params.num_sumcheck_rounds params.num_whir_rounds) domain) where
+    PrvState := fun _ ↦
+      (
+        ((StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩) × 
+         (∀ j, OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩) j)) ×
+        WitnessRound (num_rounds := params.num_whir_rounds) F num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩)
+      )
+                        
+    input := id
+    sendMessage := fun i s ↦
+      match i with
+      | ⟨0, _⟩ => pure ⟨sorry, s⟩ -- something from witness
+      | ⟨1, h⟩ => nomatch h
+    receiveChallenge := fun i s ↦
+      match i with
+      | ⟨0, h⟩ => nomatch h
+      | ⟨1, _⟩ => pure fun _ ↦ s
+    output := fun x ↦ pure x
+
+-- NOTE: `preSumcheckReduction` is actually the one we need for the step `p. 33 step 3.`
+
+noncomputable def verifierFinal
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
+  {OSpecIdx : Type}
+  {log_order : ℕ}
+  {num_vars : ℕ}
+  (oSpec : OracleSpec OSpecIdx)
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (params : FoldingParams num_vars)
+  (num_queries : ℕ)
+  (repetition_param : ℕ) :
+  OracleVerifier
+    (oSpec    := oSpec)
+    (StmtIn   := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
+    (OStmtIn  := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩))
+    (StmtOut  := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
+    (OStmtOut := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds ⟨params.num_whir_rounds - 1, sorry⟩)
+    (pSpec    := pSpecFinal F num_vars repetition_param log_order
+                            (params.num_sumcheck_rounds params.num_whir_rounds) domain) where
+  verify := sorry -- the difficults
+  outputOracle := sorry -- Claude this
+
+noncomputable def reductionFinal
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
+  {OSpecIdx : Type}
+  {log_order : ℕ}
+  {num_vars : ℕ}
+  (oSpec : OracleSpec OSpecIdx)
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (params : FoldingParams num_vars)
+  (num_queries : ℕ)
+  (repetition_param : ℕ) :
+  OracleReduction
+    (oSpec    := oSpec)
+    (StmtIn   := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
+    (OStmtIn  := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩))
+    (WitIn    := WitnessRound (num_rounds := params.num_whir_rounds) F num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩))
+    (StmtOut  := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
+    (OStmtOut := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds ⟨params.num_whir_rounds - 1, sorry⟩)
+    (WitOut   := WitnessRound (num_rounds := params.num_whir_rounds) F num_vars params.num_sumcheck_rounds ⟨params.num_whir_rounds - 1, sorry⟩)
+    (pSpec    := pSpecFinal F num_vars repetition_param log_order
+                            (params.num_sumcheck_rounds params.num_whir_rounds) domain) where
+    prover := proverFinal oSpec domain params num_queries repetition_param
+    verifier := verifierFinal oSpec domain params num_queries repetition_param
+  -- oracleReduction
+  --   oSpec
+  --   (subdomainRec domain round)
+  --   (numVarsRec num_vars params.num_sumcheck_rounds round)
+  --   ⟨params.num_sumcheck_rounds round, params.num_sumcheck_rounds_lt⟩
+  --   (by simpa [Fin.lt_def] using params.num_sumcheck_rounds_pos round round.isLt)
+  --   num_queries
+
+-- /- Oracle reduction of the FRI protocol. -/
+-- @[reducible]
+-- def reduction :
+--     OracleReduction []ₒ
+--     (Statement F (0 : Fin (k + 1))) (OracleStatement s ω (0 : Fin (k + 1)))
+--       (Witness F s d (0 : Fin (k + 2)))
+--     (FinalStatement F k) (FinalOracleStatement s ω) (Witness F s d (Fin.last (k + 1)))
+--     (pSpecFold k (ω := ω) s ++ₚ FinalFoldPhase.pSpec F ++ₚ QueryRound.pSpec l (ω := ω)) :=
+--   OracleReduction.append (reductionFold k s d)
+--     (QueryRound.queryOracleReduction (k := k) s d dom_size_cond l)
 
 end Spec
 
