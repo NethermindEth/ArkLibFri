@@ -43,21 +43,31 @@ lemma subdomainRec_heq_subdomain
   subdomainRec domain round ≍ domain.subdomain round := by
   induction round <;> [(simp; rfl); grind]
 
-def numVarsRec (num_vars k : ℕ) : ℕ → ℕ
+def numVarsRec (num_vars : ℕ) (k : ℕ → ℕ) : ℕ → ℕ
   | 0         => num_vars
-  | round + 1 => numVarsRec num_vars k round - k
+  | round + 1 => numVarsRec num_vars k round - k round
 
 @[simp, grind =]
-lemma numVarsRec_zero {num_vars k : ℕ} : numVarsRec num_vars k 0 = num_vars := rfl
+lemma numVarsRec_zero {num_vars : ℕ} {k : ℕ → ℕ} : numVarsRec num_vars k 0 = num_vars := rfl
 
 @[simp, grind =]
-lemma numVarsRec_succ {num_vars k round : ℕ} :
-  numVarsRec num_vars k (round + 1) = numVarsRec num_vars k round - k := rfl
+lemma numVarsRec_succ {num_vars : ℕ} {k : ℕ → ℕ} {round : ℕ} :
+  numVarsRec num_vars k (round + 1) = numVarsRec num_vars k round - k round := rfl
 
-@[grind _=_]
-lemma numVarsRec_eq {num_vars k round : ℕ} :
-  numVarsRec num_vars k round = num_vars - round * k := by
-  induction round <;> grind
+/-- `mᵢ = num_vars - Σ_{j < i} kⱼ`. -/
+lemma numVarsRec_eq {num_vars : ℕ} {k : ℕ → ℕ} {round : ℕ} :
+  numVarsRec num_vars k round = num_vars - ∑ j : Fin round, k j := by
+  induction round with
+  | zero => simp
+  | succ round ih =>
+    rw [numVarsRec_succ, ih, Fin.sum_univ_castSucc, Nat.sub_sub]
+    rfl
+
+@[simp]
+lemma numVarsRec_const_eq {num_vars k round : ℕ} :
+  numVarsRec num_vars (fun _ ↦ k) round = num_vars - round * k := by
+  rw [numVarsRec_eq]
+  simp
 
 end RecForDefeq
 
@@ -77,7 +87,7 @@ abbrev OracleStatementRound
   [DecidableEq F]
   (domain : Domain.SmoothCosetFftDomain log_order F)
   (num_vars : ℕ)
-  (num_sumcheck_rounds : ℕ)
+  (num_sumcheck_rounds : ℕ → ℕ)
   (round : Fin num_rounds)
   (idx : OracleIdxPre) : Type :=
   OracleStatementPre
@@ -87,7 +97,7 @@ abbrev OracleStatementRound
 abbrev WitnessRound
   (F : Type) [Field F]
   (num_vars : ℕ)
-  (num_sumcheck_rounds : ℕ)
+  (num_sumcheck_rounds : ℕ → ℕ)
   (round : Fin num_rounds) : Type :=
   WitnessPreSumcheck F (numVarsRec num_vars num_sumcheck_rounds round.val)
 
@@ -164,17 +174,17 @@ lemma statementRound_eq_dom :
   grind
 
 lemma oracleStatementRound_eq_dom [DecidableEq F] :
-  OracleStatementRound domain num_vars num_sumcheck_rounds round idx =
+  OracleStatementRound domain num_vars (fun _ ↦ num_sumcheck_rounds) round idx =
   OracleStatementRoundDom domain num_vars num_sumcheck_rounds round idx := by
   unfold OracleStatementRound OracleStatementRoundDom
-  rw! (castMode := .all) [subdomainRec_heq_subdomain, subdomainRec_aux_eq, numVarsRec_eq]
+  rw! (castMode := .all) [subdomainRec_heq_subdomain, subdomainRec_aux_eq, numVarsRec_const_eq]
   rfl
 
 lemma witnessRound_eq_dom :
-  WitnessRound F num_vars num_sumcheck_rounds round =
+  WitnessRound F num_vars (fun _ ↦ num_sumcheck_rounds) round =
   WitnessRoundDom F num_vars num_sumcheck_rounds round := by
-  change WitnessPreSumcheck F (numVarsRec num_vars num_sumcheck_rounds round.val) = _
-  rw [numVarsRec_eq]
+  change WitnessPreSumcheck F (numVarsRec num_vars (fun _ ↦ num_sumcheck_rounds) round.val) = _
+  rw [numVarsRec_const_eq]
 
 end DomRoundTypes
 
@@ -225,11 +235,11 @@ noncomputable def ReductionRoundIThinkBorked
 : OracleReduction
     (oSpec := oSpec)
     (StmtIn := StatementRound domain round.castSucc)
-    (OStmtIn := OracleStatementRound domain num_vars num_sumcheck_rounds round.castSucc)
-    (WitIn := WitnessRound F num_vars num_sumcheck_rounds round.castSucc)
+    (OStmtIn := OracleStatementRound domain num_vars (fun _ ↦ num_sumcheck_rounds) round.castSucc)
+    (WitIn := WitnessRound F num_vars (fun _ ↦ num_sumcheck_rounds) round.castSucc)
     (StmtOut := StatementRound domain round.succ)
-    (OStmtOut := OracleStatementRound domain num_vars num_sumcheck_rounds round.succ)
-    (WitOut := WitnessRound F num_vars num_sumcheck_rounds round.succ)
+    (OStmtOut := OracleStatementRound domain num_vars (fun _ ↦ num_sumcheck_rounds) round.succ)
+    (WitOut := WitnessRound F num_vars (fun _ ↦ num_sumcheck_rounds) round.succ)
     (pSpec :=
       preSumcheckPSpec F (num_vars - round * num_sumcheck_rounds) ++ₚ
       Sumcheck.Spec.pSpec F (deg := 2) num_sumcheck_rounds ++ₚ
@@ -251,42 +261,6 @@ noncomputable def ReductionRoundIThinkBorked
   num_queries) using 1 -- TODO remove the convert
       all_goals sorry
 
-section EquivWithDomSpec
-
-/-
-This is a useless section, I am just sanity-checking myself.
-I wanted `Oₘ` to infer in `ReductionRound`.
--/
-
-variable {F : Type} [Field F] [DecidableEq F]
-         {log_order : ℕ}
-         {num_vars : ℕ}
-         {num_sumcheck_rounds : Fin (num_vars + 1)}
-
-abbrev pSpecButFunnyDom
-  (domain : Domain.SmoothCosetFftDomain log_order F)
-  (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
-  (num_queries : ℕ)
-  (round : Fin (num_vars / num_sumcheck_rounds)) :=
-  let r : Fin (num_vars - round * num_sumcheck_rounds + 1) :=
-    ⟨num_sumcheck_rounds.val, num_sumcheck_rounds_lt_remaining h_num_sumcheck_rounds⟩
-  preSumcheckPSpec F (num_vars - round * num_sumcheck_rounds) ++ₚ
-  Sumcheck.Spec.pSpec F (deg := 2) r ++ₚ
-  restPSpec (domain.subdomain round) r num_queries
-
-lemma pSpecButFunnyDom_eq
-  {domain : Domain.SmoothCosetFftDomain log_order F}
-  {h_num_sumcheck_rounds : num_sumcheck_rounds > 0}
-  {num_queries : ℕ}
-  {round : Fin (num_vars / num_sumcheck_rounds)} :
-  pSpecButFunnyDom domain h_num_sumcheck_rounds num_queries round =
-  preSumcheckPSpec F (num_vars - round * num_sumcheck_rounds) ++ₚ
-  Sumcheck.Spec.pSpec F (deg := 2) num_sumcheck_rounds ++ₚ
-  restPSpec (domain.subdomain round) num_sumcheck_rounds num_queries
-:= rfl
-
-end EquivWithDomSpec
-
 section RecSpec
 
 variable {F : Type} [Field F] [DecidableEq F]
@@ -294,81 +268,106 @@ variable {F : Type} [Field F] [DecidableEq F]
          {num_vars : ℕ}
          {num_sumcheck_rounds : Fin (num_vars + 1)}
 
+@[grind .]
 lemma num_sumcheck_rounds_lt_numVarsRec
   {round : Fin (num_vars / num_sumcheck_rounds)}
   (h_num_sumcheck_rounds : num_sumcheck_rounds > 0) :
-  num_sumcheck_rounds.val < numVarsRec num_vars num_sumcheck_rounds round + 1 := by
-  rw [numVarsRec_eq]
+  num_sumcheck_rounds.val < numVarsRec num_vars (fun _ ↦ num_sumcheck_rounds) round + 1 := by
+  rw [numVarsRec_const_eq]
   exact num_sumcheck_rounds_lt_remaining h_num_sumcheck_rounds
 
-abbrev pSpecButFunny
+@[grind .]
+lemma lt_numVarsRec_add_one_of_sum {num_vars M : ℕ} {k : ℕ → ℕ} {i : Fin M}
+  (h : ∑ j : Fin M, k j ≤ num_vars) : k i < numVarsRec num_vars k i + 1 := by
+  rw [numVarsRec_eq, Fin.sum_univ_eq_sum_range k i]
+  rw [Fin.sum_univ_eq_sum_range k M] at h
+  have h_prefix : ∑ j ∈ Finset.range (i.val + 1), k j ≤ ∑ j ∈ Finset.range M, k j :=
+    Finset.sum_le_sum_of_subset (Finset.range_subset_range.mpr i.isLt)
+  rw [Finset.sum_range_succ] at h_prefix
+  omega
+
+/--
+The statement is like this to ensure good defeq behaviour and typeclass inference.
+-/
+abbrev pSpecDefeqViable
   (domain : Domain.SmoothCosetFftDomain log_order F)
-  (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
+  (num_vars : ℕ)
+  (num_sumcheck_rounds : ℕ → ℕ)
   (num_queries : ℕ)
-  (round : Fin (num_vars / num_sumcheck_rounds)) :=
+  (round : ℕ)
+  (h : num_sumcheck_rounds round < numVarsRec num_vars num_sumcheck_rounds round + 1) :=
   let r : Fin (numVarsRec num_vars num_sumcheck_rounds round + 1) :=
-    ⟨num_sumcheck_rounds.val, num_sumcheck_rounds_lt_numVarsRec h_num_sumcheck_rounds⟩
+    ⟨num_sumcheck_rounds round, h⟩
   preSumcheckPSpec F (numVarsRec num_vars num_sumcheck_rounds round) ++ₚ
   Sumcheck.Spec.pSpec F (deg := 2) r ++ₚ
   restPSpec (subdomainRec domain round) r num_queries
 
 end RecSpec
 
-noncomputable def ReductionRound
-  {OSpecIdx : Type}
-  (oSpec : OracleSpec OSpecIdx)
-  {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
-  {log_order : ℕ}
-  (domain : Domain.SmoothCosetFftDomain log_order F)
-  (num_vars : ℕ)
-  (num_sumcheck_rounds : Fin (num_vars + 1))
-  (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
-  (num_queries : ℕ)
-  /-
-    the only important change, follows from `oracleReduction`, semantically seems reasonable too?
-    So basically, there's only so many variables we have, and if we eliminate `num_sumcheck_rounds`
-    per round, then the only relevant rounds are `num_vars / num_sumcheck_rounds`, which just so
-    happens to also align with what follows from what `oracleReduction` happens to need.
+section FoldingParams
 
-    And then the leftovers will somehow follow `NOTE, need to plan for the last round,` per WisDom.
-    Actually... kinda breaks for `num_vars % num_sumcheck_rounds > 0` I guess?
-    What am I doing.
-  -/
-  (round : Fin (num_vars / num_sumcheck_rounds))
-: OracleReduction
+structure FoldingParams (num_vars : ℕ) where
+  num_whir_rounds : ℕ
+  num_sumcheck_rounds : ℕ → ℕ
+  num_sumcheck_rounds_pos : ∀ i < num_whir_rounds, 0 < num_sumcheck_rounds i
+  sum_num_sumcheck_rounds_le : ∑ j : Fin num_whir_rounds, num_sumcheck_rounds j ≤ num_vars
+
+namespace FoldingParams
+
+variable {num_vars : ℕ}
+
+@[grind .]
+lemma num_sumcheck_rounds_lt
+  {sched : FoldingParams num_vars} {round : Fin sched.num_whir_rounds} :
+  sched.num_sumcheck_rounds round < numVarsRec num_vars sched.num_sumcheck_rounds round + 1 :=
+  lt_numVarsRec_add_one_of_sum sched.sum_num_sumcheck_rounds_le
+
+end FoldingParams
+
+end FoldingParams
+
+noncomputable def ReductionRound
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
+  {OSpecIdx : Type}
+  {log_order : ℕ}
+  {num_vars : ℕ}
+  (oSpec : OracleSpec OSpecIdx)
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (params : FoldingParams num_vars)
+  (num_queries : ℕ)
+  (round : Fin params.num_whir_rounds) :
+  OracleReduction
     (oSpec    := oSpec)
     (StmtIn   := StatementRound domain round.castSucc)
-    (OStmtIn  := OracleStatementRound domain num_vars num_sumcheck_rounds round.castSucc)
-    (WitIn    := WitnessRound F num_vars num_sumcheck_rounds round.castSucc)
+    (OStmtIn  := OracleStatementRound domain num_vars params.num_sumcheck_rounds round.castSucc)
+    (WitIn    := WitnessRound F num_vars params.num_sumcheck_rounds round.castSucc)
     (StmtOut  := StatementRound domain round.succ)
-    (OStmtOut := OracleStatementRound domain num_vars num_sumcheck_rounds round.succ)
-    (WitOut   := WitnessRound F num_vars num_sumcheck_rounds round.succ)
-    (pSpec    := pSpecButFunny domain h_num_sumcheck_rounds num_queries round)
-:=
+    (OStmtOut := OracleStatementRound domain num_vars params.num_sumcheck_rounds round.succ)
+    (WitOut   := WitnessRound F num_vars params.num_sumcheck_rounds round.succ)
+    (pSpec    := pSpecDefeqViable domain num_vars params.num_sumcheck_rounds num_queries round
+                   params.num_sumcheck_rounds_lt) :=
   oracleReduction
     oSpec
     (subdomainRec domain round)
-    (numVarsRec num_vars num_sumcheck_rounds round)
-    ⟨num_sumcheck_rounds.val, num_sumcheck_rounds_lt_numVarsRec h_num_sumcheck_rounds⟩
-    h_num_sumcheck_rounds
+    (numVarsRec num_vars params.num_sumcheck_rounds round)
+    ⟨params.num_sumcheck_rounds round, params.num_sumcheck_rounds_lt⟩
+    (by simpa [Fin.lt_def] using params.num_sumcheck_rounds_pos round round.isLt)
     num_queries
 
-def reduction
+noncomputable def reduction
   {OSpecIdx : Type}
   (oSpec : OracleSpec OSpecIdx)
   {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
   {log_order : ℕ}
+  {num_vars : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
-  (num_vars : ℕ)
-  (num_sumcheck_rounds : ℕ)
-  {num_rounds : ℕ}
-  (round : Fin num_rounds)
-:= OracleReduction.seqCompose
-  (Stmt := StatementRound domain)
-  (OStmt := OracleStatementRound domain num_vars num_sumcheck_rounds)
-  (Wit := WitnessRound F num_vars num_sumcheck_rounds)
-  (R := ReductionRound oSpec domain num_vars num_sumcheck_rounds h_num_sumcheck_rounds num_queries)
-
+  (params : FoldingParams num_vars)
+  (num_queries : ℕ) :=
+  OracleReduction.seqCompose
+    (Stmt  := StatementRound domain)
+    (OStmt := OracleStatementRound domain num_vars params.num_sumcheck_rounds)
+    (Wit   := WitnessRound F num_vars params.num_sumcheck_rounds)
+    (R     := ReductionRound oSpec domain params num_queries)
 
 end Spec
 
