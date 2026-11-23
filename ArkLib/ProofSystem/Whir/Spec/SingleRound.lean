@@ -1230,14 +1230,6 @@ where
         simp
         rfl
       rewrite [this]
-      -- PICK UP
-      -- the idea is to generalize f to be for any round
-      -- prove that the verifier materialize output (for this verifier specifically)
-      -- appends on to f, leaving anything handled by it
-      -- this will likely require another induction
-      -- then when doing this induction, we can wrap the SingleRound materializeOutput as f in the
-      -- induction hypothesis and use sumcheckChallenge_succ to split off the first round, and move
-      -- it onto the other side of the append
       have :=
         materializeChallenges_seqCompose
           (m := num_sumcheck_rounds)
