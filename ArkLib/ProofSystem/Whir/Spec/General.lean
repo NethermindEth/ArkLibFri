@@ -371,21 +371,24 @@ noncomputable def proverFinal
   (params : FoldingParams num_vars)
   (num_queries : ℕ)
   (repetition_param : ℕ) :
+  letI lastRound := Fin.last params.num_whir_rounds
   OracleProver
     (oSpec    := oSpec)
-    (StmtIn   := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
-    (OStmtIn  := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩))
-    (WitIn    := WitnessRound (num_rounds := params.num_whir_rounds) F num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩))
-    (StmtOut  := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
-    (OStmtOut := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds ⟨params.num_whir_rounds - 1, sorry⟩)
-    (WitOut   := WitnessRound (num_rounds := params.num_whir_rounds) F num_vars params.num_sumcheck_rounds ⟨params.num_whir_rounds - 1, sorry⟩)
+    (StmtIn   := StatementRound domain lastRound)
+    (OStmtIn  := OracleStatementRound domain num_vars params.num_sumcheck_rounds (lastRound))
+    (WitIn    := WitnessRound F num_vars params.num_sumcheck_rounds (lastRound))
+    (StmtOut  := StatementRound domain lastRound)
+    (OStmtOut := OracleStatementRound domain num_vars params.num_sumcheck_rounds lastRound)
+    (WitOut   := WitnessRound F num_vars params.num_sumcheck_rounds lastRound)
     (pSpec    := pSpecFinal F num_vars repetition_param log_order
-                            (params.num_sumcheck_rounds params.num_whir_rounds) domain) where
+                            (params.num_sumcheck_rounds params.num_whir_rounds) domain) :=
+    letI lastRound := Fin.last params.num_whir_rounds
+    {
     PrvState := fun _ ↦
       (
-        ((StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩) × 
-         (∀ j, OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩) j)) ×
-        WitnessRound (num_rounds := params.num_whir_rounds) F num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩)
+        ((StatementRound domain lastRound) × 
+         (∀ j, OracleStatementRound domain num_vars params.num_sumcheck_rounds lastRound j)) ×
+        WitnessRound F num_vars params.num_sumcheck_rounds lastRound
       )
                         
     input := id
@@ -398,6 +401,7 @@ noncomputable def proverFinal
       | ⟨0, h⟩ => nomatch h
       | ⟨1, _⟩ => pure fun _ ↦ s
     output := fun x ↦ pure x
+    }
 
 -- NOTE: `preSumcheckReduction` is actually the one we need for the step `p. 33 step 3.`
 
@@ -411,12 +415,13 @@ noncomputable def verifierFinal
   (params : FoldingParams num_vars)
   (num_queries : ℕ)
   (repetition_param : ℕ) :
+  letI lastRound := Fin.last params.num_whir_rounds
   OracleVerifier
     (oSpec    := oSpec)
-    (StmtIn   := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
-    (OStmtIn  := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩))
-    (StmtOut  := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
-    (OStmtOut := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds ⟨params.num_whir_rounds - 1, sorry⟩)
+    (StmtIn   := StatementRound domain lastRound)
+    (OStmtIn  := OracleStatementRound domain num_vars params.num_sumcheck_rounds (lastRound))
+    (StmtOut  := StatementRound domain lastRound)
+    (OStmtOut := OracleStatementRound domain num_vars params.num_sumcheck_rounds lastRound)
     (pSpec    := pSpecFinal F num_vars repetition_param log_order
                             (params.num_sumcheck_rounds params.num_whir_rounds) domain) where
   verify := sorry -- the difficults
@@ -432,14 +437,15 @@ noncomputable def reductionFinal
   (params : FoldingParams num_vars)
   (num_queries : ℕ)
   (repetition_param : ℕ) :
+  letI lastRound := Fin.last params.num_whir_rounds
   OracleReduction
     (oSpec    := oSpec)
-    (StmtIn   := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
-    (OStmtIn  := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩))
-    (WitIn    := WitnessRound (num_rounds := params.num_whir_rounds) F num_vars params.num_sumcheck_rounds (⟨params.num_whir_rounds - 1, sorry⟩))
-    (StmtOut  := StatementRound (num_rounds := params.num_whir_rounds) domain ⟨params.num_whir_rounds - 1, sorry⟩)
-    (OStmtOut := OracleStatementRound (num_rounds := params.num_whir_rounds) domain num_vars params.num_sumcheck_rounds ⟨params.num_whir_rounds - 1, sorry⟩)
-    (WitOut   := WitnessRound (num_rounds := params.num_whir_rounds) F num_vars params.num_sumcheck_rounds ⟨params.num_whir_rounds - 1, sorry⟩)
+    (StmtIn   := StatementRound domain lastRound)
+    (OStmtIn  := OracleStatementRound domain num_vars params.num_sumcheck_rounds (lastRound))
+    (WitIn    := WitnessRound F num_vars params.num_sumcheck_rounds (lastRound))
+    (StmtOut  := StatementRound domain lastRound)
+    (OStmtOut := OracleStatementRound domain num_vars params.num_sumcheck_rounds lastRound)
+    (WitOut   := WitnessRound F num_vars params.num_sumcheck_rounds lastRound)
     (pSpec    := pSpecFinal F num_vars repetition_param log_order
                             (params.num_sumcheck_rounds params.num_whir_rounds) domain) where
     prover := proverFinal oSpec domain params num_queries repetition_param
