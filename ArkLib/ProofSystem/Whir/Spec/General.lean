@@ -419,13 +419,13 @@ noncomputable def verifierFinal
   OracleVerifier
     (oSpec    := oSpec)
     (StmtIn   := StatementRound domain lastRound)
-    (OStmtIn  := OracleStatementRound domain num_vars params.num_sumcheck_rounds (lastRound))
+    (OStmtIn  := OracleStatementRound domain num_vars params.num_sumcheck_rounds lastRound)
     (StmtOut  := StatementRound domain lastRound)
     (OStmtOut := OracleStatementRound domain num_vars params.num_sumcheck_rounds lastRound)
     (pSpec    := pSpecFinal F num_vars repetition_param log_order
                             (params.num_sumcheck_rounds params.num_whir_rounds) domain) where
   verify := sorry -- the difficults
-  outputOracle := sorry -- Claude this
+  outputOracle := sorry -- Claude this (nope)
 
 noncomputable def reductionFinal
   {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
