@@ -254,6 +254,7 @@ end RecSpec
 
 section FoldingParams
 
+@[grind cases]
 structure FoldingParams (num_vars : ℕ) where
   num_whir_rounds : ℕ
   num_sumcheck_rounds : ℕ → ℕ
@@ -303,7 +304,7 @@ noncomputable def ReductionRound
     (by simpa [Fin.lt_def] using params.num_sumcheck_rounds_pos round round.isLt.le)
     num_queries
 
-noncomputable def LastRound
+noncomputable def lastRound
   {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
   {OSpecIdx : Type}
   {log_order : ℕ}
@@ -313,17 +314,32 @@ noncomputable def LastRound
   (params : FoldingParams num_vars) :
   letI round := params.num_whir_rounds
   letI remaining_vars := numVarsRec num_vars params.num_sumcheck_rounds round
+  letI last_num_sumcheck_rounds : Fin (remaining_vars + 1) :=
+    ⟨
+      params.num_sumcheck_rounds round,
+      params.num_sumcheck_rounds_lt (round := Fin.last _)
+    ⟩
   OracleReduction
     (oSpec    := oSpec)
     (StmtIn   := StatementRound domain (Fin.last round))
     (OStmtIn  := OracleStatementPre (subdomainRec domain round) remaining_vars)
     (WitIn    := WitnessPreSumcheck F remaining_vars)
-    (StmtOut  := _)
-    (OStmtOut := _)
-    (WitOut   := _)
-    (pSpec    := _) :=
+    (StmtOut  := StatementRound domain (Fin.last round) ×
+                 Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
+    (OStmtOut := OracleStatementMid
+                   (subdomainRec domain round)
+                   remaining_vars
+                   last_num_sumcheck_rounds)
+    (WitOut   := WitnessPostSumcheck F remaining_vars)
+    (pSpec    := preSumcheckPSpec F remaining_vars ++ₚ
+                 Sumcheck.Spec.pSpec F 2 last_num_sumcheck_rounds) :=
   letI ω := subdomainRec domain params.num_whir_rounds
   letI remaining_vars := numVarsRec num_vars params.num_sumcheck_rounds params.num_whir_rounds
+  letI last_num_sumcheck_rounds : Fin (remaining_vars + 1) :=
+    ⟨
+      params.num_sumcheck_rounds params.num_whir_rounds,
+      (params.num_sumcheck_rounds_lt (round := Fin.last _))
+    ⟩
   OracleReduction.append
     (
       preSumcheckReduction
@@ -336,8 +352,8 @@ noncomputable def LastRound
         oSpec
         ω
         remaining_vars
-        (params.num_sumcheck_rounds params.num_whir_rounds)
-        sorry
+        last_num_sumcheck_rounds
+        (by grind)
     )
 
 -- I think we just want the second part of this.
@@ -398,6 +414,18 @@ noncomputable def reduction
     (OStmt := OracleStatementRound domain num_vars params.num_sumcheck_rounds)
     (Wit   := WitnessRound F num_vars params.num_sumcheck_rounds)
     (R     := ReductionRound oSpec domain params num_queries)
+
+noncomputable def reductionWithLastRound
+  {OSpecIdx : Type}
+  (oSpec : OracleSpec OSpecIdx)
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
+  {log_order num_vars : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (params : FoldingParams num_vars)
+  (num_queries : ℕ) :=
+  OracleReduction.append
+    (reduction oSpec domain params num_queries)
+    (lastRound oSpec domain params)
 
 noncomputable def proverFinal
   {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
