@@ -27,7 +27,7 @@ def subdomainRec
 @[simp, grind =]
 lemma subdomainRec_zero {domain : Domain.SmoothCosetFftDomain log_order F} :
    subdomainRec domain 0 = domain := rfl
-  
+
 @[simp, grind =]
 lemma subdomainRec_succ {domain : Domain.SmoothCosetFftDomain log_order F} {round : ℕ} :
    subdomainRec domain (round + 1) = (subdomainRec domain round).subdomain 1 := rfl
@@ -76,7 +76,7 @@ section Types
 variable
   {F : Type} [Field F]
   {log_order : ℕ}
-  {num_rounds : ℕ}       
+  {num_rounds : ℕ}
 
 abbrev StatementRound
   (domain : Domain.SmoothCosetFftDomain log_order F)
@@ -205,7 +205,7 @@ lemma num_sumcheck_rounds_lt_remaining
   (h_num_sumcheck_rounds : num_sumcheck_rounds > 0)
 :
   num_sumcheck_rounds.val < num_vars - round.val * num_sumcheck_rounds.val + 1
-:= by  
+:= by
   have h := round_succ_mul_le (round := round) h_num_sumcheck_rounds
   grind
 
@@ -422,10 +422,15 @@ noncomputable def reductionWithLastRound
   {log_order num_vars : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
   (params : FoldingParams num_vars)
-  (num_queries : ℕ) :=
+  (num_queries : ℕ)
+:=
   OracleReduction.append
     (reduction oSpec domain params num_queries)
     (lastRound oSpec domain params)
+
+#check reductionWithLastRound
+
+--------------------
 
 noncomputable def proverFinal
   {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
@@ -440,7 +445,11 @@ noncomputable def proverFinal
   letI lastRound := Fin.last params.num_whir_rounds
   OracleProver
     (oSpec    := oSpec)
-    (StmtIn   := StatementRound domain lastRound)
+    (StmtIn   :=
+      (StatementRound domain lastRound ×
+      Sumcheck.Spec.StatementRound F (numVarsRec num_vars params.num_sumcheck_rounds params.num_whir_rounds)
+        ⟨params.num_sumcheck_rounds params.num_whir_rounds, params.num_sumcheck_rounds_lt (round := lastRound)⟩)
+    )
     (OStmtIn  := OracleStatementRound domain num_vars params.num_sumcheck_rounds (lastRound))
     (WitIn    := WitnessRound F num_vars params.num_sumcheck_rounds (lastRound))
     (StmtOut  := StatementRound domain lastRound)
@@ -452,15 +461,29 @@ noncomputable def proverFinal
     {
     PrvState := fun _ ↦
       (
-        ((StatementRound domain lastRound) × 
+        (((StatementRound domain lastRound ×
+      Sumcheck.Spec.StatementRound F (numVarsRec num_vars params.num_sumcheck_rounds params.num_whir_rounds)
+        ⟨params.num_sumcheck_rounds params.num_whir_rounds, params.num_sumcheck_rounds_lt (round := lastRound)⟩)) ×
          (∀ j, OracleStatementRound domain num_vars params.num_sumcheck_rounds lastRound j)) ×
         WitnessRound F num_vars params.num_sumcheck_rounds lastRound
       )
-                        
+
     input := id
-    sendMessage := fun i s ↦
+    sendMessage := fun i state ↦
       match i with
-      | ⟨0, _⟩ => pure ⟨sorry, s⟩ -- something from witness
+      | ⟨0, _⟩ =>
+        let f_hat := state.2.f_hat.val
+        letI num_vars := (numVarsRec num_vars params.num_sumcheck_rounds lastRound.val)
+        letI num_args := num_vars - params.num_sumcheck_rounds params.num_whir_rounds
+        let challenges := state.1.1.2.challenges
+        let args : Fin num_args → MvPolynomial (Fin num_args) F := fun (i : Fin num_args) ↦ MvPolynomial.X i
+        let f_hat_applied := MvPolynomial.eval₂
+          MvPolynomial.C
+          (fun i => (Fin.vappend challenges args) (Fin.cast (by {
+
+          }) i))
+          f_hat
+        pure ⟨f_hat_applied, state⟩ -- something from witness
       | ⟨1, h⟩ => nomatch h
     receiveChallenge := fun i s ↦
       match i with
@@ -468,8 +491,6 @@ noncomputable def proverFinal
       | ⟨1, _⟩ => pure fun _ ↦ s
     output := fun x ↦ pure x
     }
-
--- NOTE: `preSumcheckReduction` is actually the one we need for the step `p. 33 step 3.`
 
 noncomputable def verifierFinal
   {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
@@ -492,6 +513,50 @@ noncomputable def verifierFinal
                             (params.num_sumcheck_rounds params.num_whir_rounds) domain) where
   verify := sorry -- the difficults
   outputOracle := sorry -- Claude this (nope)
+
+noncomputable def reductionFinal
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
+  {OSpecIdx : Type}
+  {log_order : ℕ}
+  {num_vars : ℕ}
+  (oSpec : OracleSpec OSpecIdx)
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (params : FoldingParams num_vars)
+  (num_queries : ℕ)
+  (repetition_param : ℕ)
+:
+  letI lastRound := Fin.last params.num_whir_rounds
+  OracleReduction
+    (oSpec    := oSpec)
+    (StmtIn   := StatementRound domain lastRound)
+    (OStmtIn  := OracleStatementRound domain num_vars params.num_sumcheck_rounds lastRound)
+    (StmtOut  := StatementRound domain lastRound)
+    (OStmtOut := OracleStatementRound domain num_vars params.num_sumcheck_rounds lastRound)
+    (WitIn    := WitnessRound F num_vars params.num_sumcheck_rounds (lastRound))
+    (WitOut   := WitnessRound F num_vars params.num_sumcheck_rounds lastRound)
+    (pSpec    := pSpecFinal F num_vars repetition_param log_order
+                            (params.num_sumcheck_rounds params.num_whir_rounds) domain)
+where
+  prover := proverFinal oSpec domain params num_queries repetition_param
+  verifier := verifierFinal oSpec domain params num_queries repetition_param
+
+noncomputable def reductionFinalFull
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
+  {OSpecIdx : Type}
+  {log_order : ℕ}
+  {num_vars : ℕ}
+  (oSpec : OracleSpec OSpecIdx)
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (params : FoldingParams num_vars)
+  (num_queries : ℕ)
+  (repetition_param : ℕ)
+:=
+  let a := reductionWithLastRound oSpec domain params num_queries
+  let b := reductionFinal oSpec domain params num_queries repetition_param
+  a.append b
+
+-- NOTE: `preSumcheckReduction` is actually the one we need for the step `p. 33 step 3.`
+
 
 noncomputable def reductionFinal
   {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
