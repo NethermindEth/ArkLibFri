@@ -257,8 +257,9 @@ section FoldingParams
 structure FoldingParams (num_vars : ℕ) where
   num_whir_rounds : ℕ
   num_sumcheck_rounds : ℕ → ℕ
-  num_sumcheck_rounds_pos : ∀ i < num_whir_rounds, 0 < num_sumcheck_rounds i
-  sum_num_sumcheck_rounds_le : ∑ j : Fin num_whir_rounds, num_sumcheck_rounds j ≤ num_vars
+  num_sumcheck_rounds_pos : ∀ i ≤ num_whir_rounds, 0 < num_sumcheck_rounds i
+  -- `Σ_{i = 0}^{M - 1} kᵢ ≤ m`
+  sum_num_sumcheck_rounds_le : ∑ j : Fin (num_whir_rounds + 1), num_sumcheck_rounds j ≤ num_vars
 
 namespace FoldingParams
 
@@ -266,9 +267,9 @@ variable {num_vars : ℕ}
 
 @[grind .]
 lemma num_sumcheck_rounds_lt
-  {sched : FoldingParams num_vars} {round : Fin sched.num_whir_rounds} :
-  sched.num_sumcheck_rounds round < numVarsRec num_vars sched.num_sumcheck_rounds round + 1 :=
-  lt_numVarsRec_add_one_of_sum sched.sum_num_sumcheck_rounds_le
+  {params : FoldingParams num_vars} {round : Fin (params.num_whir_rounds + 1)} :
+  params.num_sumcheck_rounds round < numVarsRec num_vars params.num_sumcheck_rounds round + 1 :=
+  lt_numVarsRec_add_one_of_sum params.sum_num_sumcheck_rounds_le
 
 end FoldingParams
 
@@ -293,14 +294,51 @@ noncomputable def ReductionRound
     (OStmtOut := OracleStatementRound domain num_vars params.num_sumcheck_rounds round.succ)
     (WitOut   := WitnessRound F num_vars params.num_sumcheck_rounds round.succ)
     (pSpec    := pSpecDefeqViable domain num_vars params.num_sumcheck_rounds num_queries round
-                   params.num_sumcheck_rounds_lt) :=
+                   (params.num_sumcheck_rounds_lt (round := round.castSucc))) :=
   oracleReduction
     oSpec
     (subdomainRec domain round)
     (numVarsRec num_vars params.num_sumcheck_rounds round)
-    ⟨params.num_sumcheck_rounds round, params.num_sumcheck_rounds_lt⟩
-    (by simpa [Fin.lt_def] using params.num_sumcheck_rounds_pos round round.isLt)
+    ⟨params.num_sumcheck_rounds round, params.num_sumcheck_rounds_lt (round := round.castSucc)⟩
+    (by simpa [Fin.lt_def] using params.num_sumcheck_rounds_pos round round.isLt.le)
     num_queries
+
+noncomputable def LastRound
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
+  {OSpecIdx : Type}
+  {log_order : ℕ}
+  {num_vars : ℕ}
+  (oSpec : OracleSpec OSpecIdx)
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (params : FoldingParams num_vars) :
+  letI round := params.num_whir_rounds
+  letI remaining_vars := numVarsRec num_vars params.num_sumcheck_rounds round
+  OracleReduction
+    (oSpec    := oSpec)
+    (StmtIn   := StatementRound domain (Fin.last round))
+    (OStmtIn  := OracleStatementPre (subdomainRec domain round) remaining_vars)
+    (WitIn    := WitnessPreSumcheck F remaining_vars)
+    (StmtOut  := _)
+    (OStmtOut := _)
+    (WitOut   := _)
+    (pSpec    := _) :=
+  letI ω := subdomainRec domain params.num_whir_rounds
+  letI remaining_vars := numVarsRec num_vars params.num_sumcheck_rounds params.num_whir_rounds
+  OracleReduction.append
+    (
+      preSumcheckReduction
+        oSpec
+        ω
+        remaining_vars
+    )
+    (
+      sumcheckReduction
+        oSpec
+        ω
+        remaining_vars
+        (params.num_sumcheck_rounds params.num_whir_rounds)
+        sorry
+    )
 
 -- I think we just want the second part of this.
 -- /-- The final folding round of the FRI protocol begins with the verifier sending a random field
