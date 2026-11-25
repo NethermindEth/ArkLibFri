@@ -31,13 +31,14 @@ The sum-check protocol is parameterized by the following:
 - `oSpec : OracleSpec ι`: the set of underlying oracles (e.g. random oracles) that may be needed for
   other reductions. However, the sum-check protocol does _not_ use any oracles.
 
-The sum-check relation has no witness. The statement for the `i`-th round, where `i : Fin (n + 1)`,
- contains:
+The statement for the `i`-th round, where `i : Fin (n + 1)`, contains:
 - `target : R`, which is the target value for sum-check
 - `challenges : Fin i → R`, which is the list of challenges sent from the verifier to the prover in
   previous rounds
 
-There is a single oracle statement, which is:
+The oracle statement records the round polynomials and challenges of the previous rounds.
+
+The witness is:
 - `poly : MvPolynomial (Fin n) R`, the multivariate polynomial that is summed over
 
 The sum-check relation for the `i`-th round, where `i = 0, ..., n`, checks that:
@@ -239,12 +240,12 @@ def oracleVerifier : OracleVerifier oSpec (StatementRound R n 0) (OracleStatemen
 /-- The sum-check protocol as a reduction -/
 @[reducible]
 def reduction : Reduction oSpec
-    (StatementRound R n 0 × ∀ i, OracleStatementRound R n deg 0 i) Unit
-    (StatementRound R n (.last n) × ∀ i, OracleStatementRound R n deg (.last n) i) Unit
-    (pSpec R deg n) :=
+    (StatementRound R n 0 × ∀ i, OracleStatementRound R n deg 0 i) (WitnessPoly R n deg)
+    (StatementRound R n (.last n) × ∀ i, OracleStatementRound R n deg (.last n) i)
+    (WitnessPoly R n deg) (pSpec R deg n) :=
   Reduction.seqCompose (oSpec := oSpec)
     (Stmt := fun i => StatementRound R n i × (∀ j, OracleStatementRound R n deg i j))
-    (Wit := fun _ => Unit)
+    (Wit := fun _ => WitnessPoly R n deg)
     (pSpec := fun _ => SingleRound.pSpec R deg)
     (SingleRound.reduction R n deg D oSpec)
 
@@ -255,16 +256,16 @@ def partialOracleReduction
 : OracleReduction oSpec
   (StatementRound R n 0)
   (OracleStatementRound R n deg 0)
-  Unit
+  (WitnessPoly R n deg)
   (StatementRound R n num_rounds)
   (OracleStatementRound R n deg num_rounds)
-  Unit
+  (WitnessPoly R n deg)
   (pSpec R deg num_rounds)
 := OracleReduction.seqCompose
   (oSpec := oSpec)
   (Stmt := fun (i : Fin (num_rounds + 1)) => StatementRound R n (i.castLE (by grind)))
   (OStmt := fun (i : Fin (num_rounds + 1)) => OracleStatementRound R n deg (i.castLE (by grind)))
-  (Wit := fun (i : Fin (num_rounds + 1)) => Unit)
+  (Wit := fun (i : Fin (num_rounds + 1)) => WitnessPoly R n deg)
   (pSpec := fun (i : Fin num_rounds) => SingleRound.pSpec R deg)
   (R := fun (i : Fin num_rounds) =>
     SingleRound.oracleReduction R n deg D oSpec (i.castLE (by grind))
@@ -274,8 +275,8 @@ def partialOracleReduction
 @[reducible]
 def oracleReduction
 : OracleReduction oSpec
-  (StatementRound R n 0) (OracleStatementRound R n deg 0) Unit
-  (StatementRound R n (.last n)) (OracleStatementRound R n deg (.last n)) Unit
+  (StatementRound R n 0) (OracleStatementRound R n deg 0) (WitnessPoly R n deg)
+  (StatementRound R n (.last n)) (OracleStatementRound R n deg (.last n)) (WitnessPoly R n deg)
   (pSpec R deg n)
 :=
   partialOracleReduction R deg D n oSpec (.last n)
@@ -302,7 +303,7 @@ theorem reduction_perfectCompleteness :
       (relationRound R n deg D 0) (relationRound R n deg D (.last n)) :=
   Reduction.seqCompose_perfectCompleteness_of_guarded_verifiers
     (fun i => StatementRound R n i × ∀ j, OracleStatementRound R n deg i j)
-    (fun _ => Unit) init impl (relationRound R n deg D)
+    (fun _ => WitnessPoly R n deg) init impl (relationRound R n deg D)
     (SingleRound.reduction R n deg D oSpec)
     (fun _ => inferInstance) (SingleRound.verifierGuardedForm R n deg D oSpec)
     (fun i s => SingleRound.reduction_perfectCompleteness (init := pure s) i)

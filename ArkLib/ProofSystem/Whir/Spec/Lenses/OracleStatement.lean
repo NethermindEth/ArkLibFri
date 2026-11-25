@@ -128,60 +128,20 @@ where
     target := whirStatement.target
     challenges := !v[]
   }
-  -- Create the sumcheck starting oracle statement from the whir statement and oracle statement
-  materializeInput whirStatement whirOStatement := fun idx => match idx with
-    | .mvPoly => composePolynomials
-      (whirOStatement .CodeWordPolynomial)
-      (whirOStatement .WeightPolynomial)
+  materializeInput _ _ := fun idx => match idx with
     | .responsePoly => fun x => Fin.elim0 x
     | .challenges => fun x => Fin.elim0 x
 
-  -- With access to the whir OStatement, create an implementation for the sumcheck oracle
-  --  (the multivariate polynomial)
-  -- Would survive the weight polynomial being moved into the oracle statement,
-  --  as it can use queryBind to evaluate the whir oracles
-  simulateInput whirStatement oracleIdx :=
-    let data : (Fin num_vars → F) := cast (by {
-      obtain ⟨a,b⟩ := oracleIdx
-      fin_cases a
-      · rfl
-      · apply Fin.elim0 b.1
-      · apply Fin.elim0 b
-    }) oracleIdx.2
-    OracleComp.queryBind
-      (Sigma.mk OracleIdx.CodeWordPolynomial data)
-      (fun codeWordEvaluation : F => OracleComp.queryBind
-        (Sigma.mk OracleIdx.WeightPolynomial (
-          Fin.cases codeWordEvaluation data
-        ))
-        (fun weightPolyEvaluation : F => do return (cast (by {
-          obtain ⟨a,b⟩ := oracleIdx
-          fin_cases a
-          · rfl
-          · apply Fin.elim0 b.1
-          · apply Fin.elim0 b
-        }) weightPolyEvaluation))
-      )
+  simulateInput _ q := match q with
+    | ⟨⟨0, _⟩, data⟩ => Fin.elim0 data.1
+    | ⟨⟨1, _⟩, data⟩ => Fin.elim0 data
 
   simulateInput_eq := by
-    intro outerStmt outerOStmt query
-    obtain ⟨queryIdx, queryData⟩ := query
-    simp only [Fin.coe_ofNat_eq_mod, Nat.zero_mod, Nat.cast_ofNat]
-    fin_cases queryIdx
-    · simp only [Fin.zero_eta, Fin.isValue, cast_eq]
-      change Fin num_vars → F at queryData
-      unfold OracleInterface.answer OracleInterface.toOC
-      unfold Sumcheck.Spec.instOracleInterfaceOracleStatementRound
-      simp only [
-        Fin.coe_ofNat_eq_mod, Nat.zero_mod, Nat.cast_ofNat, Fin.isValue, ReaderT.run,
-        OracleInterface.toOC, read, readThe, MonadReaderOf.read, ReaderT.read, bind_pure_comp,
-        Functor.map
-      ]
-      conv_rhs => unfold pure Id.instMonad Applicative.toPure
-      simp [eval_composePolynomials]
-      rfl
-    · exact Fin.elim0 queryData.1
-    · exact Fin.elim0 queryData
+    intro _ _ q
+    obtain ⟨idx, data⟩ := q
+    fin_cases idx
+    · exact Fin.elim0 data.1
+    · exact Fin.elim0 data
 
   liftStmt whirStatementIn sumcheckStatementOut :=
     (whirStatementIn, sumcheckStatementOut)

@@ -40,7 +40,7 @@ local instance : ∀ i, OracleInterface ((Spec.SingleRound.pSpec R deg).Challeng
 
 /-- Both directions of the legacy input relation agree, using the same finite domain. -/
 theorem legacy_input_iff {m : ℕ} (D : Fin m ↪ R) (p : Message R deg) (target : R) :
-    ((target, (fun _ : Unit => p)), ()) ∈ Spec.SingleRound.Simple.inputRelation R deg D ↔
+    ((target, fun _ => ()), p) ∈ Spec.SingleRound.Simple.inputRelation R deg D ↔
       closedInputRelation R deg (Finset.univ.map D).toList
         (ConcreteClaim.toClosed
           (⟨target, fun _ => p⟩ : ConcreteClaim R (outputFamily R deg))) := by
@@ -108,17 +108,17 @@ theorem legacyTranscript_challenge (p : Message R deg) (r : R) :
 theorem legacy_honest_verifier_correspondence [DecidableEq R] [SampleableType R]
     {ι : Type} (ambient : OracleSpec ι) {m : ℕ} (D : Fin m ↪ R)
     (p : Message R deg) (target r : R)
-    (h : ((target, (fun _ : Unit => p)), ()) ∈
+    (h : ((target, fun _ => ()), p) ∈
       Spec.SingleRound.Simple.inputRelation R deg D) :
     (Option.map Prod.fst) <$>
       ((Spec.SingleRound.Simple.oracleVerifier R deg D ambient).toVerifier.verify
-        (target, fun _ => p) (legacyTranscript R deg p r)).run =
+        (target, fun _ => ()) (legacyTranscript R deg p r)).run =
       (fun result => result.2.2) <$>
         executeAt R deg ambient p p (Finset.univ.map D).toList target r := by
   rw [executeAt_honest R deg ambient p _ target r (legacy_input_sum R deg D p target h)]
   rw [Spec.SingleRound.Simple.oracleVerifier_eq_verifier]
-  have hs : (∑ x, p.val.eval (D x)) = target := by
-    simpa [Spec.SingleRound.Simple.inputRelation] using h
+  have hs : (∑ x, p.val.eval (D x)) = target :=
+    (Finset.sum_map Finset.univ D fun x => p.val.eval x).symm.trans h
   simp [Spec.SingleRound.Simple.verifier, hs]
 
 

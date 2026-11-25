@@ -37,14 +37,15 @@ The sum-check protocol is parameterized by the following:
 - `oSpec : OracleSpec ι`: the set of underlying oracles (e.g. random oracles) that may be needed for
   other reductions. However, the sum-check protocol does _not_ use any oracles.
 
-The sum-check relation has no witness. The statement for the `i`-th round, where `i : Fin (n + 1)`,
- contains:
+The statement for the `i`-th round, where `i : Fin (n + 1)`, contains:
 - `target : R`, which is the target value for sum-check
 - `challenges : Fin i → R`, which is the list of challenges sent from the verifier to the prover in
   previous rounds
 
-There is a single oracle statement, which is:
-- `poly : MvPolynomial (Fin (n + 1)) R`, the multivariate polynomial that is summed over
+The oracle statement records the round polynomials and challenges of the previous rounds.
+
+The witness is:
+- `poly : R⦃≤ deg⦄[X Fin n]`, the multivariate polynomial that is summed over
 
 The sum-check relation for the `i`-th round checks that:
 
@@ -135,17 +136,15 @@ structure StatementRound (i : Fin (n + 1)) where
 
 abbrev OutputStatement := StatementRound R _ (.last n)
 
-abbrev OracleIdx := Fin 3
-abbrev OracleIdx.mvPoly : OracleIdx := 0
-abbrev OracleIdx.responsePoly : OracleIdx := 1
-abbrev OracleIdx.challenges : OracleIdx := 2
+abbrev OracleIdx := Fin 2
+abbrev OracleIdx.responsePoly : OracleIdx := 0
+abbrev OracleIdx.challenges : OracleIdx := 1
 
-/-- Oracle statement for sum-check, which is a multivariate polynomial over `n` variables of
-  individual degree at most `deg`, equipped with the poly evaluation oracle interface. -/
+/-- Oracle statement for sum-check: the round polynomials sent so far and the challenges sampled
+  so far. -/
 @[reducible]
 def OracleStatementRound (round : Fin (n + 1)) (idx : OracleIdx) : Type :=
   match idx with
-    | .mvPoly => R⦃≤ deg⦄[X Fin n]
     | .responsePoly => Fin round → R⦃≤ deg⦄[X]
     | .challenges => Fin round → R
 
@@ -153,19 +152,15 @@ instance
   (round : Fin (n + 1))
   (idx : OracleIdx)
 : OracleInterface (OracleStatementRound R n deg round idx) :=
-  letI mvPolyI := (inferInstance : OracleInterface (OracleStatementRound R n deg round .mvPoly))
   letI responsePolyI := (inferInstance : OracleInterface (R⦃≤ deg⦄[X]))
 {
   Query := match idx with
-    | .mvPoly => mvPolyI.Query
     | .responsePoly => Fin round × responsePolyI.Query
     | .challenges => Fin round
   toOC.spec := match idx with
-    | .mvPoly => mvPolyI.toOC.spec
     | .responsePoly => fun x => responsePolyI.toOC.spec x.2
     | .challenges => fun _ => R
   toOC.impl := match idx with
-    | .mvPoly => mvPolyI.toOC.impl
     | .responsePoly => fun inputs => do
       let responses ← read
       return Polynomial.eval inputs.2 (responses inputs.1)
@@ -174,11 +169,17 @@ instance
       return challenges challengeIdx
 }
 
+/-- Witness for sum-check: the multivariate polynomial over `n` variables of individual degree at
+  most `deg` that is summed over. -/
+@[reducible]
+def WitnessPoly : Type := R⦃≤ deg⦄[X Fin n]
+
 /-- The sum-check relation for the `i`-th round, for `i ≤ n` -/
 def relationRound (round : Fin (n + 1)) :
-    Set (((StatementRound R n round) × (∀ i, OracleStatementRound R n deg round i)) × Unit) :=
-  { ⟨⟨⟨target, challenges⟩, oracle⟩, _⟩ |
-    ∑ x ∈ (univ.map D) ^ᶠ (n - round), (oracle .mvPoly).val ⸨challenges, x⸩ = target }
+    Set (((StatementRound R n round) × (∀ i, OracleStatementRound R n deg round i)) ×
+      WitnessPoly R n deg) :=
+  { ⟨⟨⟨target, challenges⟩, _⟩, poly⟩ |
+    ∑ x ∈ (univ.map D) ^ᶠ (n - round), poly.val ⸨challenges, x⸩ = target }
 
 namespace SingleRound
 
@@ -366,8 +367,8 @@ namespace Simple
 -- the result to the full protocol.
 
 -- In this simplified setting, the sum-check protocol consists of a _univariate_ polynomial
--- `p : R⦃≤ d⦄[X]` of degree at most `d`, and the relation is that
--- `∑ x ∈ univ.map D, p.eval x = newTarget`.
+-- `p : R⦃≤ d⦄[X]` of degree at most `d`, held by the prover as its witness, and the relation is
+-- that `∑ x ∈ univ.map D, p.eval x = newTarget`.
 
 @[reducible, simp]
 def StmtIn : Type := R
@@ -375,18 +376,23 @@ def StmtIn : Type := R
 @[reducible, simp]
 def StmtOut : Type := R × R
 
-@[reducible, simp]
-def OStmtIn : Unit → Type := fun _ => R⦃≤ deg⦄[X]
+def OStmtIn : Empty → Type := fun _ => Unit
 
-abbrev OStmtOutIdx := Fin 3
-abbrev OStmtOutIdx.in : OStmtOutIdx := 0
-abbrev OStmtOutIdx.message : OStmtOutIdx := 1
-abbrev OStmtOutIdx.challenge : OStmtOutIdx := 2
+instance (i : Empty) : OracleInterface.{0, 0} (OStmtIn i) := i.elim
+
+@[reducible, simp]
+def WitIn : Type := R⦃≤ deg⦄[X]
+
+@[reducible, simp]
+def WitOut : Type := R⦃≤ deg⦄[X]
+
+abbrev OStmtOutIdx := Fin 2
+abbrev OStmtOutIdx.message : OStmtOutIdx := 0
+abbrev OStmtOutIdx.challenge : OStmtOutIdx := 1
 
 @[reducible, simp]
 def OStmtOut : OStmtOutIdx → Type := fun idx =>
   match idx with
-    | .in => R⦃≤ deg⦄[X]
     | .message => R⦃≤ deg⦄[X]
     | .challenge => R
 
@@ -394,7 +400,6 @@ instance
   (i)
 : OracleInterface (OStmtOut R deg i) :=
 match i with
-  | .in => inferInstance
   | .message => inferInstance
   | .challenge => {
     Query := Unit
@@ -402,29 +407,29 @@ match i with
     toOC.impl := fun _ => do read
   }
 
-def inputRelation : Set ((StmtIn R × (∀ i, OStmtIn R deg i)) × Unit) :=
-  { ⟨⟨target, oStmt⟩, _⟩ | ∑ x ∈ (univ.map D), (oStmt ()).1.eval x = target }
+def inputRelation : Set ((StmtIn R × (∀ i, OStmtIn i)) × WitIn R deg) :=
+  { ⟨⟨target, _⟩, poly⟩ | ∑ x ∈ (univ.map D), poly.1.eval x = target }
 
-def outputRelation : Set ((StmtOut R × (∀ i, OStmtOut R deg i)) × Unit) :=
-  { ⟨⟨⟨newTarget, chal⟩, oStmt⟩, _⟩ | (oStmt .in).1.eval chal = newTarget }
+def outputRelation : Set ((StmtOut R × (∀ i, OStmtOut R deg i)) × WitOut R deg) :=
+  { ⟨⟨⟨newTarget, chal⟩, _⟩, poly⟩ | poly.1.eval chal = newTarget }
 
 variable {ι : Type} (oSpec : OracleSpec ι)
 
 /-- The prover in the simple description of a single round of sum-check.
 
-  Takes in input `target : R` and `poly : R⦃≤ deg⦄[X]`, and:
+  Takes in input `target : R` and witness `poly : R⦃≤ deg⦄[X]`, and:
   - Sends a message `poly' := poly` to the verifier
   - Receive `chal` from the verifier
-  - Outputs `(newTarget, chal) : R × R`, where `newTarget := poly.eval chal`
+  - Outputs `(newTarget, chal) : R × R`, where `newTarget := poly.eval chal`, and the witness `poly`
 -/
-def prover : OracleProver oSpec (StmtIn R) (OStmtIn R deg) Unit (StmtOut R) (OStmtOut R deg) Unit
-    (pSpec R deg) where
+def prover : OracleProver oSpec (StmtIn R) OStmtIn (WitIn R deg) (StmtOut R) (OStmtOut R deg)
+    (WitOut R deg) (pSpec R deg) where
   PrvState
     | 0 => R⦃≤ deg⦄[X]
     | 1 => R⦃≤ deg⦄[X]
     | 2 => R⦃≤ deg⦄[X] × R
 
-  input := fun ⟨⟨_, oStmt⟩, _⟩ => oStmt ()
+  input := fun ⟨_, poly⟩ => poly
 
   sendMessage
   | ⟨0, _⟩ => fun polyLE => pure ⟨polyLE, polyLE⟩
@@ -437,10 +442,9 @@ def prover : OracleProver oSpec (StmtIn R) (OStmtIn R deg) Unit (StmtOut R) (OSt
   output := fun ⟨polyLE, chal⟩ => pure (
     ((polyLE.val.eval chal, chal),
     fun idx => match idx with
-      | .in => polyLE
       | .message => polyLE
       | .challenge => chal
-    ), ()
+    ), polyLE
   )
 
 /-- The simple round's output computes only polynomial values and performs no oracle query. -/
@@ -450,28 +454,24 @@ instance instOutputIsPureProver : (prover R deg oSpec).OutputIsPure :=
 variable [DecidableEq R] [SampleableType R]
 
 /-- The verifier for the simple description of a single round of sum-check -/
-def verifier : Verifier oSpec (StmtIn R × (∀ i, OStmtIn R deg i))
+def verifier : Verifier oSpec (StmtIn R × (∀ i, OStmtIn i))
     (StmtOut R × (∀ i, OStmtOut R deg i)) (pSpec R deg) where
-  verify := fun ⟨target, oStmt⟩ transcript => do
-    letI polyLE := transcript 0
-    guard (∑ x ∈ (univ.map D), polyLE.val.eval x = target)
-    letI chal := transcript 1
+  verify := fun ⟨target, _⟩ transcript => do
+    guard (∑ x ∈ (univ.map D), (transcript 0).val.eval x = target)
     pure ⟨
-      ⟨(oStmt ()).val.eval chal, chal⟩,
+      ⟨(transcript 0).val.eval (transcript 1), transcript 1⟩,
       fun idx => match idx with
-        | .in => oStmt ()
         | .message => transcript 0
-        | .challenge => chal
+        | .challenge => transcript 1
     ⟩
 
 /-- The simple verifier rejects an inconsistent round sum, then computes its next statement. -/
 def verifierGuardedForm : (verifier R deg D oSpec).GuardedForm where
   check := fun input tr => decide (∑ x ∈ (univ.map D), (tr 0).val.eval x = input.1)
-  out := fun input tr =>
+  out := fun _ tr =>
     (
-      ((input.2 ()).val.eval (tr 1), tr 1),
+      ((tr 0).val.eval (tr 1), tr 1),
       fun idx => match idx with
-        | .in => input.2 ()
         | .message => tr 0
         | .challenge => tr 1
     )
@@ -481,8 +481,8 @@ def verifierGuardedForm : (verifier R deg D oSpec).GuardedForm where
     split <;> simp_all
 
 /-- The reduction for the simple description of a single round of sum-check -/
-def reduction : Reduction oSpec (StmtIn R × (∀ i, OStmtIn R deg i)) Unit
-    (StmtOut R × (∀ i, OStmtOut R deg i)) Unit (pSpec R deg) where
+def reduction : Reduction oSpec (StmtIn R × (∀ i, OStmtIn i)) (WitIn R deg)
+    (StmtOut R × (∀ i, OStmtOut R deg i)) (WitOut R deg) (pSpec R deg) where
   prover := prover R deg oSpec
   verifier := verifier R deg D oSpec
 
@@ -494,7 +494,7 @@ instance t {ι₁ ι₂ ι₃}
   infer_instance
 
 open Function in
-def oracleVerifier : OracleVerifier oSpec (StmtIn R) (OStmtIn R deg) (StmtOut R) (OStmtOut R deg)
+def oracleVerifier : OracleVerifier oSpec (StmtIn R) OStmtIn (StmtOut R) (OStmtOut R deg)
     (pSpec R deg) where
   verify := fun target chal => do
     let evals : Vector R m ← (Vector.finRange m).mapM
@@ -505,22 +505,20 @@ def oracleVerifier : OracleVerifier oSpec (StmtIn R) (OStmtIn R deg) (StmtOut R)
     guard (evals.sum = target)
     let newTarget ← OptionT.lift <| OracleComp.liftComp
       (OracleComp.lift <|
-        OracleSpec.query (show [OStmtIn R deg]ₒ.Domain from ⟨(), chal default⟩))
+        OracleSpec.query (show [(pSpec R deg).Message]ₒ.Domain from ⟨default, chal default⟩))
       _
     pure (newTarget, chal default)
   outputOracle := Sum.inr {
-    materializeOutput challenges oracles messages oracleIdx := match oracleIdx with
-      | .in => oracles ()
+    materializeOutput challenges _ messages oracleIdx := match oracleIdx with
       | .message => messages ⟨0, rfl⟩
       | .challenge => challenges ⟨1, rfl⟩
     simulateOutputQuery challenges domain := match domain with
-        | ⟨.in, query⟩ => OracleComp.queryBind (Sum.inr (Sum.inl ⟨(), query⟩)) (pure ·)
         | ⟨.message, query⟩ => OracleComp.queryBind (Sum.inr (Sum.inr ⟨⟨0, rfl⟩, query⟩)) (pure ·)
-        | ⟨.challenge, query⟩ => do return challenges ⟨1, rfl⟩
+        | ⟨.challenge, _⟩ => do return challenges ⟨1, rfl⟩
     simulateOutputQuery_eq := by
       intro challenges oStmt messages q
       simp_all only [
-        OStmtOut, OStmtIn, MessageIdx, Nat.reduceAdd, Nat.add_zero, Fin.vcons_fin_zero,
+        OStmtOut, MessageIdx, Nat.reduceAdd, Nat.add_zero, Fin.vcons_fin_zero,
         Fin.vappend_zero, Message, add_apply_inr, add_apply_inl, PFunctor.FreeM.liftBind_eq,
         ofPFunctor_toPFunctor, PFunctor.FreeM.bind_eq_bind, Fin.isValue, Challenge]
       obtain ⟨fst, snd⟩ := q
@@ -530,15 +528,12 @@ def oracleVerifier : OracleVerifier oSpec (StmtIn R) (OStmtIn R deg) (StmtOut R)
         simp_all only [Fin.zero_eta, Fin.isValue, simulateQ_bind]
         rfl
       next idx =>
-        simp_all only [Fin.mk_one, Fin.isValue, simulateQ_bind]
-        rfl
-      next idx =>
         simp_all only [Fin.reduceFinMk, Fin.isValue]
         rfl
   }
 
-def oracleReduction : OracleReduction oSpec (StmtIn R) (OStmtIn R deg) Unit
-    (StmtOut R) (OStmtOut R deg) Unit (pSpec R deg) where
+def oracleReduction : OracleReduction oSpec (StmtIn R) OStmtIn (WitIn R deg)
+    (StmtOut R) (OStmtOut R deg) (WitOut R deg) (pSpec R deg) where
   prover := prover R deg oSpec
   verifier := oracleVerifier R deg D oSpec
 
@@ -572,7 +567,7 @@ theorem oracleVerifier_eq_verifier :
   -- Each oracle query in mapM resolves to pure evaluation
   set impl := (QueryImpl.liftTarget (OracleComp oSpec) (QueryImpl.id oSpec) +
     QueryImpl.liftTarget (OracleComp oSpec)
-      ((OracleInterface.simOracle0 (OStmtIn R deg) oStmt).add
+      ((OracleInterface.simOracle0 OStmtIn oStmt).add
         (OracleInterface.simOracle0
           (fun i => (pSpec R deg).Message i) transcript.messages)))
   have hmapM := simulateQ_optionT_vector_mapM_pure impl
@@ -631,7 +626,7 @@ theorem reduction_perfectCompleteness :
     (reduction R deg D oSpec).perfectCompleteness init impl
       (inputRelation R deg D) (outputRelation R deg) := by
   simp only [Reduction.perfectCompleteness, Reduction.completeness, ENNReal.coe_zero, tsub_zero]
-  intro ⟨target, oStmt⟩ () hValid
+  intro ⟨target, oStmt⟩ poly hValid
   have optionT_lift_eq_map {M : Type → Type} [Monad M] [LawfulMonad M]
       {α : Type} (mx : M α) :
       (OptionT.lift mx : OptionT M α) = OptionT.mk (some <$> mx) := by
@@ -878,11 +873,9 @@ def projectedRoundPolynomial (i : Fin n) (challenges : Fin i.castSucc → R)
         simpa only [roundSuffix] using
           sumcheck_roundPoly_degreeLE R n deg D i poly.property⟩
 
-/-- The oracle statement lens that connect the simple to the full single-round sum-check protocol
-
-For `n = 0`, since `poly : R[X Fin 0]` is just a constant, we need to embed it as a constant poly.
-
-For other `n := n + 1`, we proceed with the sum `∑ x ∈ D ^ (n - i), poly ⸨challenges, X, x⸩` -/
+/-- The oracle statement lens that connect the simple to the full single-round sum-check protocol.
+The simple round has no input oracles, and its output oracles are appended to the response
+polynomials and challenges of the full round. -/
 def oStmtLens (i : Fin n) : OracleStatement.Lens
     (OuterStmtIn := StatementRound R n i.castSucc)
     (OuterStmtOut := StatementRound R n i.succ)
@@ -890,118 +883,54 @@ def oStmtLens (i : Fin n) : OracleStatement.Lens
     (InnerStmtOut := Simple.StmtOut R)
     (OuterOStmtIn := OracleStatementRound R n deg i.castSucc)
     (OuterOStmtOut := OracleStatementRound R n deg i.succ)
-    (InnerOStmtIn := Simple.OStmtIn R deg)
+    (InnerOStmtIn := Simple.OStmtIn)
     (InnerOStmtOut := Simple.OStmtOut R deg) where
 
-  toFunA := fun ⟨⟨target, challenges⟩, oStmt⟩ =>
-    ⟨target, fun _ => projectedRoundPolynomial R n deg D i challenges (oStmt .mvPoly)⟩
+  toFunA := fun x => ⟨x.1.target, fun i => i.elim⟩
 
   toFunB := fun ⟨⟨_oldTarget, challenges⟩, oStmt⟩ ⟨⟨newTarget, chal⟩, innerOStmtOut⟩ =>
     ⟨⟨newTarget, Fin.snoc challenges chal⟩, fun idx => match idx with
-      | .mvPoly => oStmt .mvPoly
       | .responsePoly => Fin.snoc (oStmt .responsePoly) (innerOStmtOut .message) -- TODO do we want .message here?
       | .challenges => Fin.snoc (oStmt .challenges) (innerOStmtOut .challenge)
     ⟩
 
-/-- Query the multivariate sum-check input oracle at one point. -/
-def queryRoundInput {round : Fin (n + 1)} (point : Fin n → R) :
-    OracleComp [OracleStatementRound R n deg round]ₒ R :=
-  liftM <| OracleSpec.query
-    (show [OracleStatementRound R n deg round]ₒ.Domain from ⟨.mvPoly, point⟩)
+/-- The witness lens that connect the simple to the full single-round sum-check protocol.
 
-@[simp]
-theorem simulateQ_queryRoundInput {round} (oStmt : ∀ j, OracleStatementRound R n deg round j)
-    (point : Fin n → R) :
-    simulateQ (OracleInterface.simOracle0 (OracleStatementRound R n deg round) oStmt)
-        (queryRoundInput R n deg point) = pure ((oStmt .mvPoly).val.eval point) := by
-  simp only [queryRoundInput]
-  rfl
+For `n = 0`, since `poly : R[X Fin 0]` is just a constant, we need to embed it as a constant poly.
 
-/-- Query implementation of `projectedRoundPolynomial`.  A univariate
-evaluation query is answered by querying the multivariate input oracle once
-for every remaining suffix in the sum-check domain and summing the answers. -/
-def simulateProjectedRoundPolynomial (i : Fin n)
-    (stmt : StatementRound R n i.castSucc) :
-    QueryImpl [Simple.OStmtIn R deg]ₒ
-      (OracleComp [OracleStatementRound R n deg i.castSucc]ₒ) := fun q => by
-  rcases q with ⟨u, r⟩
-  rcases u with ⟨⟩
-  match h : n with
-  | 0 => exact Fin.elim0 (h ▸ i)
-  | n + 1 =>
-      exact do
-        let evals ← ((univ.map D) ^ᶠ (n - i)).toList.mapM fun x =>
-          queryRoundInput R (n + 1) deg <| Fin.insertNth i r
-            (roundSuffix R n i stmt.challenges x)
-        pure evals.sum
+For other `n := n + 1`, we proceed with the sum `∑ x ∈ D ^ (n - i), poly ⸨challenges, X, x⸩` -/
+def witLens (i : Fin n) : Witness.Lens
+    (StatementRound R n i.castSucc × ∀ j, OracleStatementRound R n deg i.castSucc j)
+    (Simple.StmtOut R × ∀ j, Simple.OStmtOut R deg j)
+    (WitnessPoly R n deg) (WitnessPoly R n deg)
+    (Simple.WitIn R deg) (Simple.WitOut R deg) where
+  toFunA := fun ⟨⟨stmt, _⟩, poly⟩ => projectedRoundPolynomial R n deg D i stmt.challenges poly
+  toFunB := fun ⟨_, poly⟩ _ => poly
 
-theorem simulateProjectedRoundPolynomial_eq (i : Fin n)
-    (stmt : StatementRound R n i.castSucc)
-    (oStmt : ∀ j, OracleStatementRound R n deg i.castSucc j)
-    (q : [Simple.OStmtIn R deg]ₒ.Domain) :
-    simulateQ (OracleInterface.simOracle0 (OracleStatementRound R n deg i.castSucc) oStmt)
-        (simulateProjectedRoundPolynomial R n deg D i stmt q) =
-      (inferInstance : OracleInterface (Simple.OStmtIn R deg q.1)).answer
-        (projectedRoundPolynomial R n deg D i stmt.challenges (oStmt .mvPoly)) q.2 := by
-  rcases q with ⟨u, r⟩
-  rcases u with ⟨⟩
-  match h : n with
-  | 0 => exact Fin.elim0 (h ▸ i)
-  | n + 1 =>
-      change _ = Polynomial.eval r
-        (projectedRoundPolynomial R (n + 1) deg D i stmt.challenges (oStmt .mvPoly)).val
-      simp only [simulateProjectedRoundPolynomial, simulateQ_bind,
-        simulateQ_list_mapM, simulateQ_queryRoundInput, List.mapM_pure,
-        pure_bind]
-      change
-        (List.map (fun x => (oStmt .mvPoly).val.eval <|
-            Fin.insertNth i r
-              (roundSuffix R n i stmt.challenges x))
-          ((univ.map D) ^ᶠ (n - i)).toList).sum =
-        Polynomial.eval r
-          (projectedRoundPolynomial R (n + 1) deg D i stmt.challenges (oStmt .mvPoly)).val
-      calc
-        _ = ∑ x ∈ (univ.map D) ^ᶠ (n - i), (oStmt .mvPoly).val.eval
-              (Fin.insertNth i r
-                (roundSuffix R n i stmt.challenges x)) := by
-            exact Multiset.sum_map_toList
-              (((univ.map D) ^ᶠ (n - i)).1) _
-        _ = _ := by
-          rw [show (projectedRoundPolynomial R (n + 1) deg D i
-              stmt.challenges (oStmt .mvPoly)).val =
-              ∑ x ∈ (univ.map D) ^ᶠ (n - i),
-                Polynomial.map (MvPolynomial.eval (roundSuffix R n i stmt.challenges x))
-                  (MvPolynomial.finSuccEquivNth R i (oStmt .mvPoly).val) from rfl]
-          rw [Polynomial.eval_finsetSum]
-          apply Finset.sum_congr rfl
-          intro x hx
-          exact eval_eq_eval_mv_eval_finSuccEquivNth
-            (roundSuffix R n i stmt.challenges x) r (oStmt .mvPoly).val
+/-- The witness lens for the extractor, in the reverse direction of `witLens`. -/
+def witInvLens (i : Fin n) : Witness.InvLens
+    (StatementRound R n i.castSucc × ∀ j, OracleStatementRound R n deg i.castSucc j)
+    (WitnessPoly R n deg) (WitnessPoly R n deg)
+    (Simple.WitIn R deg) (Simple.WitOut R deg) where
+  toFunA := fun ⟨⟨stmt, _⟩, poly⟩ => projectedRoundPolynomial R n deg D i stmt.challenges poly
+  toFunB := fun ⟨_, poly⟩ _ => poly
 
 /-- Executable oracle-statement lens for a full sum-check round. -/
 def oStmtExecutableLens (i : Fin n) : OracleStatement.ExecutableLens
     (StatementRound R n i.castSucc) (StatementRound R n i.succ)
     (Simple.StmtIn R) (Simple.StmtOut R)
     (OracleStatementRound R n deg i.castSucc) (OracleStatementRound R n deg i.succ)
-    (Simple.OStmtIn R deg) (Simple.OStmtOut R deg) where
+    Simple.OStmtIn (Simple.OStmtOut R deg) where
   projStmt := StatementRound.target
-  materializeInput := fun stmt oStmt _ =>
-    projectedRoundPolynomial R n deg D i stmt.challenges (oStmt .mvPoly)
-  simulateInput := simulateProjectedRoundPolynomial R n deg D i
-  simulateInput_eq := simulateProjectedRoundPolynomial_eq R n deg D i
+  materializeInput := fun _ _ i => i.elim
+  simulateInput := fun _ q => q.1.elim
+  simulateInput_eq := fun _ _ q => q.1.elim
   liftStmt := fun stmt ⟨newTarget, chal⟩ =>
     ⟨newTarget, Fin.snoc stmt.challenges chal⟩
   materializeOutput := fun outerOStmt innerOStmtOut idx => match idx with
-    | .mvPoly => outerOStmt .mvPoly
     | .responsePoly => Fin.snoc (outerOStmt .responsePoly) (innerOStmtOut .message)
     | .challenges => Fin.snoc (outerOStmt .challenges) (innerOStmtOut .challenge)
   simulateOutput query := match h1: query.1 with
-    | .mvPoly => OracleComp.queryBind (Sum.inl ⟨.mvPoly, cast (by rw [h1]) query.2⟩) (fun data => do return (cast (by {
-      obtain ⟨a,b⟩ := query
-      simp at ⊢ h1
-      rw! (castMode := .all) [h1]
-      rfl
-    }) data))
     | .responsePoly =>
       let query' : Fin (i.val + 1) × R := cast (by {
         rw [h1]
@@ -1050,7 +979,6 @@ def oStmtExecutableLens (i : Fin n) : OracleStatement.ExecutableLens
     intro outerOStmt innerOStmt q
     obtain ⟨idx,data⟩ := q
     fin_cases idx
-    . rfl
     . simp
       obtain ⟨⟨round, h_lt⟩, innerData⟩ := data
       split_ifs with h
@@ -1098,28 +1026,17 @@ def oStmtExecutableLens (i : Fin n) : OracleStatement.ExecutableLens
 
 @[simp]
 theorem oStmtExecutableLens_toLens (i : Fin n) :
-    (oStmtExecutableLens R n deg D i).toLens = oStmtLens R n deg D i := by
+    (oStmtExecutableLens R n deg i).toLens = oStmtLens R n deg i := by
   rfl
 
-/-- The lifted round exposes the original multivariate oracle.  It is written
-as a virtual identity oracle so the same query semantics survives every
-adapter and sequential composition path. -/
+/-- The lifted round exposes the response polynomials and challenges of all rounds so far. -/
 def liftOutputSimulation {i : Fin n} {ι : Type} (oSpec : OracleSpec ι) :
     OracleOutputSimulation oSpec (OracleStatementRound R n deg i.castSucc)
       (OracleStatementRound R n deg i.succ) (pSpec R deg) where
   materializeOutput := fun challenges oracleStatement messages idx => match idx with
-    | .mvPoly => oracleStatement .mvPoly
     | .responsePoly => Fin.snoc (oracleStatement .responsePoly) (messages ⟨0, rfl⟩)
     | .challenges => Fin.snoc (oracleStatement .challenges) (challenges ⟨1, rfl⟩)
   simulateOutputQuery challenges domain := match h_idx : domain.1 with
-    | .mvPoly => OracleComp.queryBind
-      (Sum.inr (Sum.inl ⟨.mvPoly, cast (by rw [h_idx]) domain.2⟩))
-      (fun data => do return (cast (by {
-        obtain ⟨a,b⟩ := domain
-        simp at h_idx
-        rw! (castMode := .all) [h_idx]
-        rfl
-      }) data))
     | .responsePoly =>
       let query : Fin (i+1) × R := cast (by rw [h_idx]; rfl) domain.2
       let round := query.1
@@ -1162,7 +1079,6 @@ def liftOutputSimulation {i : Fin n} {ι : Type} (oSpec : OracleSpec ι) :
     intro challenges oracleStatement messages query
     obtain ⟨a,b⟩ := query
     fin_cases a
-    · rfl
     · obtain ⟨⟨round, h_lt⟩,innerData⟩ := b
       dsimp
       split_ifs with h
@@ -1226,7 +1142,7 @@ def liftOutputSimulation {i : Fin n} {ι : Type} (oSpec : OracleSpec ι) :
 
 def liftContextOutput {ι : Type} (oSpec : OracleSpec ι)
     [DecidableEq R] [SampleableType R] (i : Fin n) :
-    OracleVerifier.LiftContextOutput (oStmtExecutableLens R n deg D i)
+    OracleVerifier.LiftContextOutput (oStmtExecutableLens R n deg i)
       (Simple.oracleVerifier R deg D oSpec) where
   outputOracle := .inr (liftOutputSimulation R n deg oSpec)
   materialize_eq := by
@@ -1241,29 +1157,29 @@ def oCtxExecutableLens (i : Fin n) : OracleContext.ExecutableLens
     (StatementRound R n i.castSucc) (StatementRound R n i.succ)
     (Simple.StmtIn R) (Simple.StmtOut R)
     (OracleStatementRound R n deg i.castSucc) (OracleStatementRound R n deg i.succ)
-    (Simple.OStmtIn R deg) (Simple.OStmtOut R deg)
-    Unit Unit Unit Unit where
-  wit := Witness.Lens.trivial
-  stmt := oStmtExecutableLens R n deg D i
+    Simple.OStmtIn (Simple.OStmtOut R deg)
+    (WitnessPoly R n deg) (WitnessPoly R n deg) (Simple.WitIn R deg) (Simple.WitOut R deg) where
+  wit := witLens R n deg D i
+  stmt := oStmtExecutableLens R n deg i
 
 @[simp]
 def oCtxLens (i : Fin n) : OracleContext.Lens
     (StatementRound R n i.castSucc) (StatementRound R n i.succ) (Simple.StmtIn R) (Simple.StmtOut R)
     (OracleStatementRound R n deg i.castSucc) (OracleStatementRound R n deg i.succ)
-    (Simple.OStmtIn R deg) (Simple.OStmtOut R deg)
-    Unit Unit Unit Unit where
-  wit := Witness.Lens.trivial
-  stmt := oStmtLens R n deg D i
+    Simple.OStmtIn (Simple.OStmtOut R deg)
+    (WitnessPoly R n deg) (WitnessPoly R n deg) (Simple.WitIn R deg) (Simple.WitOut R deg) where
+  wit := witLens R n deg D i
+  stmt := oStmtLens R n deg i
 
 @[simp]
 def extractorLens (i : Fin n) : Extractor.Lens
     (StatementRound R n i.castSucc × (∀ j, OracleStatementRound R n deg i.castSucc j))
     (StatementRound R n i.succ × (∀ j, OracleStatementRound R n deg i.succ j))
-    (Simple.StmtIn R × (∀ i, Simple.OStmtIn R deg i))
+    (Simple.StmtIn R × (∀ i, Simple.OStmtIn i))
     (Simple.StmtOut R × (∀ i, Simple.OStmtOut R deg i))
-    Unit Unit Unit Unit where
-  stmt := oStmtLens R n deg D i
-  wit := Witness.InvLens.trivial
+    (WitnessPoly R n deg) (WitnessPoly R n deg) (Simple.WitIn R deg) (Simple.WitOut R deg) where
+  stmt := oStmtLens R n deg i
+  wit := witInvLens R n deg D i
 
 variable {ι : Type} (oSpec : OracleSpec ι) [DecidableEq R] [SampleableType R]
 
@@ -1271,7 +1187,7 @@ variable {ι : Type} (oSpec : OracleSpec ι) [DecidableEq R] [SampleableType R]
 def verifier (i : Fin n) : Verifier oSpec
     (StatementRound R n i.castSucc × (∀ j, OracleStatementRound R n deg i.castSucc j))
     (StatementRound R n i.succ × (∀ j, OracleStatementRound R n deg i.succ j)) (pSpec R deg) :=
-  (Simple.verifier R deg D oSpec).liftContext (oStmtLens R n deg D i)
+  (Simple.verifier R deg D oSpec).liftContext (oStmtLens R n deg i)
 
 /-- The oracle verifier for the `i`-th round of the sum-check protocol -/
 def oracleVerifier (i : Fin n) : OracleVerifier oSpec
@@ -1282,13 +1198,14 @@ def oracleVerifier (i : Fin n) : OracleVerifier oSpec
   (pSpec R deg)
 :=
   (Simple.oracleVerifier R deg D oSpec).liftContext
-    (oStmtExecutableLens R n deg D i) (liftContextOutput R n deg D oSpec i)
+    (oStmtExecutableLens R n deg i) (liftContextOutput R n deg D oSpec i)
 
 /-- The sum-check reduction for the `i`-th round of the sum-check protocol -/
 def reduction (i : Fin n) : Reduction oSpec
-  ((StatementRound R n i.castSucc) × (∀ j, OracleStatementRound R n deg i.castSucc j)) Unit
+  ((StatementRound R n i.castSucc) × (∀ j, OracleStatementRound R n deg i.castSucc j))
+  (WitnessPoly R n deg)
   ((StatementRound R n i.succ) × (∀ j, OracleStatementRound R n deg i.succ j))
-  Unit (pSpec R deg)
+  (WitnessPoly R n deg) (pSpec R deg)
 :=
   (Simple.reduction R deg D oSpec).liftContext (oCtxLens R n deg D i).toContext
 
@@ -1302,13 +1219,14 @@ instance instOutputIsPureReduction (i : Fin n) :
 /-- The lifted full round retains the simple verifier's rejection guard. -/
 def verifierGuardedForm (i : Fin n) :
     (reduction R n deg D oSpec i).verifier.GuardedForm :=
-  Verifier.GuardedForm.liftContext (oStmtLens R n deg D i)
+  Verifier.GuardedForm.liftContext (oStmtLens R n deg i)
     (Simple.verifier R deg D oSpec) (Simple.verifierGuardedForm R deg D oSpec)
 
 /-- The sum-check oracle reduction for the `i`-th round of the sum-check protocol -/
 def oracleReduction (i : Fin n) : OracleReduction oSpec
-    (StatementRound R n i.castSucc) (OracleStatementRound R n deg i.castSucc) Unit
-    (StatementRound R n i.succ) (OracleStatementRound R n deg i.succ) Unit (pSpec R deg) :=
+    (StatementRound R n i.castSucc) (OracleStatementRound R n deg i.castSucc) (WitnessPoly R n deg)
+    (StatementRound R n i.succ) (OracleStatementRound R n deg i.succ) (WitnessPoly R n deg)
+    (pSpec R deg) :=
   (Simple.oracleReduction R deg D oSpec).liftContext
     (oCtxExecutableLens R n deg D i) (liftContextOutput R n deg D oSpec i)
 
@@ -1343,14 +1261,14 @@ instance oCtxLens_complete :
 where
   proj_complete := by
     simp only [relationRound, Fin.val_castSucc, Set.mem_ofPred_eq, Simple.StmtIn,
-      Simple.OStmtIn, Simple.inputRelation, sum_map, Simple.StmtOut, Simple.OStmtOut,
+      Simple.inputRelation, sum_map, Simple.StmtOut, Simple.OStmtOut,
       oCtxLens, forall_const, Prod.forall]
-    unfold oStmtLens
+    unfold witLens
     unfold projectedRoundPolynomial
     induction n with
     | zero => exact Fin.elim0 i
     | succ n ih =>
-      intro stmt oStmt hRelIn
+      intro stmt oStmt poly hRelIn
       simp only [← hRelIn]
       simp_rw [Polynomial.eval_finsetSum]
       simp_rw [← eval_eq_eval_mv_eval_finSuccEquivNth]
@@ -1360,7 +1278,7 @@ where
       --        (2) piFinset cons decomposition for D^(n+1-i) ↔ D × D^(n-i)
       sorry
   lift_complete := by
-    simp only [Simple.StmtOut, Simple.OStmtOut, Simple.StmtIn, Simple.OStmtIn,
+    simp only [Simple.StmtOut, Simple.OStmtOut, Simple.StmtIn,
       oCtxLens, relationRound, Fin.val_castSucc, Set.mem_ofPred_eq, Fin.val_succ,
       Prod.forall]
     unfold compatContext oStmtLens
@@ -1375,26 +1293,18 @@ instance extractorLens_rbr_knowledge_soundness :
     Extractor.Lens.IsKnowledgeSound
       (relationRound R n deg D i.castSucc) (Simple.inputRelation R deg D)
       (relationRound R n deg D i.succ) (Simple.outputRelation R deg)
-      ((Simple.oracleVerifier R deg D oSpec).toVerifier.compatStatement (oStmtLens R n deg D i))
+      ((Simple.oracleVerifier R deg D oSpec).toVerifier.compatStatement (oStmtLens R n deg i))
       (fun _ _ => True)
-      ⟨oStmtLens R n deg D i, Witness.InvLens.trivial⟩ where
+      (extractorLens R n deg D i) where
   proj_knowledgeSound := by
     -- simp [relationRound, Simple.outputRelation, Verifier.compatStatement,
     --   Simple.oracleVerifier_eq_verifier, Simple.verifier, Verifier.run]
     sorry
   lift_knowledgeSound := by
-    simp only [Simple.StmtIn, Simple.OStmtIn, Simple.inputRelation, sum_map,
+    simp only [Simple.StmtIn, Simple.inputRelation, sum_map,
       Statement.Lens.proj, Simple.StmtOut, Simple.OStmtOut, Set.mem_ofPred_eq,
       relationRound, Fin.val_castSucc, forall_const, Prod.forall]
-    unfold oStmtLens
-    unfold projectedRoundPolynomial
-    induction n with
-    | zero => exact Fin.elim0 i
-    | succ n ih =>
-      intro stmt oStmt hRelIn
-      simp at hRelIn ⊢
-      -- Now it's a statement about polynomials
-      sorry
+    sorry
 
 
 variable {σ : Type} {init : ProbComp σ} {impl : QueryImpl oSpec (StateT σ ProbComp)}
@@ -1439,7 +1349,6 @@ local instance : Inhabited R := ⟨0⟩
 local instance
   (i : Simple.OStmtOutIdx)
 : Inhabited (Simple.OStmtOut R deg i) := match i with
-  | .in => inferInstance
   | .message => inferInstance
   | .challenge => inferInstance
 
@@ -1450,8 +1359,8 @@ theorem oracleVerifier_rbrKnowledgeSoundness [Fintype R] :
     (relationRound R n deg D i.castSucc) (relationRound R n deg D i.succ)
     (fun _ => (deg : ℝ≥0) / Fintype.card R) :=
   OracleVerifier.liftContext_rbr_knowledgeSoundness
-    (stmtLens := oStmtExecutableLens R n deg D i)
-    (witLens := Witness.InvLens.trivial)
+    (stmtLens := oStmtExecutableLens R n deg i)
+    (witLens := witInvLens R n deg D i)
     (Simple.oracleVerifier R deg D oSpec)
     (liftContextOutput R n deg D oSpec i)
     (lensKS := by simpa using extractorLens_rbr_knowledge_soundness i)
@@ -1508,15 +1417,18 @@ namespace Unfolded
 @[reducible]
 def proverState (i : Fin n) : ProverState 2 where
   PrvState
-  | 0 => (StatementRound R n i.castSucc) × (∀ j, OracleStatementRound R n deg i.castSucc j)
-  | 1 => (StatementRound R n i.castSucc) × (∀ j, OracleStatementRound R n deg i.castSucc j) × (pSpec R deg).Message ⟨0, rfl⟩
-  | 2 => (StatementRound R n i.succ) × (∀ j, OracleStatementRound R n deg i.succ j)
+  | 0 => ((StatementRound R n i.castSucc) × (∀ j, OracleStatementRound R n deg i.castSucc j)) ×
+      WitnessPoly R n deg
+  | 1 => ((StatementRound R n i.castSucc) × (∀ j, OracleStatementRound R n deg i.castSucc j)) ×
+      WitnessPoly R n deg × (pSpec R deg).Message ⟨0, rfl⟩
+  | 2 => ((StatementRound R n i.succ) × (∀ j, OracleStatementRound R n deg i.succ j)) ×
+      WitnessPoly R n deg
 
 /-- Prover input for the `i`-th round of the sum-check protocol, where `i < n` -/
 def proverInput (i : Fin n) : ProverInput
     ((StatementRound R n i.castSucc) × (∀ j, OracleStatementRound R n deg i.castSucc j))
-    Unit ((proverState R n deg i).PrvState 0) where
-  input := Prod.fst
+    (WitnessPoly R n deg) ((proverState R n deg i).PrvState 0) where
+  input := id
 
 /-- Prover interaction for the `i`-th round of the sum-check protocol, where `i < n`. -/
 def proverRound (i : Fin n) : ProverRound oSpec (pSpec R deg) where
@@ -1527,41 +1439,41 @@ def proverRound (i : Fin n) : ProverRound oSpec (pSpec R deg) where
     match n with
     | 0 => Fin.elim0 i
     | n + 1 =>
-      let ⟨⟨_, challenges⟩, oStmt⟩ := state
-      let ⟨poly, hp⟩ := oStmt 0
+      let ⟨⟨⟨_, challenges⟩, _⟩, ⟨poly, hp⟩⟩ := state
       let message := ⟨∑ x ∈ (univ.map D) ^ᶠ (n - i), poly ⸨X ⦃i⦄, challenges, x⸩'(by simp; omega),
         sumcheck_roundPoly_degreeLE R n deg D i hp⟩
       pure ⟨ message,
           (
             state.1,
-            (oStmt, message)
+            (state.2, message)
           )⟩
   | ⟨1, h⟩ => nomatch h
 
   receiveChallenge
   | ⟨0, h⟩ => nomatch h
-  | ⟨1, _⟩ => fun ⟨⟨target, challenges⟩, (oStmt, message)⟩ => pure fun chal =>
-    let ⟨poly, hp⟩ := oStmt 0
+  | ⟨1, _⟩ => fun ⟨⟨⟨_, challenges⟩, oStmt⟩, (polyLE, message)⟩ => pure fun chal =>
     letI newChallenges : Fin i.succ → R := Fin.snoc challenges chal
-    letI newTarget := ∑ x ∈ (univ.map D) ^ᶠ (n - i - 1), poly ⸨newChallenges, x⸩'(by simp; omega)
-    ⟨⟨newTarget, newChallenges⟩, fun idx => match idx with
-      | .mvPoly => (oStmt .mvPoly)
+    letI newTarget :=
+      ∑ x ∈ (univ.map D) ^ᶠ (n - i - 1), polyLE.val ⸨newChallenges, x⸩'(by simp; omega)
+    ⟨⟨⟨newTarget, newChallenges⟩, fun idx => match idx with
       | .responsePoly => Fin.snoc (oStmt .responsePoly) message
       | .challenges => newChallenges
-    ⟩
+    ⟩, polyLE⟩
 
-/-- Since there is no witness, the prover's output for each round `i < n` of the sum-check protocol
-  is trivial -/
+/-- The prover's output for each round `i < n` of the sum-check protocol is its final state: the
+  next statement together with the unchanged witness polynomial. -/
 def proverOutput (i : Fin n) : ProverOutput oSpec
-    ((StatementRound R n i.succ × (∀ j, OracleStatementRound R n deg i.succ j)) × Unit)
+    ((StatementRound R n i.succ × (∀ j, OracleStatementRound R n deg i.succ j)) ×
+      WitnessPoly R n deg)
     ((proverState R n deg i).PrvState (Fin.last 2)) where
-  output := fun x => pure (x, ())
+  output := fun x => pure x
 
 /-- The overall prover for the `i`-th round of the sum-check protocol, where `i < n`. This is only
   well-defined for `n > 0`, since when `n = 0` there is no protocol. -/
 def prover (i : Fin n) : OracleProver oSpec
-    (StatementRound R n i.castSucc) (OracleStatementRound R n deg i.castSucc) Unit
-    (StatementRound R n i.succ) (OracleStatementRound R n deg i.succ) Unit (pSpec R deg) where
+    (StatementRound R n i.castSucc) (OracleStatementRound R n deg i.castSucc) (WitnessPoly R n deg)
+    (StatementRound R n i.succ) (OracleStatementRound R n deg i.succ) (WitnessPoly R n deg)
+    (pSpec R deg) where
   toProverState := proverState R n deg i
   toProverInput := proverInput R n deg i
   sendMessage := (proverRound R n deg D oSpec i).sendMessage
@@ -1577,7 +1489,6 @@ def verifier (i : Fin n) : Verifier oSpec
     let r_i : R := transcript 1
     guard (∑ x ∈ (univ.map D), p_i.eval x = target)
     pure ⟨⟨p_i.eval r_i, Fin.snoc challenges r_i⟩, fun idx => match idx with
-      | .mvPoly => oStmt .mvPoly
       | .responsePoly => Fin.snoc (oStmt .responsePoly) (transcript 0)
       | .challenges => Fin.snoc challenges r_i
     ⟩

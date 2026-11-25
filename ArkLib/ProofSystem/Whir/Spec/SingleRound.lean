@@ -460,8 +460,8 @@ noncomputable def sumcheckLens
     (InnerOStmtOut := Sumcheck.Spec.OracleStatementRound F num_vars (deg := 2) num_sumcheck_rounds)
     (OuterOStmtOut := OracleStatementMid domain num_vars num_sumcheck_rounds)
     (OuterWitIn := WitnessPreSumcheck F num_vars)
-    (InnerWitIn := Unit)
-    (InnerWitOut := Unit)
+    (InnerWitIn := Sumcheck.Spec.WitnessPoly F num_vars 2)
+    (InnerWitOut := Sumcheck.Spec.WitnessPoly F num_vars 2)
     (OuterWitOut := WitnessPostSumcheck F num_vars)
 where
   stmt := OracleStatement.sumcheckExecutableLens
@@ -1222,7 +1222,7 @@ where
       have :
         (fun round ↦ sumcheckChallenge round challenges) =
         (fun round : Fin (Fin.mk num_sumcheck_rounds h_num_sumcheck_rounds').val ↦ (
-          (f 2) ++ᵛ
+          (f 1) ++ᵛ
           (fun round ↦ sumcheckChallenge round challenges)
         ) (round.cast (by grind)))
       := by

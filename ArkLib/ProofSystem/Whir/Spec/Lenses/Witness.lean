@@ -28,11 +28,11 @@ noncomputable def sumcheckLens
     (∀ i, Sumcheck.Spec.OracleStatementRound F num_vars (deg := 2) num_sumcheck_rounds i)
   )
   (OuterWitIn := WitnessPreSumcheck F num_vars)
-  (InnerWitIn := Unit)
-  (InnerWitOut := Unit)
+  (InnerWitIn := Sumcheck.Spec.WitnessPoly F num_vars 2)
+  (InnerWitOut := Sumcheck.Spec.WitnessPoly F num_vars 2)
   (OuterWitOut := WitnessPostSumcheck F num_vars)
 where
-  toFunA _ := ()
+  toFunA outerIns := composePolynomials outerIns.2.f_hat (outerIns.1.2 .WeightPolynomial)
   toFunB outerIns innerOuts :=
     let outerWitnessIn := outerIns.2
     let outerOracleStatementIn := outerIns.1.2
