@@ -1942,8 +1942,18 @@ where
     let y0 : F ← OracleComp.queryBind
       (Sum.inr (Sum.inr (Sigma.mk ⟨2, rfl⟩ ())))
       (fun x => do return (.some x))
-
-    let y_one_plus : Fin num_queries → F := sorry -- folds
+    let y_one_plus : Vector F num_queries ←
+      (Vector.finRange num_queries).mapM (fun j => do
+        let z : F := (challenges ⟨3, rfl⟩).1 j
+        let point : Fin num_vars → F := fun v =>
+          if h : v.val < num_sumcheck_rounds.val
+          then sumcheck_statement.challenges ⟨v.val, h⟩
+          else z ^ (2 ^ (v.val - num_sumcheck_rounds.val))
+        let y : F ← OracleComp.queryBind
+          (Sum.inr (Sum.inl ⟨.CodeWordPolynomial, point⟩))
+          (fun x => do return (.some x))
+        return y)
+    let y_one_plus : Fin num_queries → F := y_one_plus.get
 
     let ys : Fin (num_queries + 1) → F := Fin.cases y0 y_one_plus
     let gamma_y_sum : F := ∑ i, γ^(i.val+1) * (ys i)
