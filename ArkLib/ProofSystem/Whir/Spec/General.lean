@@ -380,7 +380,8 @@ p. 33 - 3. + 4.
 abbrev pSpecFinal
          (F : Type) [Field F] [DecidableEq F]
          (num_vars : ℕ)
-         (repetition_param log_order : ℕ)
+         {log_order : ℕ}
+         (repetition_param : ℕ)
          (final_folding_parameter : ℕ)
          (domain : Domain.SmoothCosetFftDomain log_order F) : ProtocolSpec 2 :=
   ⟨
@@ -388,6 +389,8 @@ abbrev pSpecFinal
     !v[
       F⦃≤1⦄[X Fin num_vars],
       Fin repetition_param → domain.subdomain final_folding_parameter
+      -- L_{M-1}^{2^{k_{M-1}}}
+      --         _____________ this does this bit, so we need to pass `L_{M-1}`
     ]
   ⟩
 
@@ -396,7 +399,7 @@ instance {F} [Field F] [DecidableEq F] {num_vars} {repetition_param log_order : 
          {domain : Domain.SmoothCosetFftDomain log_order F} :
   ∀ j,
     OracleInterface (
-      (pSpecFinal F num_vars repetition_param log_order
+      (pSpecFinal F num_vars repetition_param
                   final_folding_parameter domain).Message j)
   | _ => OracleInterface.instDefault
 
@@ -448,19 +451,34 @@ noncomputable def proverFinal
     ⟨params.num_sumcheck_rounds params.num_whir_rounds,
       params.num_sumcheck_rounds_lt (round := lastRound)⟩
   OracleProver
-    (oSpec    := oSpec)
-    (StmtIn   := StatementRound domain lastRound ×
-                 Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
-    (OStmtIn  := OracleStatementMid (subdomainRec domain params.num_whir_rounds) remaining_vars
-                   last_num_sumcheck_rounds)
-    (WitIn    := WitnessPostSumcheck F remaining_vars)
-    (StmtOut  := StatementRound domain lastRound ×
-                 Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
-    (OStmtOut := OracleStatementMid (subdomainRec domain params.num_whir_rounds) remaining_vars
-                   last_num_sumcheck_rounds)
-    (WitOut   := WitnessPostSumcheck F remaining_vars)
-    (pSpec    := pSpecFinal F num_vars repetition_param log_order
-                            (params.num_sumcheck_rounds params.num_whir_rounds) domain) :=
+    (oSpec := oSpec)
+    (StmtIn :=
+      StatementRound domain lastRound ×
+      Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
+    (OStmtIn :=
+      OracleStatementMid
+        (subdomainRec domain params.num_whir_rounds)
+        remaining_vars
+        last_num_sumcheck_rounds
+    )
+    (WitIn := WitnessPostSumcheck F remaining_vars)
+    (StmtOut :=
+      StatementRound domain lastRound ×
+      Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
+    (OStmtOut :=
+      OracleStatementMid
+        (subdomainRec domain params.num_whir_rounds)
+        remaining_vars
+        last_num_sumcheck_rounds)
+    (WitOut := WitnessPostSumcheck F remaining_vars)
+    (pSpec :=
+      pSpecFinal
+        F
+        (remaining_vars - last_num_sumcheck_rounds)
+        repetition_param
+        last_num_sumcheck_rounds
+        (subdomainRec domain params.num_whir_rounds)
+    ) :=
     letI lastRound := Fin.last params.num_whir_rounds
     letI remaining_vars := numVarsRec num_vars params.num_sumcheck_rounds params.num_whir_rounds
     letI last_num_sumcheck_rounds : Fin (remaining_vars + 1) :=
@@ -518,18 +536,31 @@ noncomputable def verifierFinal
     ⟨params.num_sumcheck_rounds params.num_whir_rounds,
       params.num_sumcheck_rounds_lt (round := lastRound)⟩
   OracleVerifier
-    (oSpec    := oSpec)
-    (StmtIn   := StatementRound domain lastRound ×
-                 Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
-    (OStmtIn  := OracleStatementMid (subdomainRec domain params.num_whir_rounds) remaining_vars
-                   last_num_sumcheck_rounds)
-    (StmtOut  := StatementRound domain lastRound ×
-                 Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
-    (OStmtOut := OracleStatementMid (subdomainRec domain params.num_whir_rounds) remaining_vars
-                   last_num_sumcheck_rounds)
-    (pSpec    := pSpecFinal F num_vars repetition_param log_order
-                            (params.num_sumcheck_rounds params.num_whir_rounds) domain) where
-  verify := sorry -- the difficults
+    (oSpec := oSpec)
+    (StmtIn :=
+      StatementRound domain lastRound ×
+      Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
+    (OStmtIn :=
+      OracleStatementMid
+        (subdomainRec domain params.num_whir_rounds)
+        remaining_vars
+        last_num_sumcheck_rounds)
+    (StmtOut :=
+      StatementRound domain lastRound ×
+      Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
+    (OStmtOut :=
+      OracleStatementMid
+        (subdomainRec domain params.num_whir_rounds)
+        remaining_vars
+        last_num_sumcheck_rounds)
+    (pSpec :=
+      pSpecFinal
+        F
+        (remaining_vars - last_num_sumcheck_rounds)
+        repetition_param
+        last_num_sumcheck_rounds
+        (subdomainRec domain params.num_whir_rounds)) where
+  verify s charles := sorry
   outputOracle := sorry -- Claude this (nope)
 
 noncomputable def reductionFinal
@@ -549,19 +580,32 @@ noncomputable def reductionFinal
     ⟨params.num_sumcheck_rounds params.num_whir_rounds,
       params.num_sumcheck_rounds_lt (round := lastRound)⟩
   OracleReduction
-    (oSpec    := oSpec)
-    (StmtIn   := StatementRound domain lastRound ×
-                 Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
-    (OStmtIn  := OracleStatementMid (subdomainRec domain params.num_whir_rounds) remaining_vars
-                   last_num_sumcheck_rounds)
-    (StmtOut  := StatementRound domain lastRound ×
-                 Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
-    (OStmtOut := OracleStatementMid (subdomainRec domain params.num_whir_rounds) remaining_vars
-                   last_num_sumcheck_rounds)
-    (WitIn    := WitnessPostSumcheck F remaining_vars)
-    (WitOut   := WitnessPostSumcheck F remaining_vars)
-    (pSpec    := pSpecFinal F num_vars repetition_param log_order
-                            (params.num_sumcheck_rounds params.num_whir_rounds) domain)
+    (oSpec := oSpec)
+    (StmtIn :=
+      StatementRound domain lastRound ×
+      Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
+    (OStmtIn :=
+      OracleStatementMid
+        (subdomainRec domain params.num_whir_rounds)
+        remaining_vars
+        last_num_sumcheck_rounds)
+    (StmtOut :=
+      StatementRound domain lastRound ×
+      Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
+    (OStmtOut :=
+      OracleStatementMid
+        (subdomainRec domain params.num_whir_rounds)
+        remaining_vars
+        last_num_sumcheck_rounds)
+    (WitIn := WitnessPostSumcheck F remaining_vars)
+    (WitOut := WitnessPostSumcheck F remaining_vars)
+    (pSpec :=
+      pSpecFinal
+        F
+        (remaining_vars - last_num_sumcheck_rounds)
+        repetition_param
+        last_num_sumcheck_rounds
+        (subdomainRec domain params.num_whir_rounds))
 where
   prover := proverFinal oSpec domain params num_queries repetition_param
   verifier := verifierFinal oSpec domain params num_queries repetition_param
