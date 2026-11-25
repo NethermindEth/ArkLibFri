@@ -15,20 +15,18 @@ namespace Whir.Spec.Statement
 
 def sumcheckLens
   {F : Type} [Field F]
-  {log_order : ℕ}
-  (domain : Domain.SmoothCosetFftDomain log_order F)
   (num_vars : ℕ)
   (num_sumcheck_rounds : (Fin (num_vars + 1)))
 : Statement.Lens
-  (OuterStmtIn := Statement domain)
+  (OuterStmtIn := Statement F num_vars)
   (InnerStmtIn := Sumcheck.Spec.StatementRound F num_vars 0)
   (InnerStmtOut := Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
   (OuterStmtOut :=
-    (Statement domain) ×
+    (Statement F num_vars) ×
     (Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
   )
 where
-  toFunA (x : Statement domain) := {
+  toFunA (x : Statement F num_vars) := {
     target := x.target
     challenges := fun x => nomatch x
     : Sumcheck.Spec.StatementRound F num_vars 0
