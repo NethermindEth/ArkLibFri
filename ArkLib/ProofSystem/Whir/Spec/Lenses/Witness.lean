@@ -57,7 +57,11 @@ where
           (poly := polynomial)
     {
       f_hat := f_hat
-      h_k_hat := sorry
+      h_k_hat := ⟨h_k_hat, by
+        simp only [h_k_hat]
+        split
+        · exact Polynomial.mem_degreeLE.2 (Polynomial.degree_C_le.trans (by simp))
+        · exact Subtype.property _⟩
     }
 
 end Whir.Spec.Witness

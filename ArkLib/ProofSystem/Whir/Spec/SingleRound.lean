@@ -1236,8 +1236,7 @@ where
             (oSpec := oSpec)
             (i := i.castLE (by grind))
       exact this.symm
-
-
+#check Sumcheck.Spec.oracleVerifier
 noncomputable def sumcheckReduction
   {ι : Type} (oSpec : OracleSpec ι)
   {F : Type} [Field F] [DecidableEq F] [SampleableType F]
@@ -1258,11 +1257,39 @@ noncomputable def sumcheckReduction
     (WitOut := WitnessPostSumcheck F num_vars)
     (Sumcheck.Spec.pSpec F (deg := 2) num_sumcheck_rounds)
 := (
+  /-
+  (Establish: presumcheck verify does nothing, then this guy, then the rest verifier)
+
+  5.1. (Decision phase)
+  1. Check initial sumcheck:
+  a) Check that Σ_{b∈{0,1}} h_hat_{{0, 1}}(b) = σ₀.
+  b) Check that Σ_{b∈{0,1}} h_hat_{{0, ℓ}}(b) = h_hat_{{0, ℓ - 1}}(α₀, ℓ-1) for ℓ ∈ {2, ..., k₀}
+  
+  Trace:
+    1. `Sumcheck.Spec.partialOracleReduction`
+    2. `oracleReduction_verifier_eq_oracleVerifier`
+    3. `Sumcheck.Spec.oracleVerifier`
+    4. `Sumcheck.Spec.partialOracleVerifier`
+    5. `SingleRound.oracleVerifier`
+    6. `Simple.oracleVerifier`
+  
+  I am not checking how the sumcheck check is implemented, but we're probably calling it wrong.
+
+  `Sumcheck.Spec.SingleRound.Simple.oracleVerifier :`
+  `(R : Type) = F`
+  `[CommSemiring R]`
+  `(deg : ℕ) = 2` -- TODO(probably not a bug) - is this ok because we multiply a (multi)linear poly with (multi)linear weight?
+  `{m : ℕ} = 2^log_order` -- TODO(bug?), the paper says `b∈{0,1}`
+  `(D : Fin m ↪ R) = ↑domain` -- TODO(bug?), and I guess not the smooth Cosette domain, but just
+                              -- something silly like x : Fun m ↦ match x with | 0 ↦ (0 : R) | 1 → 1
+  `{ι : Type}`
+  `(oSpec : OracleSpec ι) [DecidableEq R]`
+  -/
   Sumcheck.Spec.partialOracleReduction
     (R := F)
     (deg := 2)
-    (m := 2^log_order)
-    ↑domain
+    (m := 2^log_order) -- TODO(bug?)
+    ↑domain -- TODO(bug?)
     (n := num_vars)
     oSpec
     num_sumcheck_rounds
@@ -1924,6 +1951,50 @@ noncomputable def restVerifier
     (restPSpec domain num_sumcheck_rounds num_queries)
 where
   verify statement challenges := do
+    /-
+      2. Check main loop: For i = 1, ..., M - 1:
+    -/
+    /-
+      a) Let gᵢ₋₁ := Fold(fᵢ₋₁, αᵢ₋₁).
+    -/
+
+    /-
+      top level function params:
+      domain - `L` with `2^log_order` points
+      num_vars - `m`, the number of variables of `f_hat`
+      num_sumcheck_rounds - `k`, the folding factor
+      num_queries - `t` (look into this)
+
+      this function params:
+      statement = whirStuff × sumcheckStuff
+      whirStuff = `σ` (target value) and `w_hat` (the weights)
+      sumcheckStuff = `α` - challenges, and the 'new' target `h_hatₖ(αₖ)`
+
+      challenges
+        - 0 - foldedFunction
+        - 1 - outOfDomainSample
+        - 2 - outOfDomainAnswer
+        - 3 - shiftQueriesAndCombinationRandomness
+            - `Fin num_queries → ↥(Domain.CosetFftDomain.toFinset (Domain.CosetFftDomain.subdomain domain ↑num_sumcheck_rounds))`
+            - ???? (of type `F`) - combination randomness?
+
+      from monad:
+        Query :=
+        - not sure yet
+        | ⟨0, _⟩ => domain.subdomain 1 → F
+        - a unit?
+        | ⟨2, _⟩ => Unit → F
+
+      - `f`
+      `| .CodeWord => OracleStatement domain num_vars .CodeWord`
+      - `f_hat`
+      `| .CodeWordPolynomial => OracleStatement domain num_vars .CodeWordPolynomial`
+      - `h_k`
+      `| .SumcheckResult => F⦃≤ 2⦄[X]`
+      - is this `α` from challenges?
+      `| .SumcheckChallenges => Fin num_sumcheck_rounds → F`
+
+    -/    
     let sumcheck_statement := statement.2
     let alpha_k : F := sumcheck_statement.challenges ⟨num_sumcheck_rounds - 1, by grind⟩
     let h_hat_k_of_alpha_k : F ← OracleComp.queryBind
