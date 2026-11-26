@@ -48,10 +48,11 @@ def sendFoldedFunction
     {F : Type} [Field F] [DecidableEq F]
     {n : ℕ}
     (domain : Domain.SmoothCosetFftDomain n F)
+    (k : ℕ)
 : ProtocolSpec 1 :=
     ⟨
         !v[.P_to_V],
-        !v[domain.subdomain 1 → F]
+        !v[domain.subdomain k → F]
     ⟩
 
 def outOfDomainSample (F : Type)
@@ -1282,7 +1283,7 @@ def restPSpec
   (num_sumcheck_rounds : Fin (num_vars + 1))
   (num_queries : ℕ)
 : ProtocolSpec 4 :=
-  (pSpec.sendFoldedFunction domain) ++ₚ
+  (pSpec.sendFoldedFunction domain num_sumcheck_rounds) ++ₚ
   (pSpec.outOfDomainSample F) ++ₚ
   (pSpec.outOfDomainAnswer F) ++ₚ
   (pSpec.shiftQueriesAndCombinationRandomness num_sumcheck_rounds num_queries domain)
@@ -1332,7 +1333,7 @@ instance restPSpecInstance
 : OracleInterface ((restPSpec domain num_sumcheck_rounds num_queries).Message idx)
 where
   Query := match idx with
-    | ⟨0, _⟩ =>  domain.subdomain 1
+    | ⟨0, _⟩ =>  domain.subdomain num_sumcheck_rounds.1
     | ⟨1, h⟩ => nomatch h
     | ⟨2, _⟩ => Unit
     | ⟨3, h⟩ => nomatch h
@@ -1374,7 +1375,7 @@ structure ProverStateRound1
 where
   α : Fin num_sumcheck_rounds → F
   f_hat : F⦃≤ 1⦄[X Fin num_vars]
-  g : (domain.subdomain 1) → F
+  g : (domain.subdomain num_sumcheck_rounds) → F
   g_hat : F⦃≤ 1⦄[X Fin (num_vars - num_sumcheck_rounds)]
   ω_hat : F⦃≤ 1⦄[X Fin (num_vars + 1)]
   h_hat_k : F⦃≤ 2⦄[X]
@@ -1389,7 +1390,7 @@ structure ProverStateRound2
 where
   α : Fin num_sumcheck_rounds → F
   f_hat : F⦃≤ 1⦄[X Fin num_vars]
-  g : (domain.subdomain 1) → F
+  g : (domain.subdomain num_sumcheck_rounds) → F
   g_hat : F⦃≤ 1⦄[X Fin (num_vars - num_sumcheck_rounds)]
   h_hat_k : F⦃≤ 2⦄[X]
   ω_hat : F⦃≤ 1⦄[X Fin (num_vars + 1)]
@@ -1405,7 +1406,7 @@ structure ProverStateRound3
 where
   α : Fin num_sumcheck_rounds → F
   f_hat : F⦃≤ 1⦄[X Fin num_vars]
-  g : (domain.subdomain 1) → F
+  g : (domain.subdomain num_sumcheck_rounds) → F
   g_hat : F⦃≤ 1⦄[X Fin (num_vars - num_sumcheck_rounds)]
   h_hat_k : F⦃≤ 2⦄[X]
   ω_hat : F⦃≤ 1⦄[X Fin (num_vars + 1)]
@@ -1423,7 +1424,7 @@ structure ProverStateRound4
 where
   α : Fin num_sumcheck_rounds → F
   f_hat : F⦃≤ 1⦄[X Fin num_vars]
-  g : (domain.subdomain 1) → F
+  g : (domain.subdomain num_sumcheck_rounds) → F
   g_hat : F⦃≤ 1⦄[X Fin (num_vars - num_sumcheck_rounds)]
   γ : F
   h_hat_k : F⦃≤ 2⦄[X]
@@ -1584,7 +1585,7 @@ noncomputable def restProver
     (OracleStatementMid domain num_vars num_sumcheck_rounds)
     (WitnessPostSumcheck F num_vars)
     (Statement F (num_vars - num_sumcheck_rounds))
-    (OracleStatementPre (Domain.CosetFftDomain.subdomain domain 1))
+    (OracleStatementPre (Domain.CosetFftDomain.subdomain domain num_sumcheck_rounds.1))
     (WitnessPreSumcheck F (num_vars - num_sumcheck_rounds))
     (restPSpec domain num_sumcheck_rounds num_queries)
 where
@@ -1685,7 +1686,7 @@ where
                 simp
             · simp at h'
         ⟩
-      let g : domain.subdomain 1 → F := fun x =>
+      let g : domain.subdomain num_sumcheck_rounds.1 → F := fun x =>
         MvPolynomial.eval (fun i ↦ (x : F) ^ (2 ^ i.1)) g_hat.1
       let msg := g
       let newState := {
@@ -1920,7 +1921,7 @@ noncomputable def restVerifier
     (Statement F num_vars × Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds)
     (OracleStatementMid domain num_vars num_sumcheck_rounds)
     (Statement F (num_vars - num_sumcheck_rounds))
-    (OracleStatementPre (Domain.CosetFftDomain.subdomain domain 1))
+    (OracleStatementPre (Domain.CosetFftDomain.subdomain domain num_sumcheck_rounds.1))
     (restPSpec domain num_sumcheck_rounds num_queries)
 where
   verify statement challenges := do
@@ -1937,13 +1938,9 @@ where
       (fun x => do return (.some x))
     let y_one_plus : Vector F num_queries ←
       (Vector.finRange num_queries).mapM (fun j => do
-        let z : F := (challenges ⟨3, rfl⟩).1 j
-        let point : Fin num_vars → F := fun v =>
-          if h : v.val < num_sumcheck_rounds.val
-          then sumcheck_statement.challenges ⟨v.val, h⟩
-          else z ^ (2 ^ (v.val - num_sumcheck_rounds.val))
+        let z := (challenges ⟨3, rfl⟩).1 j
         let y : F ← OracleComp.queryBind
-          (Sum.inr (Sum.inl ⟨.CodeWordPolynomial, point⟩))
+          (Sum.inr (Sum.inr ⟨⟨0, by rfl⟩, z⟩))
           (fun x => do return (.some x))
         return y)
     let y_one_plus : Fin num_queries → F := y_one_plus.get
@@ -2018,7 +2015,7 @@ noncomputable def restReduction
     (OStmtIn := (OracleStatementMid domain num_vars num_sumcheck_rounds))
     (WitIn := WitnessPostSumcheck F num_vars)
     (StmtOut := (Statement F (num_vars - num_sumcheck_rounds)))
-    (OStmtOut := (OracleStatementPre (domain.subdomain 1)))
+    (OStmtOut := (OracleStatementPre (domain.subdomain num_sumcheck_rounds)))
     (WitOut := WitnessPreSumcheck F (num_vars - num_sumcheck_rounds))
     (pSpec := restPSpec domain num_sumcheck_rounds num_queries)
 where
@@ -2059,7 +2056,7 @@ noncomputable def oracleReduction
     (OStmtIn := OracleStatementPre domain)
     (WitIn := WitnessPreSumcheck F num_vars)
     (StmtOut := Statement F (num_vars - num_sumcheck_rounds))
-    (OStmtOut := OracleStatementPre (domain.subdomain 1))
+    (OStmtOut := OracleStatementPre (domain.subdomain num_sumcheck_rounds))
     (WitOut := WitnessPreSumcheck F (num_vars - num_sumcheck_rounds))
     (pSpec :=
       preSumcheckPSpec F num_vars ++ₚ
