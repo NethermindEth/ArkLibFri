@@ -2014,7 +2014,7 @@ where
           then sumcheck_statement.challenges ⟨v.val, h⟩
           else z ^ (2 ^ (v.val - num_sumcheck_rounds.val))
         let y : F ← OracleComp.queryBind
-          (Sum.inr (Sum.inl ⟨.CodeWordPolynomial, point⟩))
+          (Sum.inr (Sum.inl ⟨.CodeWordPolynomial, point⟩)) -- this is not `f` but `f_hat`
           (fun x => do return (.some x))
         return y)
     let y_one_plus : Fin num_queries → F := y_one_plus.get
