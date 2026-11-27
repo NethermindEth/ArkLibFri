@@ -5,6 +5,7 @@ Authors: Dom Henderson
 -/
 
 import ArkLib.ProofSystem.Whir.Spec.SingleRound
+import ArkLib.Data.CodingTheory.ProximityGap.Folding
 
 namespace Whir
 
@@ -242,7 +243,6 @@ abbrev pSpecDefeqViable
   (h : num_sumcheck_rounds round < numVarsRec num_vars num_sumcheck_rounds round + 1) :=
   let r : Fin (numVarsRec num_vars num_sumcheck_rounds round + 1) :=
     ⟨num_sumcheck_rounds round, h⟩
-  preSumcheckPSpec F (numVarsRec num_vars num_sumcheck_rounds round) ++ₚ
   Sumcheck.Spec.pSpec F (deg := 2) r ++ₚ
   restPSpec (subdomainRec domain round) r num_queries
 
@@ -322,13 +322,9 @@ noncomputable def lastRound
     (WitIn    := WitnessPreSumcheck F remaining_vars)
     (StmtOut  := StatementRound F num_vars params.num_sumcheck_rounds (Fin.last round) ×
                  Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
-    (OStmtOut := OracleStatementMid
-                   (subdomainRec domain round)
-                   remaining_vars
-                   last_num_sumcheck_rounds)
-    (WitOut   := WitnessPostSumcheck F remaining_vars)
-    (pSpec    := preSumcheckPSpec F remaining_vars ++ₚ
-                 Sumcheck.Spec.pSpec F 2 last_num_sumcheck_rounds) :=
+    (OStmtOut := OracleStatementMid (subdomainRec domain round))
+    (WitOut   := WitnessPreSumcheck F remaining_vars)
+    (pSpec    := Sumcheck.Spec.pSpec F 2 last_num_sumcheck_rounds) :=
   letI ω := subdomainRec domain params.num_whir_rounds
   letI remaining_vars := numVarsRec num_vars params.num_sumcheck_rounds params.num_whir_rounds
   letI last_num_sumcheck_rounds : Fin (remaining_vars + 1) :=
@@ -336,21 +332,12 @@ noncomputable def lastRound
       params.num_sumcheck_rounds params.num_whir_rounds,
       (params.num_sumcheck_rounds_lt (round := Fin.last _))
     ⟩
-  OracleReduction.append
-    (
-      preSumcheckReduction
-        oSpec
-        ω
-        remaining_vars
-    )
-    (
-      sumcheckReduction
-        oSpec
-        ω
-        remaining_vars
-        last_num_sumcheck_rounds
-        (by grind)
-    )
+  sumcheckReduction
+    oSpec
+    ω
+    remaining_vars
+    last_num_sumcheck_rounds
+    (by grind)
 
 -- I think we just want the second part of this.
 -- /-- The final folding round of the FRI protocol begins with the verifier sending a random field
@@ -433,10 +420,10 @@ open MvPolynomial in
 theorem eval₂_vappend_C_X_mem_restrictDegree_one {F : Type} [Field F] {n k m : ℕ}
     (h : n = k + m) (c : Fin k → MvPolynomial (Fin m) F) (hc : ∀ i, ∃ a, c i = C a)
     (p : MvPolynomial (Fin n) F) (hp : p ∈ restrictDegree (Fin n) F 1) :
-    eval₂ C (fun i => Fin.vappend c (fun j : Fin m => X j) (Fin.cast h i)) p
+    eval₂ C (fun i => Fin.vappend c (fun j : Fin m => MvPolynomial.X j) (Fin.cast h i)) p
       ∈ restrictDegree (Fin m) F 1 := by
   have key : ∀ (v : Fin m) (j : Fin (k + m)),
-      degreeOf v (Fin.vappend c (fun j : Fin m => X j) j) ≠ 0 → j = Fin.natAdd k v := by
+      degreeOf v (Fin.vappend c (fun j : Fin m => MvPolynomial.X j) j) ≠ 0 → j = Fin.natAdd k v := by
     intro v j hj
     induction j using Fin.addCases with
     | left j =>
@@ -481,19 +468,15 @@ noncomputable def proverFinal
     (OStmtIn :=
       OracleStatementMid
         (subdomainRec domain params.num_whir_rounds)
-        remaining_vars
-        last_num_sumcheck_rounds
     )
-    (WitIn := WitnessPostSumcheck F remaining_vars)
+    (WitIn := WitnessPreSumcheck F remaining_vars)
     (StmtOut :=
       StatementRound F num_vars params.num_sumcheck_rounds lastRound ×
       Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
     (OStmtOut :=
       OracleStatementMid
-        (subdomainRec domain params.num_whir_rounds)
-        remaining_vars
-        last_num_sumcheck_rounds)
-    (WitOut := WitnessPostSumcheck F remaining_vars)
+        (subdomainRec domain params.num_whir_rounds))
+    (WitOut := WitnessPreSumcheck F remaining_vars)
     (pSpec :=
       pSpecFinal
         F
@@ -512,10 +495,9 @@ noncomputable def proverFinal
       (
         (StatementRound F num_vars params.num_sumcheck_rounds lastRound ×
           Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds) ×
-        (∀ j, OracleStatementMid (subdomainRec domain params.num_whir_rounds) remaining_vars
-          last_num_sumcheck_rounds j)
+        (∀ j, OracleStatementMid (subdomainRec domain params.num_whir_rounds) j)
       ) ×
-      WitnessPostSumcheck F remaining_vars
+      WitnessPreSumcheck F remaining_vars
 
     input := id
     sendMessage := fun i state ↦
@@ -566,17 +548,13 @@ noncomputable def verifierFinal
       Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
     (OStmtIn :=
       OracleStatementMid
-        (subdomainRec domain params.num_whir_rounds)
-        remaining_vars
-        last_num_sumcheck_rounds)
+        (subdomainRec domain params.num_whir_rounds))
     (StmtOut :=
       StatementRound F num_vars params.num_sumcheck_rounds lastRound ×
       Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
     (OStmtOut :=
       OracleStatementMid
-        (subdomainRec domain params.num_whir_rounds)
-        remaining_vars
-        last_num_sumcheck_rounds)
+        (subdomainRec domain params.num_whir_rounds))
     (pSpec :=
       pSpecFinal
         F
@@ -595,15 +573,16 @@ noncomputable def verifierFinal
     let rs := challenges ⟨1, rfl⟩
     let gs : Vector F repetition_param ←
       (Vector.finRange repetition_param).mapM (fun ℓ => do
-        let r : F := rs ℓ
-        let point : Fin remaining_vars → F := fun v =>
-          if h : v.val < k
-          then αs ⟨v.val, h⟩
-          else r ^ (2 ^ (v.val - k))
-        let g : F ← OracleComp.queryBind
-          (Sum.inr (Sum.inl ⟨.CodeWordPolynomial, point⟩))
-          (fun x => do return (.some x))
-        return g)
+        let ω := subdomainRec domain params.num_whir_rounds
+        let z := rs ℓ
+        let values ← (Vector.finRange (2 ^ subdomainRec_aux log_order params.num_whir_rounds)).mapM
+          fun i =>
+            if ω i ^ 2 ^ k = z.1
+            then OptionT.mk (OracleComp.queryBind
+              (Sum.inr (Sum.inl ⟨.CodeWord, ⟨ω i, Domain.CosetFftDomain.mem_toFinset_self⟩⟩))
+              (fun y => pure (some y)))
+            else pure 0
+        return ProximityGap.iteratedFoldWord ω values.get k αs ((ω.subdomain k).log z))
     guard (∀ ℓ : Fin repetition_param,
       MvPolynomial.eval (fun j => ((rs ℓ : F)) ^ (2 ^ j.val)) f_hat_M.val = gs.get ℓ)
     let w_hat_sum : F := ∑ b : Fin (remaining_vars - k) → Fin 2,
@@ -645,19 +624,15 @@ noncomputable def reductionFinal
       Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
     (OStmtIn :=
       OracleStatementMid
-        (subdomainRec domain params.num_whir_rounds)
-        remaining_vars
-        last_num_sumcheck_rounds)
+        (subdomainRec domain params.num_whir_rounds))
     (StmtOut :=
       StatementRound F num_vars params.num_sumcheck_rounds lastRound ×
       Sumcheck.Spec.StatementRound F remaining_vars last_num_sumcheck_rounds)
     (OStmtOut :=
       OracleStatementMid
-        (subdomainRec domain params.num_whir_rounds)
-        remaining_vars
-        last_num_sumcheck_rounds)
-    (WitIn := WitnessPostSumcheck F remaining_vars)
-    (WitOut := WitnessPostSumcheck F remaining_vars)
+        (subdomainRec domain params.num_whir_rounds))
+    (WitIn := WitnessPreSumcheck F remaining_vars)
+    (WitOut := WitnessPreSumcheck F remaining_vars)
     (pSpec :=
       pSpecFinal
         F
@@ -720,7 +695,6 @@ noncomputable def reductionFinalFull
 
 end
 
--- NOTE: `preSumcheckReduction` is actually the one we need for the step `p. 33 step 3.`
 
 
 -- noncomputable def reductionFinal
