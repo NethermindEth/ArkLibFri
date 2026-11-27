@@ -1933,6 +1933,96 @@ theorem simulateQ_vector_mapM_of_pure {ι : Type} {spec : OracleSpec ι} {r : Ty
   simp only [hf, List.mapM_pure, map_pure, Vector.toArray_map]
   exact congrArg pure (Array.ext' (by simp))
 
+section SubdomainSqrt
+
+variable {F : Type} [Field F] [DecidableEq F]
+  {log_order : ℕ} [NeZero log_order]
+  {domain : Domain.SmoothCosetFftDomain log_order F}
+  {m : Type → Type} [Monad m]
+
+@[grind =]
+theorem mem_subdomain_one_iff_exists_sq {x : F} :
+  x ∈ (domain.subdomain 1).toFinset ↔ ∃ y : domain, y.1 * y.1 = x := by
+  open Domain CosetFftDomainClass in
+  rw [CosetFftDomain.mem_toFinset_iff_mem]
+  constructor
+  · intro hx
+    obtain ⟨y, hy, rfl⟩ :=
+      root_exists (ω := domain) (i := 0) (j := 1) NeZero.one_le (by simpa using hx)
+    exact ⟨⟨y, CosetFftDomain.mem_toFinset_iff_mem.2 (mem_subdomain_0_iff_mem.1 hy)⟩, by ring⟩
+  · rintro ⟨⟨y, hy⟩, rfl⟩
+    simpa [← pow_two] using pow_mem_subdomain_of_mem_subdomain_0 (ω := domain) (i := 1)
+      NeZero.one_le (mem_subdomain_0_iff_mem.2 (CosetFftDomain.mem_toFinset_iff_mem.1 hy))
+
+noncomputable def subdomainSqrt
+  (z : domain.subdomain 1) : domain := (mem_subdomain_one_iff_exists_sq.1 z.2).choose
+
+namespace IKnowWhatIamDoing
+
+scoped prefix:max "√" => subdomainSqrt
+
+scoped instance (priority := low) instNegDomain : Neg domain where
+  neg x :=
+    ⟨
+      -x.1,
+      Domain.CosetFftDomain.mem_toFinset_iff_mem.2
+        (Domain.CosetFftDomainClass.neg_mem_domain_of_mem
+          (Domain.CosetFftDomain.mem_toFinset_iff_mem.1 x.2))
+    ⟩
+
+@[simp, grind _=_]
+lemma neg_domain_val {x : domain} : (-x).1 = -x.1 := rfl
+
+end IKnowWhatIamDoing
+
+open IKnowWhatIamDoing in
+omit [NeZero log_order] in
+/--
+Paper's `Fold`.
+The `domain` has a square root of `z`, so I noncomputably choose the one I want,
+because I am evil 😈.
+
+Junk value `0` when `log_order = 0`, where `domain` has a single point and no square roots.
+-/
+noncomputable def foldAtPoint
+  (f : domain → m F) -- codeword
+  (α : F) -- challenge
+  (z : domain.subdomain 1) -- evaluation_point
+  : m F :=
+  if h : log_order = 0 then pure 0 else
+  haveI : NeZero log_order := ⟨h⟩
+  do
+  let x   : domain := √z
+  let fx  : F      ← f x
+  let fy  : F      ← f (-x)
+  let lhs : F      := (fx + fy) / 2
+  let rhs : F      := α * ((fx - fy) / (2 * x))
+  return lhs + rhs
+
+omit [NeZero log_order] in
+/--
+Paper's hidden recursive `Fold`. Who's evil 😈 now...
+
+> For k ≤ m and α=(α1,...,αk) ∈ Fk we define Fold(f,α): L(2k) → F to equal Fold(f,α) := fk
+> where fk is defined recursively as follows: f0 := f, and fi := Fold(fi−1,αi).
+> For a set S ⊆ FL we sometimes denote Fold(S,α) := {Fold(f,α) | f ∈ S}.
+-/
+noncomputable def foldAtPointRec
+  (f : domain → m F) -- codeword
+  (k : ℕ) -- folding_factor
+  (α : Fin k → F) -- challenges
+  (z : domain.subdomain k) -- evaluation_point
+  : m F :=
+  match k with
+  | 0 => f ⟨z.1, by simpa using z.2⟩
+  | k + 1 =>
+    foldAtPoint
+      (foldAtPointRec f k (Fin.init α))
+      (α (Fin.last k))
+      ⟨z.1, by simp⟩
+
+end SubdomainSqrt
+
 open Polynomial MvPolynomial in
 noncomputable def restVerifier
   {OSpecIdx : Type} (oSpec : OracleSpec OSpecIdx)
@@ -1950,126 +2040,156 @@ noncomputable def restVerifier
     (OracleStatementMid domain num_vars num_sumcheck_rounds)
     (Statement F (num_vars - num_sumcheck_rounds))
     (OracleStatementPre (Domain.CosetFftDomain.subdomain domain num_sumcheck_rounds.1))
-    (restPSpec domain num_sumcheck_rounds num_queries)
-where
-  verify statement challenges := do
-    /-
-      2. Check main loop: For i = 1, ..., M - 1:
-    -/
-    /-
-      a) Let gᵢ₋₁ := Fold(fᵢ₋₁, αᵢ₋₁).
-    -/
+    (restPSpec domain num_sumcheck_rounds num_queries) :=
+    letI State :=
+      OracleComp (
+        oSpec +
+        ([OracleStatementMid domain num_vars num_sumcheck_rounds]ₒ +
+         [(restPSpec domain num_sumcheck_rounds num_queries).Message]ₒ)
+      ) F
+    {
+      verify statement challenges := do
+        /-
+          2. Check main loop: For i = 1, ..., M - 1:
+        -/
+        /-
+          top level function params:
+          domain - `L` with `2^log_order` points
+          num_vars - `m`, the number of variables of `f_hat`
+          num_sumcheck_rounds - `k`, the folding factor
+          num_queries - `t` (look into this)
 
-    /-
-      top level function params:
-      domain - `L` with `2^log_order` points
-      num_vars - `m`, the number of variables of `f_hat`
-      num_sumcheck_rounds - `k`, the folding factor
-      num_queries - `t` (look into this)
+          this function params:
+          statement = whirStuff × sumcheckStuff
+          whirStuff = `σ` (target value) and `w_hat` (the weights)
+          sumcheckStuff = `α` - challenges, and the 'new' target `h_hatₖ(αₖ)`
 
-      this function params:
-      statement = whirStuff × sumcheckStuff
-      whirStuff = `σ` (target value) and `w_hat` (the weights)
-      sumcheckStuff = `α` - challenges, and the 'new' target `h_hatₖ(αₖ)`
+          challenges
+            - 0 - foldedFunction
+            - 1 - outOfDomainSample
+            - 2 - outOfDomainAnswer
+            - 3 - shiftQueriesAndCombinationRandomness
+                - `Fin num_queries → ↥(Domain.CosetFftDomain.toFinset (Domain.CosetFftDomain.subdomain domain ↑num_sumcheck_rounds))`
+                - ???? (of type `F`) - combination randomness?
 
-      challenges
-        - 0 - foldedFunction
-        - 1 - outOfDomainSample
-        - 2 - outOfDomainAnswer
-        - 3 - shiftQueriesAndCombinationRandomness
-            - `Fin num_queries → ↥(Domain.CosetFftDomain.toFinset (Domain.CosetFftDomain.subdomain domain ↑num_sumcheck_rounds))`
-            - ???? (of type `F`) - combination randomness?
+          from monad:
+            Query :=
+            - not sure yet
+            | ⟨0, _⟩ => domain.subdomain 1 → F
+            - a unit?
+            | ⟨2, _⟩ => Unit → F
 
-      from monad:
-        Query :=
-        - not sure yet
-        | ⟨0, _⟩ => domain.subdomain 1 → F
-        - a unit?
-        | ⟨2, _⟩ => Unit → F
+          - `f`
+          `| .CodeWord => OracleStatement domain num_vars .CodeWord`
+          - `f_hat`
+          `| .CodeWordPolynomial => OracleStatement domain num_vars .CodeWordPolynomial`
+          - `h_k`
+          `| .SumcheckResult => F⦃≤ 2⦄[X]`
+          - is this `α` from challenges?
+          `| .SumcheckChallenges => Fin num_sumcheck_rounds → F`
 
-      - `f`
-      `| .CodeWord => OracleStatement domain num_vars .CodeWord`
-      - `f_hat`
-      `| .CodeWordPolynomial => OracleStatement domain num_vars .CodeWordPolynomial`
-      - `h_k`
-      `| .SumcheckResult => F⦃≤ 2⦄[X]`
-      - is this `α` from challenges?
-      `| .SumcheckChallenges => Fin num_sumcheck_rounds → F`
+        -/
+        let f_sub_i_sub_one : domain → State :=
+          fun x ↦ OracleComp.queryBind (Sum.inr (Sum.inl ⟨.CodeWord, x⟩)) pure
 
-    -/    
-    let sumcheck_statement := statement.2
-    let alpha_k : F := sumcheck_statement.challenges ⟨num_sumcheck_rounds - 1, by grind⟩
-    let h_hat_k_of_alpha_k : F ← OracleComp.queryBind
-      (Sum.inr (Sum.inl (Sigma.mk OracleIdxMid.SumcheckResult alpha_k)))
-      (fun x => do return (.some x))
+        /-
+          a) Let gᵢ₋₁ := Fold(fᵢ₋₁, αᵢ₋₁).
+        -/
+        let g :=
+          foldAtPointRec
+            f_sub_i_sub_one -- fᵢ₋₁
+            num_sumcheck_rounds -- k
+            statement.2.challenges -- αᵢ₋₁
 
-    let γ : F := (challenges ⟨3, rfl⟩).2
+        /-
+          b) ... appropriate locations.
+          NB: Technically, the appropriate locations are `fx ← f x` and `f (-x)` in `foldAtPoint`.
+        -/
+        let shiftPoints := (challenges restPSpec.shiftQueriesAndCombinationRandomness).1
 
-    let y0 : F ← OracleComp.queryBind
-      (Sum.inr (Sum.inr (Sigma.mk ⟨2, rfl⟩ ())))
-      (fun x => do return (.some x))
+        let gMapShitfpoints ← (Vector.finRange num_queries).mapM (fun j ↦ g (shiftPoints j))
 
-    let y_one_plus : Vector F num_queries ←
-      (Vector.finRange num_queries).mapM (fun j => do
-        let z := (challenges ⟨3, rfl⟩).1 j
-        let y : F ← OracleComp.queryBind
-          (Sum.inr (Sum.inr ⟨⟨0, by rfl⟩, z⟩))
-          (fun x => do return (.some x))
-        return y)
-    let y_one_plus : Fin num_queries → F := y_one_plus.get
+        return sorry
 
-    let ys : Fin (num_queries + 1) → F := Fin.cases y0 y_one_plus
-    let gamma_y_sum : F := ∑ i, γ^(i.val+1) * (ys i)
-    let newTarget : F := h_hat_k_of_alpha_k + gamma_y_sum
-    let αs : Fin num_sumcheck_rounds → F := sumcheck_statement.challenges
-    let αs_poly : Fin num_sumcheck_rounds → F[X Fin (num_vars - num_sumcheck_rounds + 1)] :=
-      fun i => MvPolynomial.C (αs i)
-    let w_hat_vars : Fin (num_vars + 1) → _ := Fin.cases
-      (MvPolynomial.X 0)
-      (fun (x : Fin num_vars) => if h: x.val < num_sumcheck_rounds
-        then αs_poly ⟨x.val, h⟩
-        else  MvPolynomial.X (Fin.mk (x.val - num_sumcheck_rounds + 1) (by grind))
-      )
-    let w_hat : F[X Fin (num_vars - num_sumcheck_rounds + 1)] :=
-      MvPolynomial.eval₂ MvPolynomial.C w_hat_vars statement.1.weightPolynomial.val
-    let z0 := challenges restPSpec.outOfDomainSample
-    let zs : Fin (num_queries + 1) → F :=
-      Fin.cases z0 ((challenges restPSpec.shiftQueriesAndCombinationRandomness).1 ·)
-    let γ_poly : F[X Fin (num_vars - num_sumcheck_rounds + 1)] := MvPolynomial.C γ
+        -- let sumcheck_statement := statement.2
+        -- let alpha_k : F := sumcheck_statement.challenges ⟨num_sumcheck_rounds - 1, by grind⟩
+        -- let h_hat_k_of_alpha_k : F ← OracleComp.queryBind
+        --   (Sum.inr (Sum.inl (Sigma.mk OracleIdxMid.SumcheckResult alpha_k)))
+        --   (fun x => do return (.some x))
 
-    let eq
-      : Fin (num_queries + 1 ) → F[X Fin (num_vars - num_sumcheck_rounds + 1)]
-    := fun i =>
-      ∏ (j : Fin (num_vars - num_sumcheck_rounds)), (
-        let b := (MvPolynomial.C ((zs i)^(2^j.val)))
-        let z := (MvPolynomial.X j.succ)
-        b*z + (1 - b) * (1 - z)
-      )
+        -- let γ : F := (challenges ⟨3, rfl⟩).2
 
-    let sum : F[X Fin (num_vars - num_sumcheck_rounds + 1)] :=
-      ∑ (i: Fin (num_queries + 1)), γ_poly^(i.val + 1) * eq i
-    let w_hat' : F[X Fin (num_vars - num_sumcheck_rounds + 1)] := w_hat + MvPolynomial.X 0 * sum
-    return {
-      target := newTarget
-      weightPolynomial := ⟨
-        w_hat',
-        whirWeightPolynomial_mem_restrictDegree_one _ statement.1.weightPolynomial.2 αs
-          (fun i j => zs i ^ 2 ^ j.val) γ
-      ⟩
+        -- let y0 : F ← OracleComp.queryBind
+        --   (Sum.inr (Sum.inr (Sigma.mk ⟨2, rfl⟩ ())))
+        --   (fun x => do return (.some x))
+
+        -- -- at the appropriate locations.
+      
+      
+        -- let f_i_sub_1 : domain → F := sorry
+
+        -- let y_one_plus : Vector F num_queries ←
+        --   (Vector.finRange num_queries).mapM (fun j => do
+        --     let z := (challenges ⟨3, rfl⟩).1 j
+        --     let y : F ← OracleComp.queryBind
+        --       (Sum.inr (Sum.inr ⟨⟨0, by rfl⟩, z⟩))
+        --       (fun x => do return (.some x))
+        --     return y)
+        -- let y_one_plus : Fin num_queries → F := y_one_plus.get
+
+        -- let ys : Fin (num_queries + 1) → F := Fin.cases y0 y_one_plus
+        -- let gamma_y_sum : F := ∑ i, γ^(i.val+1) * (ys i)
+        -- let newTarget : F := h_hat_k_of_alpha_k + gamma_y_sum
+        -- let αs : Fin num_sumcheck_rounds → F := sumcheck_statement.challenges
+        -- let αs_poly : Fin num_sumcheck_rounds → F[X Fin (num_vars - num_sumcheck_rounds + 1)] :=
+        --   fun i => MvPolynomial.C (αs i)
+        -- let w_hat_vars : Fin (num_vars + 1) → _ := Fin.cases
+        --   (MvPolynomial.X 0)
+        --   (fun (x : Fin num_vars) => if h: x.val < num_sumcheck_rounds
+        --     then αs_poly ⟨x.val, h⟩
+        --     else  MvPolynomial.X (Fin.mk (x.val - num_sumcheck_rounds + 1) (by grind))
+        --   )
+        -- let w_hat : F[X Fin (num_vars - num_sumcheck_rounds + 1)] :=
+        --   MvPolynomial.eval₂ MvPolynomial.C w_hat_vars statement.1.weightPolynomial.val
+        -- let z0 := challenges restPSpec.outOfDomainSample
+        -- let zs : Fin (num_queries + 1) → F :=
+        --   Fin.cases z0 ((challenges restPSpec.shiftQueriesAndCombinationRandomness).1 ·)
+        -- let γ_poly : F[X Fin (num_vars - num_sumcheck_rounds + 1)] := MvPolynomial.C γ
+
+        -- let eq
+        --   : Fin (num_queries + 1 ) → F[X Fin (num_vars - num_sumcheck_rounds + 1)]
+        -- := fun i =>
+        --   ∏ (j : Fin (num_vars - num_sumcheck_rounds)), (
+        --     let b := (MvPolynomial.C ((zs i)^(2^j.val)))
+        --     let z := (MvPolynomial.X j.succ)
+        --     b*z + (1 - b) * (1 - z)
+        --   )
+
+        -- let sum : F[X Fin (num_vars - num_sumcheck_rounds + 1)] :=
+        --   ∑ (i: Fin (num_queries + 1)), γ_poly^(i.val + 1) * eq i
+        -- let w_hat' : F[X Fin (num_vars - num_sumcheck_rounds + 1)] := w_hat + MvPolynomial.X 0 * sum
+        -- return {
+        --   target := newTarget
+        --   weightPolynomial := ⟨
+        --     w_hat',
+        --     whirWeightPolynomial_mem_restrictDegree_one _ statement.1.weightPolynomial.2 αs
+        --       (fun i j => zs i ^ 2 ^ j.val) γ
+        --   ⟩
+        -- }
+      outputOracle := Sum.inr {
+        materializeOutput challenges oracles messages oracleIdx := match oracleIdx with
+          | .CodeWord => messages ⟨0, rfl⟩
+        simulateOutputQuery challenges query := match query with
+          | ⟨.CodeWord, x⟩ => OracleComp.queryBind
+            (Sum.inr (Sum.inr ⟨⟨0, rfl⟩, x⟩))
+            (fun result => do return result)
+        simulateOutputQuery_eq := by
+          intro challenges oStmt messages q
+          rcases q with ⟨⟨_ | n, hn⟩, args⟩
+          · exact (simulateQ_simOracle2_queryBind_msg _ _ _ _ _).trans (simulateQ_pure _ _)
+          · omega
+      }
     }
-  outputOracle := Sum.inr {
-    materializeOutput challenges oracles messages oracleIdx := match oracleIdx with
-      | .CodeWord => messages ⟨0, rfl⟩
-    simulateOutputQuery challenges query := match query with
-      | ⟨.CodeWord, x⟩ => OracleComp.queryBind
-        (Sum.inr (Sum.inr ⟨⟨0, rfl⟩, x⟩))
-        (fun result => do return result)
-    simulateOutputQuery_eq := by
-      intro challenges oStmt messages q
-      rcases q with ⟨⟨_ | n, hn⟩, args⟩
-      · exact (simulateQ_simOracle2_queryBind_msg _ _ _ _ _).trans (simulateQ_pure _ _)
-      · omega
-  }
 
 noncomputable def restReduction
   {ι : Type} (oSpec : OracleSpec ι)
