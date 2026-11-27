@@ -93,7 +93,7 @@ def pspec
     (domain : Domain.SmoothCosetFftDomain log_order F)
 : ProtocolSpec (2*num_sumcheck_rounds + 4) := cast (by grind) (
   (sumCheck F num_sumcheck_rounds) ++ₚ
-  (sendFoldedFunction domain) ++ₚ
+  (sendFoldedFunction domain num_sumcheck_rounds) ++ₚ
   (outOfDomainSample F) ++ₚ
   (outOfDomainAnswer F) ++ₚ
   (shiftQueriesAndCombinationRandomness num_sumcheck_rounds num_queries domain)
@@ -1072,8 +1072,8 @@ def output
     Sumcheck.Spec.partialOracleVerifier
       (R := F)
       (deg := 2)
-      (m := 2^log_order)
-      ↑domain
+      (m := 2)
+      (booleanDomain F)
       (n := num_vars)
       oSpec
       num_sumcheck_rounds
@@ -1230,14 +1230,13 @@ where
           (round := fun i ↦ i.castLE (by grind))
           (Stmt := fun i ↦ Sumcheck.Spec.StatementRound F num_vars (i.castLE (by grind)))
           (verifiers := fun i ↦ Sumcheck.Spec.SingleRound.oracleVerifier F num_vars 2
-            (domain : Fin (2 ^ log_order) ↪ F) oSpec (i.castLE (by omega)))
+            (booleanDomain F) oSpec (i.castLE (by omega)))
           (data := ⟨f, challenges, messages⟩)
           fun i ↦ singleRound_appendsChallenge
-            (D := (domain : Fin (2 ^ log_order) ↪ F))
+            (D := (booleanDomain F))
             (oSpec := oSpec)
             (i := i.castLE (by grind))
       exact this.symm
-
 
 noncomputable def sumcheckReduction
   {ι : Type} (oSpec : OracleSpec ι)
@@ -1262,8 +1261,8 @@ noncomputable def sumcheckReduction
   Sumcheck.Spec.partialOracleReduction
     (R := F)
     (deg := 2)
-    (m := 2^log_order)
-    ↑domain
+    (m := 2)
+    (booleanDomain F)
     (n := num_vars)
     oSpec
     num_sumcheck_rounds

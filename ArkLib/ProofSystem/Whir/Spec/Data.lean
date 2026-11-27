@@ -240,6 +240,12 @@ abbrev num_weight_poly_vars
 
 end Statement
 
+/-- The Boolean domain `{0, 1}`, over which the WHIR sumcheck is performed. -/
+def booleanDomain (F : Type) [Field F] : Fin 2 ↪ F :=
+  ⟨fun i ↦ i.1, by
+    intros i i' h
+    fin_cases i, i' <;> grind⟩
+
 abbrev code {F : Type} [Field F] [DecidableEq F]
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
