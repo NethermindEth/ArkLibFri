@@ -1935,6 +1935,7 @@ where
     let y0 : F ← OracleComp.queryBind
       (Sum.inr (Sum.inr (Sigma.mk ⟨2, rfl⟩ ())))
       (fun x => do return (.some x))
+
     let y_one_plus : Vector F num_queries ←
       (Vector.finRange num_queries).mapM (fun j => do
         let z := (challenges ⟨3, rfl⟩).1 j
