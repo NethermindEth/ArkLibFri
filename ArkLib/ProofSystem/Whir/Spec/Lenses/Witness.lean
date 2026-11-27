@@ -21,7 +21,7 @@ noncomputable def sumcheckLens
   (num_vars : ℕ)
   (num_sumcheck_rounds : (Fin (num_vars + 1)))
 : Witness.Lens
-  (OuterStmtIn := Statement F num_vars × ((idx : OracleIdx) → OracleStatement domain num_vars idx))
+  (OuterStmtIn := Statement F num_vars × ((idx : OracleIdxPre) → OracleStatementPre domain idx))
   (InnerStmtOut :=
     Sumcheck.Spec.StatementRound F num_vars num_sumcheck_rounds ×
     -- TODO potentially increase degree
@@ -30,44 +30,10 @@ noncomputable def sumcheckLens
   (OuterWitIn := WitnessPreSumcheck F num_vars)
   (InnerWitIn := Sumcheck.Spec.WitnessPoly F num_vars 2)
   (InnerWitOut := Sumcheck.Spec.WitnessPoly F num_vars 2)
-  (OuterWitOut := WitnessPostSumcheck F num_vars)
+  (OuterWitOut := WitnessPreSumcheck F num_vars)
 where
   toFunA outerIns := composePolynomials outerIns.2.f_hat outerIns.1.1.weightPolynomial
-  toFunB outerIns innerOuts :=
-    let outerWitnessIn := outerIns.2
-    let weightPolynomial := outerIns.1.1.weightPolynomial
-    let f_hat := outerWitnessIn.f_hat
-    let polynomial := composePolynomials f_hat weightPolynomial
-    let innerStatementOut := innerOuts.1.1
-    let challenges := innerStatementOut.challenges
-    -- TODO tighten bound?
-    let h_k_hat :=
-      if h : num_sumcheck_rounds = num_vars then
-        Polynomial.C <| MvPolynomial.eval challenges (cast (by {
-          rw! [h]; rfl
-        }) polynomial.val)
-      else
-        Sumcheck.Spec.SingleRound.projectedRoundPolynomial
-          (R := F)
-          (n := num_vars)
-          (deg := 2)
-          (m := 2)
-          (D := booleanDomain F)
-          (i := ⟨num_sumcheck_rounds.val, by grind⟩)
-          (challenges := challenges)
-          (poly := polynomial)
-    {
-      f_hat := f_hat
-      h_k_hat :=
-        ⟨
-          h_k_hat,
-          by
-            simp only [h_k_hat]
-            split
-            · exact Polynomial.mem_degreeLE.2 (Polynomial.degree_C_le.trans (by simp))
-            · exact Subtype.property _
-        ⟩
-    }
+  toFunB outerIns _ := outerIns.2
 
 end Whir.Spec.Witness
 

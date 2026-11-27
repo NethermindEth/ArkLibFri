@@ -154,16 +154,10 @@ where
 abbrev OracleIdxPre := Fin 1
 abbrev OracleIdxPre.CodeWord : OracleIdxPre := 0
 
-abbrev OracleIdx := Fin 2
-abbrev OracleIdx.CodeWord : OracleIdx := 0
-abbrev OracleIdx.CodeWordPolynomial : OracleIdx := 1
-
 --TODO rename
-abbrev OracleIdxMid := Fin 4
+abbrev OracleIdxMid := Fin 2
 abbrev OracleIdxMid.CodeWord : OracleIdxMid := 0
-abbrev OracleIdxMid.CodeWordPolynomial : OracleIdxMid := 1
-abbrev OracleIdxMid.SumcheckResult : OracleIdxMid := 2
-abbrev OracleIdxMid.SumcheckChallenges : OracleIdxMid := 3
+abbrev OracleIdxMid.SumcheckResult : OracleIdxMid := 1
 
 @[reducible]
 def OracleStatementPre
@@ -175,36 +169,19 @@ def OracleStatementPre
 := match idx with
   | .CodeWord => domain.toFinset → F
 
-@[reducible]
-def OracleStatement
-  {F : Type} [Field F] [DecidableEq F]
-  {log_order : ℕ}
-  (domain : Domain.SmoothCosetFftDomain log_order F)
-  (num_vars : ℕ) -- m
-  (idx : OracleIdx)
-: Type
-:= match idx with
-  | .CodeWord => OracleStatementPre domain .CodeWord
-  | .CodeWordPolynomial => F⦃≤1⦄[X Fin num_vars]
-
 open Polynomial in
 @[reducible]
 def OracleStatementMid
   {F : Type} [Field F] [DecidableEq F]
   {log_order : ℕ}
   (domain : Domain.SmoothCosetFftDomain log_order F)
-  (num_vars : ℕ) -- m
-  (num_sumcheck_rounds : ℕ)
   (idx : OracleIdxMid)
 : Type
 := match idx with
     -- f
-  | .CodeWord => OracleStatement domain num_vars .CodeWord
-    -- f_hat
-  | .CodeWordPolynomial => OracleStatement domain num_vars .CodeWordPolynomial
+  | .CodeWord => OracleStatementPre domain .CodeWord
     -- h_k
   | .SumcheckResult => F⦃≤ 2⦄[X] -- TODO is this the correct degree for h_k
-  | .SumcheckChallenges => Fin num_sumcheck_rounds → F
 
 open MvPolynomial in
 structure WitnessPreSumcheck
@@ -214,14 +191,6 @@ where
   -- TODO do we actually restrict the degree here?
   -- Or do we just prove in cases of appropriate degree?
   f_hat : F⦃≤ 1⦄[X Fin num_vars]
-
-open Polynomial MvPolynomial in
-structure WitnessPostSumcheck
-  (F : Type) [Field F]
-  (num_vars : ℕ)
-where
-  f_hat : F⦃≤ 1⦄[X Fin num_vars]
-  h_k_hat : F⦃≤ 2⦄[X] -- this is now in both?
 
 end Definitions
 
