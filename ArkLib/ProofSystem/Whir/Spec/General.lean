@@ -303,11 +303,20 @@ noncomputable def ReductionRound
   · rfl
   · rfl
   · rfl
-  · rfl
+  · /-
+    OracleStatementRound domain round.succ =
+    OracleStatementPre
+      (Domain.CosetFftDomain.subdomain (subdomainRec domain ↑round) ↑⟨params.num_sumcheck_rounds ↑round, ⋯⟩)
+    -/
     rfl
   · rfl
   · rfl
-  · rfl
+  · /-
+    OracleStatement.oracleInterfacePre (subdomainRec domain ↑round.succ) ≍
+    OracleStatement.oracleInterfacePre
+      (Domain.CosetFftDomain.subdomain (subdomainRec domain ↑round) ↑⟨params.num_sumcheck_rounds ↑round, ⋯⟩)
+    -/
+    rfl
 
 
 noncomputable def lastRound
