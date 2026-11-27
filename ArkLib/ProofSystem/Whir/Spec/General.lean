@@ -720,6 +720,17 @@ noncomputable def reductionFinalFull
 
 end
 
+theorem nooope
+  {F : Type} [Field F] [DecidableEq F] [SampleableType F] [Inhabited F]
+  {OSpecIdx : Type} (oSpec : OracleSpec OSpecIdx) {log_order num_vars : ℕ}
+  (domain : Domain.SmoothCosetFftDomain log_order F)
+  (params : Whir.Spec.FoldingParams num_vars) (num_queries repetition_param : ℕ) :
+  reductionFinalFull oSpec domain params num_queries repetition_param =
+  reductionFinalFull oSpec domain params num_queries repetition_param := rfl
+
+#print axioms nooope -- We have a sorry `:sweat_smile:`
+
+
 -- NOTE: `preSumcheckReduction` is actually the one we need for the step `p. 33 step 3.`
 
 

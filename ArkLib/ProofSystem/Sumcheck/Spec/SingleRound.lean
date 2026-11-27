@@ -497,11 +497,17 @@ open Function in
 def oracleVerifier : OracleVerifier oSpec (StmtIn R) OStmtIn (StmtOut R) (OStmtOut R deg)
     (pSpec R deg) where
   verify := fun target chal => do
+    /-
+      The queried polynomial `h_hat_{<<domain>>}`
+    -/
     let evals : Vector R m ← (Vector.finRange m).mapM
       (fun i => OptionT.lift <| OracleComp.liftComp
         (OracleComp.lift <|
           OracleSpec.query (show [(pSpec R deg).Message]ₒ.Domain from ⟨default, D i⟩))
         _)
+    /-
+      The actual sum from 1.a) `Σ_{b∈{0,1}} h_hat_{<<domain>>}`, guard on 'target'
+    -/
     guard (evals.sum = target)
     let newTarget ← OptionT.lift <| OracleComp.liftComp
       (OracleComp.lift <|
