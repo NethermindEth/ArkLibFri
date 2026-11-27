@@ -2107,7 +2107,10 @@ noncomputable def restVerifier
         -/
         let shiftPoints := (challenges restPSpec.shiftQueriesAndCombinationRandomness).1
 
-        let gMapShitfpoints ← (Vector.finRange num_queries).mapM (fun j ↦ g (shiftPoints j))
+        /-
+          Compute the points {gᵢ₋₁(zᵢ,ⱼ)}ⱼ∈[tᵢ₋₁] by querying fᵢ₋₁
+        -/
+        let gMapShitfpoints ← (Vector.finRange num_queries).mapM fun j ↦ g (shiftPoints j)
 
         return sorry
 
