@@ -151,14 +151,17 @@ where
   target : F
   weightPolynomial : F⦃≤1⦄[X Fin (num_vars + 1)] -- TODO generalise to higher degree
 
-abbrev OracleIdxPre := Fin 1
+abbrev OracleIdxPre := Fin 2
 abbrev OracleIdxPre.CodeWord : OracleIdxPre := 0
+abbrev OracleIdxPre.PreviousSumcheck : OracleIdxPre := 1
 
 --TODO rename
-abbrev OracleIdxMid := Fin 2
+abbrev OracleIdxMid := Fin 3
 abbrev OracleIdxMid.CodeWord : OracleIdxMid := 0
 abbrev OracleIdxMid.SumcheckResult : OracleIdxMid := 1
+abbrev OracleIdxMid.PreviousSumcheck : OracleIdxMid := 2
 
+open Polynomial in
 @[reducible]
 def OracleStatementPre
   {F : Type} [Field F] [DecidableEq F]
@@ -168,6 +171,7 @@ def OracleStatementPre
 : Type
 := match idx with
   | .CodeWord => domain.toFinset → F
+  | .PreviousSumcheck => Option F⦃≤2⦄[X] --hᵢ₋₁,₁
 
 open Polynomial in
 @[reducible]
@@ -182,6 +186,7 @@ def OracleStatementMid
   | .CodeWord => OracleStatementPre domain .CodeWord
     -- h_k
   | .SumcheckResult => F⦃≤ 2⦄[X] -- TODO is this the correct degree for h_k
+  | .PreviousSumcheck => Option F⦃≤2⦄[X] --hᵢ₋₁,₁
 
 open MvPolynomial in
 structure WitnessPreSumcheck

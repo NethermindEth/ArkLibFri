@@ -14,7 +14,7 @@ public section Public
 
 namespace Whir.Spec.OracleStatement
 
-open MvPolynomial in
+open Polynomial MvPolynomial in
 instance oracleInterfacePre
   {F : Type} [Field F] [DecidableEq F]
   {log_order : ℕ}
@@ -22,21 +22,22 @@ instance oracleInterfacePre
   (idx : OracleIdxPre)
 : OracleInterface (OracleStatementPre domain idx) where
   Query := match idx with
-      | .CodeWord => domain.toFinset
-  toOC.spec := fun _ => F
-  toOC.impl input := do
-    let oracle_statement ← read
-    match h : idx with
-      | .CodeWord =>
-        let point : domain.toFinset := cast (by {
-          rw! [h]
-          rfl
-        }) input
-        let codeword : domain.toFinset → F := cast (by {
-          rw! [h]
-          rfl
-        }) oracle_statement
+    | .CodeWord => domain.toFinset
+    | .PreviousSumcheck => F
+  toOC.spec := match idx with
+    | .CodeWord => fun _ => F
+    | .PreviousSumcheck => fun _ => Option F
+  toOC.impl input := match idx with
+    | .CodeWord => do
+      let point : domain.toFinset := input
+        let codeword : domain.toFinset → F ← read
         return codeword point
+    | .PreviousSumcheck => do
+      let val : F := input
+      let poly : Option F⦃≤2⦄[X] ← read
+      let .some poly := poly
+        | return .none
+      return Option.some (Polynomial.eval val poly)
 
 open Polynomial in
 instance oracleInterfaceMid
@@ -48,15 +49,23 @@ instance oracleInterfaceMid
   Query := match idx with
     | .CodeWord => (oracleInterfacePre domain .CodeWord).Query
     | .SumcheckResult => F
+    | .PreviousSumcheck => F
   toOC.spec := match idx with
     | .CodeWord => (oracleInterfacePre domain .CodeWord).toOC.spec
     | .SumcheckResult => F →ₒ F
+    | .PreviousSumcheck => fun _ => Option F
   toOC.impl input := match idx with
     | .CodeWord => (oracleInterfacePre domain .CodeWord).toOC.impl input
     | .SumcheckResult => do
       let vals : F := input
       let poly : F⦃≤2⦄[X] ← read
       return Polynomial.eval vals poly
+    | .PreviousSumcheck => do
+      let val : F := input
+      let poly : Option F⦃≤2⦄[X] ← read
+      let .some poly := poly
+        | return .none
+      return Option.some (Polynomial.eval val poly)
 
 noncomputable def sumcheckExecutableLens
   {F : Type} [Field F] [DecidableEq F]
@@ -104,6 +113,7 @@ where
   materializeOutput whirOracle sumcheckOracle idx := match idx with
     | .CodeWord => whirOracle .CodeWord
     | .SumcheckResult => (sumcheckOracle .responsePoly) ⟨num_sumcheck_rounds - 1, by grind⟩
+    | .PreviousSumcheck => whirOracle .PreviousSumcheck
 
   simulateOutput query :=
     let ⟨queryIdx, queryData⟩ := query
@@ -113,6 +123,7 @@ where
           ⟨num_sumcheck_rounds - 1, by grind⟩,
           queryData
         ))
+      | .PreviousSumcheck => Sum.inl (Sigma.mk .PreviousSumcheck queryData)
     OracleComp.queryBind bindQuery (fun x => do
       return (cast (by {
         subst bindQuery

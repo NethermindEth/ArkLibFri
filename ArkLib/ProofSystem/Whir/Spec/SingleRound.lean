@@ -960,10 +960,12 @@ where
           -- TODO encapsulate
           aesop (add simp [sumcheckResultIdx, ProtocolSpec.sigmaMessageIdxToSeqCompose])
         }) (messages (sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds))
+      | .PreviousSumcheck => oracleStatement .PreviousSumcheck
     simulateOutputQuery challenges query :=
       let ⟨queryIdx, queryData⟩ := query
       match queryIdx with
         | .CodeWord => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.CodeWord, queryData⟩)) (pure ·)
+        | .PreviousSumcheck => OracleComp.queryBind (Sum.inr (Sum.inl ⟨.PreviousSumcheck, queryData⟩)) (pure ·)
         | .SumcheckResult => OracleComp.queryBind (Sum.inr (Sum.inr
             ⟨sumcheckResultIdx F num_sumcheck_rounds h_num_sumcheck_rounds, cast (by {
               rewrite [sumcheckResultMessageType]
@@ -1057,6 +1059,7 @@ where
         convert pure_cast _ _ _ _
         · simp [cast]
           rfl
+      · rfl
   }
 
   materialize_eq := by
@@ -1070,6 +1073,7 @@ where
       · grind
       · simp [OracleVerifier.materializeOutputOracle]
         rfl
+    · rfl
 
 #check Sumcheck.Spec.oracleVerifier
 noncomputable def sumcheckReduction
@@ -1661,6 +1665,7 @@ where
     }
     let oracleStatement := fun idx => match idx with
       | .CodeWord => newCodeWord
+      | .PreviousSumcheck => .some state.h_hat_k
     let witness := {
       f_hat := state.g_hat
     }
@@ -1903,6 +1908,7 @@ noncomputable def restVerifier
             - 3 - shiftQueriesAndCombinationRandomness
                 - `Fin num_queries → ↥(Domain.CosetFftDomain.toFinset (Domain.CosetFftDomain.subdomain domain ↑num_sumcheck_rounds))`
                 - ???? (of type `F`) - combination randomness?
+                  - This is γᵢ
 
           from monad:
             Query :=
@@ -1921,6 +1927,8 @@ noncomputable def restVerifier
           `| .SumcheckChallenges => Fin num_sumcheck_rounds → F`
 
         -/
+        let ⟨whirStatement, sumcheckStatement⟩ := statement
+
         let f_sub_i_sub_one : domain → State :=
           fun x ↦ OracleComp.queryBind (Sum.inr (Sum.inl ⟨.CodeWord, x⟩)) pure
 
@@ -1931,7 +1939,7 @@ noncomputable def restVerifier
           foldAtPointRec
             f_sub_i_sub_one -- fᵢ₋₁
             num_sumcheck_rounds -- k
-            statement.2.challenges -- αᵢ₋₁
+            sumcheckStatement.challenges -- αᵢ₋₁
 
         /-
           b) ... appropriate locations.
@@ -1942,7 +1950,14 @@ noncomputable def restVerifier
         /-
           Compute the points {gᵢ₋₁(zᵢ,ⱼ)}ⱼ∈[tᵢ₋₁] by querying fᵢ₋₁
         -/
-        let gMapShitfpoints ← (Vector.finRange num_queries).mapM fun j ↦ g (shiftPoints j)
+        let gMapShiftpoints ← (Vector.finRange num_queries).mapM fun j ↦ g (shiftPoints j)
+
+        /-
+          c) Check that ...
+
+        -/
+        let h_hat_sub_i_sub_one :=
+
 
         return sorry
 
